@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 
 #include "hardware/i2c.h"
+#include "hardware/spi.h"
 
 #include "MotionControllerPinning.h"
 
@@ -28,9 +29,23 @@ int main()
     // -------------   initialize UART  -------------
 
     // ------------- initialize SPI Bus -------------
+    spi_init(spi0, SPI_BAUDRATE_KHZ * 1e3); // set Baudrate
+    gpio_set_function(SPI_MISO, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_MOSI, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_SCK, GPIO_FUNC_SPI);
+
+    gpio_init(SPI_CS_DRIVER_0);
+    gpio_set_dir(SPI_CS_DRIVER_0, GPIO_OUT);
+    gpio_put(SPI_CS_DRIVER_0, true); // pull up CS
+    gpio_init(SPI_CS_DRIVER_1);
+
+    gpio_set_dir(SPI_CS_DRIVER_1, GPIO_OUT);
+    gpio_put(SPI_CS_DRIVER_1, true); // pull up CS
+
+    spi_set_format(spi0, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 
     // ------------- initialize I2C Bus -------------
-    i2c_init(i2c0, 400e3); // set Baudrate 400kHz
+    i2c_init(i2c0, I2C_BAUDRATE_KHZ * 1e3); // set Baudrate
     gpio_set_function(I2C0_SCK, GPIO_FUNC_I2C);
     gpio_set_function(I2C0_SDA, GPIO_FUNC_I2C);
 

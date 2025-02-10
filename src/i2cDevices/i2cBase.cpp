@@ -9,6 +9,7 @@ i2cBase::i2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
     _i2cStatus = STATUSOK;
     _i2cInstance = &i2cInstance;
 
+    this->_initDevice();
     this->_checkDevice();
 }
 

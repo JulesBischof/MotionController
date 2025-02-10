@@ -39,4 +39,13 @@
 
 #define TXLED_ON 27
 
+/* ==============================================================
+
+    Basic Pinning MotionController - Configuration
+
+============================================================== */
+
+#define SPI_BAUDRATE_KHZ 1000
+#define I2C_BAUDRATE_KHZ 400
+
 #endif

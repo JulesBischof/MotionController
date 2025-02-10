@@ -18,6 +18,7 @@ target_include_directories(MotionController PRIVATE
      FreeRTOS-Kernel-Heap4 
 
      i2cDevices
+     spiDevices
      )
 
 # Modify the below lines to enable/disable output over UART/USB
