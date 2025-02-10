@@ -59,5 +59,3 @@ pico_set_program_version(MotionController "0.1")
 target_include_directories(MotionController PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
-
-

@@ -2,6 +2,8 @@
      main.cpp
 )
 
+add_subdirectory(i2cDevices)
+
 target_include_directories(MotionController PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
 )
@@ -14,10 +16,12 @@ target_include_directories(MotionController PRIVATE
      hardware_timer
 
      FreeRTOS-Kernel-Heap4 
+
+     i2cDevices
      )
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(MotionController 1)
 pico_enable_stdio_usb(MotionController 1)
 
- pico_add_extra_outputs(MotionController)
+pico_add_extra_outputs(MotionController)
