@@ -26,17 +26,32 @@ uint32_t spiBase::spiReadReg(uint8_t reg)
     uint8_t tx_buffer[5] = {reg & 0x7F, 0, 0, 0, 0}; // Read command - MSB = 0
     uint8_t rx_buffer[5] = {0};
 
+    // disables all Interrupts and Scheduler activity from FreeRTOS
+    taskENTER_CRITICAL();
+
     // push address - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
     sleep_us(1);
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
+    // returns to TimeSlicing Behaviour
+    taskEXIT_CRITICAL();
+
+    // wait some time
+    vTaskDelay(pdMS_TO_TICKS(10));
+
+    // disables all Interrupts and Scheduler activity from FreeRTOS
+    taskENTER_CRITICAL();
+
     // get actual data - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
     sleep_us(1);
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
+
+    // returns to TimeSlicing Behaviour
+    taskEXIT_CRITICAL();
 
     this->_spiStatus = (rx_buffer[0]);
 
@@ -75,10 +90,16 @@ bool spiBase::spiWriteReg(uint8_t reg, uint32_t data)
                             data & 0xFF};
     uint8_t rx_buffer[5] = {0};
 
+    // disables all Interrupts and Scheduler activity from FreeRTOS
+    taskENTER_CRITICAL();
+
     gpio_put(_csPin, 0); // pull down CS
     sleep_us(1);
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
+
+    // returns to TimeSlicing Behaviour
+    taskEXIT_CRITICAL();
 
     // get status flags
     this->_spiStatus = (rx_buffer[0]);

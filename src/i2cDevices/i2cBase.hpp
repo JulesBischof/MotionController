@@ -2,7 +2,9 @@
 #define I2CBASE
 
 #include "hardware/i2c.h"
+#include "pico/stdlib.h"
 #include "FreeRTOS.h"
+#include "semphr.h"
 
 // I2C ERRORCODES
 #define STATUSOK 0;

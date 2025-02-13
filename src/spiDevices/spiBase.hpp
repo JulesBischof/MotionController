@@ -4,6 +4,7 @@
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
 #include "FreeRTOS.h"
+#include "semphr.h"
 
 // I2C ERRORCODES
 #define STATUSOK 0;
