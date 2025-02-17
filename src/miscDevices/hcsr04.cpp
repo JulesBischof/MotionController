@@ -1,5 +1,8 @@
 #include "hcsr04.hpp"
 
+/// @brief creates instance of HCSR04 Ultrasonic distance-Sensor
+/// @param triggerPin GPIO conntected to trigger
+/// @param echoPin GPIO connected to echo
 hcsr04::hcsr04(uint8_t triggerPin, uint8_t echoPin)
     : _triggerPin(triggerPin), _echoPin(echoPin)
 {
@@ -17,12 +20,14 @@ hcsr04::hcsr04(uint8_t triggerPin, uint8_t echoPin)
     _instancesMap.insert(std::make_pair(_echoPin, this));
 }
 
+/// @brief deconstructor - not implemented yet
 hcsr04::~hcsr04()
 {
+    // not implemented yet - maybe disable interrupts or else - instances hardly ever get deleted tho
 }
 
-/// @brief 
-/// @return 
+/// @brief measures current distance to distant object 
+/// @return distance measured by hcsr04, value in mm
 uint16_t hcsr04::getDistance_mm()
 {
     _trigger();
@@ -39,6 +44,7 @@ uint16_t hcsr04::getDistance_mm()
     return distance_mm;
 }
 
+/// @brief pulls the trigger pin
 void hcsr04::_trigger()
 {
     // TODO: trigger pin by PIO possible ??? 
@@ -47,7 +53,9 @@ void hcsr04::_trigger()
     gpio_put(_triggerPin, false);
 }
 
-
+/// @brief irq callback function for echo-pin interrupt
+/// @param gpio gpio that triggered the interrupt
+/// @param events falling or rising edge
 void hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
 {
     hcsr04 *inst = hcsr04::_instancesMap[gpio];
@@ -61,6 +69,7 @@ void hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
     xEventGroupSetBitsFromISR(inst->_eventGroup, inst->_echoEvent, &xHigherPriorityTaskWoken);
 }
 
+/// @brief inits gpios
 void hcsr04::_initGpios()
 {
         gpio_init(_triggerPin);

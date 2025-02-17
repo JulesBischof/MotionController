@@ -28,18 +28,42 @@ i2cBase::~i2cBase()
     // no deconstructor
 }
 
-/// @brief reads registervalue into a buffer
-/// @param reg register address
+/// @brief provides a readframe for i2c bus. No Register Adress neccessary - just read slave
 /// @param buffer pointer to a buffer
+/// @param num  numbers of bytes to read
 /// @return true if no error occurred
-bool i2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer)
+bool i2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
 {
     int err = 0;
 
     xSemaphoreTake(_i2cMutex, pdMS_TO_TICKS(100));
 
+    err = i2c_read_timeout_us(_i2cInstance, _i2cAddress, buffer, num, false, 10000);
+
+    xSemaphoreGive(_i2cMutex);
+
+    if (err != 1)
+    {
+        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        return false;
+    }
+    return true;
+}
+
+/// @brief reads registervalue into a buffer
+/// @param reg register address
+/// @param buffer pointer to a buffer
+/// @param num numbers of bytes to read
+/// @return true if no error occurred
+bool i2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
+{
+    int err = 0;
+
+    xSemaphoreTake(_i2cMutex, pdMS_TO_TICKS(100));
+
+    // write with repeated start condition (read after adress has been set)
     err = i2c_write_timeout_us(_i2cInstance, _i2cAddress, &reg, 1, true, 10000);
-    err = i2c_read_timeout_us(_i2cInstance, _i2cAddress, buffer, 1, false, 10000);
+    err = i2c_read_timeout_us(_i2cInstance, _i2cAddress, buffer, num, false, 10000);
 
     xSemaphoreGive(_i2cMutex);
 

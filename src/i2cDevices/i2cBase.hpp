@@ -13,10 +13,10 @@
 class i2cBase
 {
 private:
-    static SemaphoreHandle_t _i2cMutex;
     static bool _i2cMutexInititalized;
 
 protected:
+    static SemaphoreHandle_t _i2cMutex;
     i2c_inst_t *_i2cInstance;
     uint8_t _i2cAddress;
     uint8_t _i2cStatus;
@@ -30,9 +30,10 @@ public:
 
     uint8_t getStatus() { return this->_i2cStatus; };
 
-    bool i2cReadReg(uint8_t reg, uint8_t *buffer);
+    virtual bool i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num);
+    virtual bool i2cReadFrame(uint8_t *buffer, uint8_t num);
 
-    bool i2cWriteReg(uint8_t reg, uint8_t data);
+    virtual bool i2cWriteReg(uint8_t reg, uint8_t data);
 };
 
 #endif

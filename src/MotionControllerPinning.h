@@ -37,7 +37,7 @@
 #define HCSR04_TRIGGER 22
 #define HCSR04_ECHO 26
 
-#define TXLED_ON 27
+#define UVTXLED_ON 27
 
 /* ==============================================================
 
