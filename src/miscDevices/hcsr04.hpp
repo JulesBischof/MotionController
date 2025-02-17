@@ -33,7 +33,7 @@ class hcsr04
         hcsr04(uint8_t triggerPin, uint8_t echoPin);
         ~hcsr04();
 
-        uint16_t getDistance();
+        uint16_t getDistance_mm();
 };
 
 #endif

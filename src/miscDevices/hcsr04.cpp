@@ -21,7 +21,9 @@ hcsr04::~hcsr04()
 {
 }
 
-uint16_t hcsr04::getDistance()
+/// @brief 
+/// @return 
+uint16_t hcsr04::getDistance_mm()
 {
     _trigger();
     EventBits_t bits = xEventGroupWaitBits(_eventGroup, _echoEvent, pdTRUE, pdFALSE, portMAX_DELAY);
