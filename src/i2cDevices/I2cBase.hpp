@@ -28,6 +28,8 @@ public:
     I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress);
     ~I2cBase();
 
+    static void i2cInit(uint8_t sdaPin, uint8_t sckPin, i2c_inst_t *i2cInstance, uint16_t baudrate);
+
     uint8_t getStatus() { return this->_i2cStatus; };
 
     virtual bool i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num);

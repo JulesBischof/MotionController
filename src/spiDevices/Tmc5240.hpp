@@ -7,13 +7,6 @@
 #include "StepperConfig.h"
 # include "SpiBase.hpp"
 
-// ---------------
-// Status Flags
-// ---------------
-#define NOERROR 0
-#define TIMEOUT 1
-// ---------------
-
 class Tmc5240 : public SpiBase
 {
 private:
@@ -27,7 +20,7 @@ private:
 
 public:
     Tmc5240(spi_inst_t *spiInstance, uint8_t csPin);
-    ~Tmc5240() {};
+    ~Tmc5240();
 
     uint8_t getStatusFlag() { return this->_spi_status_flags; };
 

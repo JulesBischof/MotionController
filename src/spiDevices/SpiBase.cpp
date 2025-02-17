@@ -10,13 +10,12 @@ bool SpiBase::_spiMutexInititalized = false;
 SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
     : _spiInstance(spiInstance), _csPin(csPin)
 {
-
     if (!this->_spiMutexInititalized)
     {
         _spiMutex = xSemaphoreCreateMutex();
         _spiMutexInititalized = true;
     }
-
+    _initCsGpio(csPin);
     this->_initDevice();
     this->_checkDevice();
 }
@@ -25,6 +24,28 @@ SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
 SpiBase::~SpiBase()
 {
     // no deconstructor
+}
+
+/// @brief initializes spi-channel
+/// @param sdiPin Serial data in / MISO
+/// @param sdoPin Serial data out / MOSI
+/// @param sclkPin Serial Clock 
+/// @param baudrateKhz Baudrate in kHz
+/// @param spiInstance spi instance - ref rpi-pico c/c++ sdk (spi0/spi1)
+void SpiBase::spiInit(uint8_t sdiPin, uint8_t sdoPin, uint8_t sclkPin, uint16_t baudrateKhz, spi_inst_t *spiInstance)
+{
+    spi_init(spiInstance, 1000 * baudrateKhz);
+    
+    gpio_set_function(sdiPin, GPIO_FUNC_SPI);
+    gpio_set_function(sdoPin, GPIO_FUNC_SPI);
+    gpio_set_function(sclkPin, GPIO_FUNC_SPI);
+}
+
+void SpiBase::_initCsGpio(uint8_t csPin)
+{
+    gpio_init(csPin);
+    gpio_set_dir(csPin, GPIO_OUT);
+    gpio_put(csPin, 1);
 }
 
 /// @brief basic read method

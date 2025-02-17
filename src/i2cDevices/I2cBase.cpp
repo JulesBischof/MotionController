@@ -28,6 +28,19 @@ I2cBase::~I2cBase()
     // no deconstructor
 }
 
+/// @brief initializes i2c Channel
+/// @param sdaPin Serial data Pin
+/// @param sckPin Serial clock Pin
+/// @param i2cInstance I2C Instance - ref rpi-pico c/c++ sdk (i2c0 / i2c1)
+/// @param baudrate baudrate i2cbus 
+void I2cBase::i2cInit(uint8_t sdaPin, uint8_t sckPin, i2c_inst_t *i2cInstance, uint16_t baudrateKhz)
+{
+    i2c_init(i2cInstance, 1000 * baudrateKhz);
+
+    gpio_set_function(sdaPin, GPIO_FUNC_I2C);
+    gpio_set_function(sckPin, GPIO_FUNC_I2C);
+}
+
 /// @brief provides a readframe for i2c bus. No Register Adress neccessary - just read slave
 /// @param buffer pointer to a buffer
 /// @param num  numbers of bytes to read
