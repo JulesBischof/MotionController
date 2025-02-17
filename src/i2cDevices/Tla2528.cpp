@@ -1,16 +1,16 @@
-#include "tla2528.hpp"
+#include "Tla2528.hpp"
 
-tla2528::tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio) : i2cBase(i2cInstance, i2cAddress)
+Tla2528::Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio) : I2cBase(i2cInstance, i2cAddress)
 {
     _uvGpio = uvGpio;
 }
 
-tla2528::~tla2528()
+Tla2528::~Tla2528()
 {
 }
 
 /// @brief global confgiuration ADC-Converter
-void tla2528::_initDevice()
+void Tla2528::_initDevice()
 {
     // perform reset all registers to default values
     i2cWriteReg(GENERAL_CFG_ADDRESS, RST_COMPLETE);
@@ -38,7 +38,7 @@ void tla2528::_initDevice()
 }
 
 /// @brief sends test-message to adc
-void tla2528::_checkDevice()
+void Tla2528::_checkDevice()
 {
     uint8_t buffer = 0;
     i2cReadReg(SYSTEM_STATUS_ADDRESS, &buffer, 1);
@@ -54,7 +54,7 @@ void tla2528::_checkDevice()
 
 /// @brief toggles UV-Transmitter due to safety reasons
 /// @param state state the led should be toggled to
-void tla2528::_toggleUvLight(bool state)
+void Tla2528::_toggleUvLight(bool state)
 {
     gpio_put(_uvGpio, state);
     _uvLedState = state;
@@ -62,7 +62,7 @@ void tla2528::_toggleUvLight(bool state)
 
 /// @brief reads ADC-Value
 /// @return vector containing all raw ADC-Values
-std::vector<uint16_t> tla2528::readAdc()
+std::vector<uint16_t> Tla2528::readAdc()
 {
     std::vector<uint16_t> retVal;
 
@@ -87,7 +87,7 @@ std::vector<uint16_t> tla2528::readAdc()
 /// @param buffer pointer to a buffer
 /// @param num numbers of bytes to read
 /// @return true if no error occurred
-bool tla2528::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
+bool Tla2528::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
 {
     int err = 0;
 
@@ -114,7 +114,7 @@ bool tla2528::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
 /// @param reg register address
 /// @param data register value
 /// @return true if no error occurred
-bool tla2528::i2cWriteReg(uint8_t reg, uint8_t data)
+bool Tla2528::i2cWriteReg(uint8_t reg, uint8_t data)
 {
 
     // refer datasheet p21 - device needs operation code

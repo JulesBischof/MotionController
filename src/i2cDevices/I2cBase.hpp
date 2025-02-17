@@ -10,7 +10,7 @@
 #define STATUSOK 0;
 #define TIMEOUT 1;
 
-class i2cBase
+class I2cBase
 {
 private:
     static bool _i2cMutexInititalized;
@@ -25,8 +25,8 @@ protected:
     virtual void _checkDevice();
 
 public:
-    i2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress);
-    ~i2cBase();
+    I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress);
+    ~I2cBase();
 
     uint8_t getStatus() { return this->_i2cStatus; };
 

@@ -1,15 +1,15 @@
 #ifndef TLA2528_H
 #define TLA2528_H
 
-#include "i2cBase.hpp"
-#include "tla2528_registers.h"
+#include "I2cBase.hpp"
+#include "Tla2528_HW_Abstraction.h"
 #include <vector>
 #include <stdio.h>
 
 #define OPCODE_SINGLE_REGISTER_READ 0x10
 #define OPCODE_SINGLE_REGISTER_WRITE 0x08
 
-class tla2528 : public i2cBase
+class Tla2528 : public I2cBase
 {
 private:
     void _initDevice() override;
@@ -20,8 +20,8 @@ private:
     void _toggleUvLight(bool state);
 
 public:
-    tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
-    ~tla2528();
+    Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
+    ~Tla2528();
 
     std::vector<uint16_t> readAdc();
 

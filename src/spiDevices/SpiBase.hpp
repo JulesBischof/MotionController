@@ -10,7 +10,7 @@
 #define STATUSOK 0;
 #define TIMEOUT 1;
 
-class spiBase
+class SpiBase
 {
 private:
     static SemaphoreHandle_t _spiMutex;
@@ -24,16 +24,16 @@ protected:
     virtual void _initDevice();
     virtual void _checkDevice();
 
+    uint32_t _spiReadReg(uint8_t reg);
+    uint32_t _spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift);
+    bool _spiWriteReg(uint8_t reg, uint32_t data);
+
 public:
-    spiBase(spi_inst_t *spiInstance, uint8_t csPin);
-    ~spiBase();
+    SpiBase(spi_inst_t *spiInstance, uint8_t csPin);
+    ~SpiBase();
 
     uint8_t getStatus() { return this->_spiStatus; };
 
-    uint32_t spiReadReg(uint8_t reg);
-    uint32_t spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift);
-
-    bool spiWriteReg(uint8_t reg, uint32_t data);
 };
 
 #endif

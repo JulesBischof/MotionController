@@ -1,13 +1,13 @@
-#include "i2cBase.hpp"
+#include "I2cBase.hpp"
 
 // init static class members
-SemaphoreHandle_t i2cBase::_i2cMutex = NULL;
-bool i2cBase::_i2cMutexInititalized = false;
+SemaphoreHandle_t I2cBase::_i2cMutex = NULL;
+bool I2cBase::_i2cMutexInititalized = false;
 
 /// @brief initialises basic i2c Device
 /// @param i2cInstance i2c0 / i2c1 refer pico datasheet
 /// @param i2cAddress Bus-Adress i2c device
-i2cBase::i2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
+I2cBase::I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
     : _i2cInstance(&i2cInstance), _i2cAddress(i2cAddress)
 {
     _i2cStatus = STATUSOK;
@@ -23,7 +23,7 @@ i2cBase::i2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
 }
 
 /// @brief Deconstructor i2c baseclass - not implemented yet
-i2cBase::~i2cBase()
+I2cBase::~I2cBase()
 {
     // no deconstructor
 }
@@ -32,7 +32,7 @@ i2cBase::~i2cBase()
 /// @param buffer pointer to a buffer
 /// @param num  numbers of bytes to read
 /// @return true if no error occurred
-bool i2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
+bool I2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
 {
     int err = 0;
 
@@ -55,7 +55,7 @@ bool i2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
 /// @param buffer pointer to a buffer
 /// @param num numbers of bytes to read
 /// @return true if no error occurred
-bool i2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
+bool I2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
 {
     int err = 0;
 
@@ -79,7 +79,7 @@ bool i2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
 /// @param reg register address
 /// @param data 8-bit data to send
 /// @return true if no error occurred
-bool i2cBase::i2cWriteReg(uint8_t reg, uint8_t data)
+bool I2cBase::i2cWriteReg(uint8_t reg, uint8_t data)
 {
     uint8_t buffer[2] = {reg, data};
 

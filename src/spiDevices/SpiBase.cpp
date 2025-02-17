@@ -1,13 +1,13 @@
-#include "spiBase.hpp"
+#include "SpiBase.hpp"
 
 // init static class members
-SemaphoreHandle_t spiBase::_spiMutex = NULL;
-bool spiBase::_spiMutexInititalized = false;
+SemaphoreHandle_t SpiBase::_spiMutex = NULL;
+bool SpiBase::_spiMutexInititalized = false;
 
 /// @brief spi baseclass constructor
 /// @param spiInstance spi instance - refer rp2040 datasheet
 /// @param csPin chip-select pin of spi device
-spiBase::spiBase(spi_inst_t *spiInstance, uint8_t csPin)
+SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
     : _spiInstance(spiInstance), _csPin(csPin)
 {
 
@@ -22,7 +22,7 @@ spiBase::spiBase(spi_inst_t *spiInstance, uint8_t csPin)
 }
 
 /// @brief deconstructor - not implemented yet
-spiBase::~spiBase()
+SpiBase::~SpiBase()
 {
     // no deconstructor
 }
@@ -30,7 +30,7 @@ spiBase::~spiBase()
 /// @brief basic read method
 /// @param reg register to read
 /// @return register value 32 bit
-uint32_t spiBase::spiReadReg(uint8_t reg)
+uint32_t SpiBase::_spiReadReg(uint8_t reg)
 {
     uint8_t tx_buffer[5] = {reg & 0x7F, 0, 0, 0, 0}; // Read command - MSB = 0
     uint8_t rx_buffer[5] = {0};
@@ -73,10 +73,10 @@ uint32_t spiBase::spiReadReg(uint8_t reg)
 /// @param mask register mask fpr specific bit field
 /// @param shift necessary bitshift - refer datasheet
 /// @return 
-uint32_t spiBase::spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift)
+uint32_t SpiBase::_spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift)
 {
     // get Register
-    uint32_t reg_value = spiReadReg(reg);
+    uint32_t reg_value = _spiReadReg(reg);
     // mask Bitfield
     uint32_t bitfield = (reg_value & mask) >> shift;
     return bitfield;
@@ -86,7 +86,7 @@ uint32_t spiBase::spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift)
 /// @param reg register address
 /// @param data data to send
 /// @return true if transmition complete
-bool spiBase::spiWriteReg(uint8_t reg, uint32_t data)
+bool SpiBase::_spiWriteReg(uint8_t reg, uint32_t data)
 {
     uint8_t tx_buffer[5] = {(reg | 0x80) & 0xFF, // write - command: MSB = 1
                             (data >> 24) & 0xFF,
