@@ -1,5 +1,5 @@
-#ifndef I2CBASE
-#define I2CBASE
+#ifndef I2CBASE_H
+#define I2CBASE_H
 
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
@@ -12,6 +12,9 @@
 
 class i2cBase
 {
+private:
+    static SemaphoreHandle_t _i2cMutex;
+    static bool _i2cMutexInititalized;
 
 protected:
     i2c_inst_t *_i2cInstance;

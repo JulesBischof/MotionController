@@ -1,12 +1,21 @@
 #include "spiBase.hpp"
 
+// init static class members
+SemaphoreHandle_t spiBase::_spiMutex = NULL;
+bool spiBase::_spiMutexInititalized = false;
+
 /// @brief spi baseclass constructor
 /// @param spiInstance spi instance - refer rp2040 datasheet
 /// @param csPin chip-select pin of spi device
 spiBase::spiBase(spi_inst_t *spiInstance, uint8_t csPin)
+    : _spiInstance(spiInstance), _csPin(csPin)
 {
-    this->_csPin = csPin;
-    this->_spiInstance = spiInstance;
+
+    if (!this->_spiMutexInititalized)
+    {
+        _spiMutex = xSemaphoreCreateMutex();
+        _spiMutexInititalized = true;
+    }
 
     this->_initDevice();
     this->_checkDevice();
@@ -26,8 +35,7 @@ uint32_t spiBase::spiReadReg(uint8_t reg)
     uint8_t tx_buffer[5] = {reg & 0x7F, 0, 0, 0, 0}; // Read command - MSB = 0
     uint8_t rx_buffer[5] = {0};
 
-    // disables all Interrupts and Scheduler activity from FreeRTOS
-    taskENTER_CRITICAL();
+    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
 
     // push address - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
@@ -35,14 +43,12 @@ uint32_t spiBase::spiReadReg(uint8_t reg)
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
-    // returns to TimeSlicing Behaviour
-    taskEXIT_CRITICAL();
+    xSemaphoreGive(_spiMutex);
 
-    // wait some time
-    vTaskDelay(pdMS_TO_TICKS(10));
+    // wait some time 
+    vTaskDelay(pdMS_TO_TICKS(2));
 
-    // disables all Interrupts and Scheduler activity from FreeRTOS
-    taskENTER_CRITICAL();
+    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
 
     // get actual data - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
@@ -50,8 +56,7 @@ uint32_t spiBase::spiReadReg(uint8_t reg)
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
-    // returns to TimeSlicing Behaviour
-    taskEXIT_CRITICAL();
+    xSemaphoreGive(_spiMutex);
 
     this->_spiStatus = (rx_buffer[0]);
 
@@ -90,16 +95,14 @@ bool spiBase::spiWriteReg(uint8_t reg, uint32_t data)
                             data & 0xFF};
     uint8_t rx_buffer[5] = {0};
 
-    // disables all Interrupts and Scheduler activity from FreeRTOS
-    taskENTER_CRITICAL();
+    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
 
     gpio_put(_csPin, 0); // pull down CS
     sleep_us(1);
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
-    // returns to TimeSlicing Behaviour
-    taskEXIT_CRITICAL();
+    xSemaphoreGive(_spiMutex);
 
     // get status flags
     this->_spiStatus = (rx_buffer[0]);

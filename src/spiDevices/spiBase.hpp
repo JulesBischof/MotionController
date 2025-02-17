@@ -1,5 +1,5 @@
-#ifndef SPIBASE
-#define SPIBASE
+#ifndef SPIBASE_H
+#define SPIBASE_H
 
 #include "hardware/spi.h"
 #include "pico/stdlib.h"
@@ -12,6 +12,9 @@
 
 class spiBase
 {
+private:
+    static SemaphoreHandle_t _spiMutex;
+    static bool _spiMutexInititalized;
 
 protected:
     spi_inst_t *_spiInstance;
