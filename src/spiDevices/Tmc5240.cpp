@@ -1,5 +1,8 @@
-#include "tmc5240.hpp"
+#include "Tmc5240.hpp"
 
+/// @brief creates instance of Trinamics TMC5240 stepper driver
+/// @param spiInstance spi instance - refer pico c/c++ sdk
+/// @param csPin chip select pin
 Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin) : SpiBase(spiInstance, csPin)
 {
 }
@@ -9,12 +12,14 @@ Tmc5240::~Tmc5240()
     // not implemented yet
 }
 
+/// @brief initializes device
 void Tmc5240::_initDevice()
 {
     _initCurrentSetting();
     _initSpreadCycle();
 }
 
+/// @brief checks, if the device is still reachable
 void Tmc5240::_checkDevice()
 {
     uint8_t version = _spiReadBitField(TMC5240_INP_OUT, TMC5240_VERSION_MASK, TMC5240_VERSION_SHIFT);
@@ -24,6 +29,7 @@ void Tmc5240::_checkDevice()
     printf("DRV_ENN State = %d \n", drvEnn);
 }
 
+/// @brief inits Current settings out of StepperConfig.h File
 void Tmc5240::_initCurrentSetting()
 {
     uint32_t DRV_CONF_val = _spiReadReg(TMC5240_DRV_CONF);
@@ -48,6 +54,7 @@ void Tmc5240::_initCurrentSetting()
     printf("Current Settings Register Values \n --- GLOBSCALER ... 0x%x \n --- DRV_CONF ... 0x%x \n --- IHOLD_IRUN ... %x \n", globscalerval, drv_conf_val, ihold_irun_val);
 }
 
+/// @brief initializes stepper drive in SpreadCycle Mode - ref Datasheet
 void Tmc5240::_initSpreadCycle()
 {
     uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
@@ -63,6 +70,8 @@ void Tmc5240::_initSpreadCycle()
     return;
 }
 
+/// @brief sets motor direction
+/// @param direction true/false
 void Tmc5240::setShaftDirection(bool direction)
 {
     uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
@@ -72,6 +81,10 @@ void Tmc5240::setShaftDirection(bool direction)
     return;
 }
 
+/// @brief moves motor in velocity mode
+/// @param direction direction the motor has to turn
+/// @param vmax maximum velocity TODO: unit???
+/// @param amax maximum acceleration TODO: unit???
 void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 {
     _spiWriteReg(TMC5240_RAMPMODE, direction ? TMC5240_MODE_VELPOS : TMC5240_MODE_VELNEG);
