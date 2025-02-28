@@ -12,11 +12,13 @@ I2cBase::I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
 {
     _i2cStatus = STATUSOK;
 
+    taskENTER_CRITICAL();
     if (!this->_i2cMutexInititalized)
     {
         _i2cMutex = xSemaphoreCreateMutex();
         _i2cMutexInititalized = true;
     }
+    taskEXIT_CRITICAL();
 
     this->_initDevice();
     this->_checkDevice();
@@ -32,7 +34,7 @@ I2cBase::~I2cBase()
 /// @param sdaPin Serial data Pin
 /// @param sckPin Serial clock Pin
 /// @param i2cInstance I2C Instance - ref rpi-pico c/c++ sdk (i2c0 / i2c1)
-/// @param baudrate baudrate i2cbus 
+/// @param baudrate baudrate i2cbus
 void I2cBase::i2cInit(uint8_t sdaPin, uint8_t sckPin, i2c_inst_t *i2cInstance, uint16_t baudrateKhz)
 {
     i2c_init(i2cInstance, 1000 * baudrateKhz);
