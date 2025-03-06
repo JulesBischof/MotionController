@@ -7,16 +7,19 @@ target_include_directories(MotionController PUBLIC
 )
 
 # run "sub"-cmakelists.txt's - adds include paths
+add_subdirectory(tasks)
 add_subdirectory(i2cDevices)
 add_subdirectory(spiDevices)
 add_subdirectory(miscDevices)
 
 # add all .cpp files from folder and save in List
+file(GLOB_RECURSE CURRENT_SOURCES *.cpp)
 file(GLOB_RECURSE I2C_SOURCES i2cDevices/*.cpp)
 file(GLOB_RECURSE SPI_SOURCES spiDevices/*.cpp)
 file(GLOB_RECURSE MISC_SOURCES miscDevices/*.cpp)
 
 # add sourefiles to Project
+target_sources(MotionController PRIVATE ${CURRENT_SOURCES})
 target_sources(MotionController PRIVATE ${I2C_SOURCES})
 target_sources(MotionController PRIVATE ${SPI_SOURCES})
 target_sources(MotionController PRIVATE ${MISC_SOURCES})

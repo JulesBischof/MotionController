@@ -47,6 +47,7 @@ pico_sdk_init()
 
 # Add subdirectories
 add_subdirectory(src)
+add_subdirectory(config)
 
 # file to the "lib" directory
 # add_subdirectory(lib)

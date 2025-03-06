@@ -25,15 +25,15 @@ void Icm42670p::_initDevice()
     i2cWriteReg(PWR_MGMT0 | 0xFF, 0x00 | 0b0 << PWR_MGMT0_ACCEL_LP_CLK_SEL_POS | 0b1 << PWR_MGMT0_IDLE_POS | 0b11 << PWR_MGMT0_GYRO_MODE_POS | 0b00 << PWR_MGMT0_ACCEL_MODE_POS);
 
     /* GYRO_CONFIG0
-        +-2000 °/s
-        ODR 1.6kHz
+        - +-2000 °/s
+        - ODR 1.6kHz
     */
     i2cWriteReg(GYRO_CONFIG0 | 0xFF, 0x00 | 0b00 << GYRO_CONFIG0_GYRO_UI_FS_SEL_POS | 0b0101 << GYRO_CONFIG0_GYRO_ODR_POS);
 
     /* GYRO_CONFIG1
-        Gyro low pass Filter bandwith 16Hz
-        disable average filter accelerometer
-        disable accel low pass filter
+        - Gyro low pass Filter bandwith 16Hz
+        - disable average filter accelerometer
+        - disable accel low pass filter
     */
     i2cWriteReg(GYRO_CONFIG1 | 0xFF, 0x00 | 0b111 << GYRO_CONFIG1_GYRO_UI_FILT_BW_POS);
 }

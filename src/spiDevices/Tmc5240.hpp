@@ -4,8 +4,8 @@
 #include <stdio.h>
 
 #include "TMC5240_HW_Abstraction.h"
-#include "StepperConfig.h"
-# include "SpiBase.hpp"
+#include "Tmc5240Config.h"
+#include "SpiBase.hpp"
 
 class Tmc5240 : public SpiBase
 {
