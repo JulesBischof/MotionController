@@ -2,14 +2,14 @@
 
 void MotionControllerInit(void)
 {
-    initUArt();
-    initSPI();
-    initI2C();
+    initUart();
+    initSpi();
+    initI2c();
 
     return;
 }
 
-void initUArt(void)
+void initUart(void)
 {
     gpio_set_function(Tx_UART0, GPIO_FUNC_UART);
     gpio_set_function(Rx_UART0, GPIO_FUNC_UART);
@@ -22,7 +22,7 @@ void initUArt(void)
     return;
 }
 
-void initSPI(void)
+void initSpi(void)
 {
     spi_init(TMC5240_SPI_INSTANCE, SPI_BAUDRATE_KHZ * 1e3); // set Baudrate
     gpio_set_function(SPI_MISO, GPIO_FUNC_SPI);
@@ -42,7 +42,7 @@ void initSPI(void)
     return;
 }
 
-void initI2C(void)
+void initI2c(void)
 {
     i2c_init(I2C_INSTANCE_DEVICES, I2C_BAUDRATE_KHZ * 1e3); // set Baudrate
     gpio_set_function(I2C0_SCK, GPIO_FUNC_I2C);

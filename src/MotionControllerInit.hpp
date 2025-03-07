@@ -11,8 +11,8 @@
 
 void MotionControllerInit(void);
 
-void initUArt(void);
-void initSPI(void);
-void initI2C(void);
+void initUart(void);
+void initSpi(void);
+void initI2c(void);
 
 #endif // MOTIONCONTROLLERINIT_H
