@@ -5,6 +5,8 @@
 /// @param i2cAddress i2c address 
 Icm42670p::Icm42670p(i2c_inst_t i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
 {
+    _initDevice();
+    _checkDevice();
 }
 
 /// @brief deconstructor not implemented yet

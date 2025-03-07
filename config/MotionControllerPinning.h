@@ -37,6 +37,6 @@
 #define HCSR04_TRIGGER 22
 #define HCSR04_ECHO 26
 
-#define UVTXLED_ON 27
+#define UV_LED_GPIO 27
 
 #endif

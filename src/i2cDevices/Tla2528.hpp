@@ -11,21 +11,15 @@
 
 class Tla2528 : public I2cBase
 {
-private:
+protected:
     void _initDevice() override;
     void _checkDevice() override;
 
-    uint8_t _uvGpio;
-    bool _uvLedState;
-    void _toggleUvLight(bool state);
-
 public:
-    Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
+    Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress);
     ~Tla2528();
 
     std::vector<uint16_t> readAdc();
-
-    bool getUvLedState(){return _uvLedState;};
 
     bool i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num) override;
 

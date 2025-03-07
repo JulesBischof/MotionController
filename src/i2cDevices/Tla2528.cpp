@@ -1,8 +1,9 @@
 #include "Tla2528.hpp"
 
-Tla2528::Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio) : I2cBase(i2cInstance, i2cAddress)
+Tla2528::Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
 {
-    _uvGpio = uvGpio;
+    _initDevice();
+    _checkDevice();
 }
 
 Tla2528::~Tla2528()
@@ -29,12 +30,6 @@ void Tla2528::_initDevice()
 
     // set oversampling - process IC-internal average
     i2cWriteReg(OSR_CFG_ADDRESS, OSR_8);
-
-    // init uv-transmitter PIN
-    gpio_init(_uvGpio);
-    gpio_set_dir(_uvGpio, GPIO_OUT);
-    gpio_put(_uvGpio, false);
-    _uvLedState = false;
 }
 
 /// @brief sends test-message to adc
@@ -52,21 +47,11 @@ void Tla2528::_checkDevice()
 
 }
 
-/// @brief toggles UV-Transmitter due to safety reasons
-/// @param state state the led should be toggled to
-void Tla2528::_toggleUvLight(bool state)
-{
-    gpio_put(_uvGpio, state);
-    _uvLedState = state;
-}
-
 /// @brief reads ADC-Value
 /// @return vector containing all raw ADC-Values
 std::vector<uint16_t> Tla2528::readAdc()
 {
     std::vector<uint16_t> retVal;
-
-    _toggleUvLight(true);
 
     for(size_t i = 0; i < 8; i++)
     {
@@ -78,7 +63,6 @@ std::vector<uint16_t> Tla2528::readAdc()
         retVal.push_back(rawValue[1] << 8 | rawValue[0]);
     }
 
-    _toggleUvLight(false);
     return retVal;
 }
 

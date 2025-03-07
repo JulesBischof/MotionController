@@ -5,6 +5,8 @@
 /// @param csPin chip select pin
 Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin) : SpiBase(spiInstance, csPin)
 {
+    _initDevice();
+    _checkDevice();
 }
 
 Tmc5240::~Tmc5240()

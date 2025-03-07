@@ -19,9 +19,6 @@ I2cBase::I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
         _i2cMutexInititalized = true;
     }
     taskEXIT_CRITICAL();
-
-    this->_initDevice();
-    this->_checkDevice();
 }
 
 /// @brief Deconstructor i2c baseclass - not implemented yet

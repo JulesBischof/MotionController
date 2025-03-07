@@ -16,8 +16,6 @@ SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
         _spiMutexInititalized = true;
     }
     _initCsGpio(csPin);
-    this->_initDevice();
-    this->_checkDevice();
 }
 
 /// @brief deconstructor - not implemented yet

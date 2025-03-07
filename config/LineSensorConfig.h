@@ -1,0 +1,10 @@
+#ifndef LINESENSORCONFIG_H
+#define LINESENSORCONFIG_H
+
+#define NUMBER_OF_CELLS (8)
+
+#define ADC_TRESHHOLD (1000)
+
+#define LINECOUNTER_CROSS_DETECTED (4)
+
+#endif

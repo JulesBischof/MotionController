@@ -13,9 +13,10 @@ int main()
 {
     stdio_init_all();
     MotionControllerInit();
+    vInitQueues();
 
     // -------------- init Tasks ---------------
-    xTaskCreate(vMessageDispatcherTask, "QueueDispatcherTask", 1000, NULL, 1, NULL);
+    // xTaskCreate(vMessageDispatcherTask, "QueueDispatcherTask", 1000, NULL, 1, NULL);
     xTaskCreate(vLineFollowerTask, "LineFollowerTask", 1000, NULL, 1, NULL);
 
     // ------------ start scheduler --------------

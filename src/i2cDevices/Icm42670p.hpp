@@ -7,10 +7,11 @@
 class Icm42670p : public I2cBase
 {
 private:
+    uint16_t _getRawDataZaxis();
+
+protected:
     void _initDevice() override;
     void _checkDevice() override;
-
-    uint16_t _getRawDataZaxis();
 
 public:
     Icm42670p(i2c_inst_t i2cInstance, uint8_t i2cAddress);

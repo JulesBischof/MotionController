@@ -21,8 +21,8 @@ protected:
     uint8_t _i2cAddress;
     uint8_t _i2cStatus;
 
-    virtual void _initDevice();
-    virtual void _checkDevice();
+    virtual void _initDevice() = 0;
+    virtual void _checkDevice() = 0;
 
 public:
     I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress);

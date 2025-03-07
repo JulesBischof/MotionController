@@ -12,11 +12,12 @@ class Tmc5240 : public SpiBase
 private:
     uint8_t _spi_status_flags;
 
-    void _initDevice() override;
-    void _checkDevice() override;
-
     void _initCurrentSetting();
     void _initSpreadCycle();
+
+protected:
+    void _initDevice() override;
+    void _checkDevice() override;
 
 public:
     Tmc5240(spi_inst_t *spiInstance, uint8_t csPin);

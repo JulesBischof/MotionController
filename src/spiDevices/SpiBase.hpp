@@ -21,8 +21,8 @@ protected:
     uint8_t _csPin;
     uint8_t _spiStatus;
 
-    virtual void _initDevice();
-    virtual void _checkDevice();
+    virtual void _initDevice() = 0;
+    virtual void _checkDevice() = 0;
     void _initCsGpio(uint8_t csPin);
 
     uint32_t _spiReadReg(uint8_t reg);
