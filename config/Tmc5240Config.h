@@ -66,4 +66,15 @@ Set I_ref to 16k (R2 = HIGH, R3 = LOW)
 #define HSTRT 6
 #define HEND 3
 
+/* ####################################################################
+
+                        UNIT CONVERSION
+
+    #################################################################### */
+
+#define STEPPERCONFIG_NR_FULLSTEPS_PER_TURN 200
+#define STEPPERCONFIG_MICROSTEPPING 16
+
+#define STEPPERCONFIG_WHEEL_DIAMETER_MM 800
+
 #endif

@@ -101,6 +101,10 @@ void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
     return;
 }
 
+/// @brief moves Motor to specific location using position mode
+/// @param xTargetVal relative position! in steps
+/// @param vmax maximum velocity
+/// @param amax maxmimum acceleration
 void Tmc5240::movePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
 {
     // activate position mode
@@ -115,12 +119,16 @@ void Tmc5240::movePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
     _spiWriteReg(TMC5240_XTARGET, xTargetVal);
 }
 
+/// @brief reads out xActual register
+/// @return actual steps
 int32_t Tmc5240::getXActual()
 {
     int32_t retVal = _spiReadReg(TMC5240_XACTUAL);
     return retVal;
 }
 
+/// @brief disables Driver
+/// @param val false for disable! true to set Toff out of config header
 void Tmc5240::toggleToff(bool val)
 {
     uint32_t chopConfValue = _spiReadReg(TMC5240_CHOPCONF);
@@ -132,4 +140,14 @@ void Tmc5240::toggleToff(bool val)
     // no else - otherwise Toff = 0 -> driver disable!
 
     _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
+}
+
+/// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
+/// @param mps meter mer second value
+/// @return microsteps
+uint32_t Tmc5240::mpsToUStepsConversion(float mps)
+{
+    const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
+    float usps = (mps / (1e3 * STEPPERCONFIG_WHEEL_DIAMETER_MM) ) * microstepsPerRevolution;
+    return static_cast<uint32_t>(round(usps));
 }

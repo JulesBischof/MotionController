@@ -7,6 +7,8 @@
 #include "Tmc5240Config.h"
 #include "SpiBase.hpp"
 
+#include <cmath>
+
 class Tmc5240 : public SpiBase
 {
 private:
@@ -33,6 +35,8 @@ public:
     int32_t getXActual();
 
     void toggleToff(bool val);
+    
+    uint32_t mpsToUStepsConversion(float mps);
 };
 
 #endif
