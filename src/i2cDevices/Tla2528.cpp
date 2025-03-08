@@ -1,6 +1,6 @@
 #include "Tla2528.hpp"
 
-Tla2528::Tla2528(i2c_inst_t i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
+Tla2528::Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
 {
     _initDevice();
     _checkDevice();
@@ -88,7 +88,7 @@ bool Tla2528::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
 
     if (err != 1)
     {
-        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        _i2cStatus = I2C_TIMEOUT; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
         return false;
     }
     return true;
@@ -114,7 +114,7 @@ bool Tla2528::i2cWriteReg(uint8_t reg, uint8_t data)
 
     if (err != 2) // 2 due to 2Bytes data were send
     {
-        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        _i2cStatus = I2C_TIMEOUT; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
         return false;
     }
     return true;

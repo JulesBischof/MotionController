@@ -100,3 +100,36 @@ void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 
     return;
 }
+
+void Tmc5240::movePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
+{
+    // activate position mode
+    _spiWriteReg(TMC5240_RAMPMODE, TMC5240_MODE_POSITION);
+
+    // set vmax, amax, dmax
+    _spiWriteReg(TMC5240_VMAX, vmax);
+    _spiWriteReg(TMC5240_AMAX, amax);
+    _spiWriteReg(TMC5240_DMAX, amax);
+
+    // set Target position
+    _spiWriteReg(TMC5240_XTARGET, xTargetVal);
+}
+
+int32_t Tmc5240::getXActual()
+{
+    int32_t retVal = _spiReadReg(TMC5240_XACTUAL);
+    return retVal;
+}
+
+void Tmc5240::toggleToff(bool val)
+{
+    uint32_t chopConfValue = _spiReadReg(TMC5240_CHOPCONF);
+
+    // clear old Toff
+    chopConfValue &= ~TMC5240_TOFF_MASK;
+    if (val)
+        chopConfValue |= TOFF;
+    // no else - otherwise Toff = 0 -> driver disable!
+
+    _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
+}

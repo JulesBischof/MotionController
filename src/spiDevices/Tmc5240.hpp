@@ -28,8 +28,11 @@ public:
     void setShaftDirection(bool direction);
 
     void moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax);
-    void moveTargetMode(int32_t target_position, uint32_t v1, uint32_t v2, uint32_t a1, uint32_t a2, uint32_t dmax);
-    void toggleToff();
+    void movePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax);
+
+    int32_t getXActual();
+
+    void toggleToff(bool val);
 };
 
 #endif

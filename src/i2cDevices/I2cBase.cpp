@@ -7,10 +7,10 @@ bool I2cBase::_i2cMutexInititalized = false;
 /// @brief initialises basic i2c Device
 /// @param i2cInstance i2c0 / i2c1 refer pico datasheet
 /// @param i2cAddress Bus-Adress i2c device
-I2cBase::I2cBase(i2c_inst_t i2cInstance, uint8_t i2cAddress)
-    : _i2cInstance(&i2cInstance), _i2cAddress(i2cAddress)
+I2cBase::I2cBase(i2c_inst_t *i2cInstance, uint8_t i2cAddress)
+    : _i2cInstance(i2cInstance), _i2cAddress(i2cAddress)
 {
-    _i2cStatus = STATUSOK;
+    _i2cStatus = I2C_STATUSOK;
 
     taskENTER_CRITICAL();
     if (!this->_i2cMutexInititalized)
@@ -49,14 +49,15 @@ bool I2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
     int err = 0;
 
     xSemaphoreTake(_i2cMutex, pdMS_TO_TICKS(100));
-
     err = i2c_read_timeout_us(_i2cInstance, _i2cAddress, buffer, num, false, 10000);
-
     xSemaphoreGive(_i2cMutex);
+
+    _i2cStatus = I2C_STATUSOK;
 
     if (err != 1)
     {
-        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        this->_setError(err);
+        printf("I2C_Error! ReadFrame \n");
         return false;
     }
     return true;
@@ -72,16 +73,17 @@ bool I2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
     int err = 0;
 
     xSemaphoreTake(_i2cMutex, pdMS_TO_TICKS(100));
-
     // write with repeated start condition (read after adress has been set)
     err = i2c_write_timeout_us(_i2cInstance, _i2cAddress, &reg, 1, true, 10000);
     err = i2c_read_timeout_us(_i2cInstance, _i2cAddress, buffer, num, false, 10000);
-
     xSemaphoreGive(_i2cMutex);
+
+    _i2cStatus = I2C_STATUSOK;
 
     if (err != 1)
     {
-        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        this->_setError(err);
+        printf("I2C_Error! ReadReg \n");
         return false;
     }
     return true;
@@ -98,15 +100,33 @@ bool I2cBase::i2cWriteReg(uint8_t reg, uint8_t data)
     int err = 0;
 
     xSemaphoreTake(_i2cMutex, pdMS_TO_TICKS(100));
-
     err = i2c_write_timeout_us(_i2cInstance, _i2cAddress, buffer, 2, true, 10000);
-
     xSemaphoreGive(_i2cMutex);
+
+    _i2cStatus = I2C_STATUSOK;
 
     if (err != 2) // 2 due to 2Bytes data were send
     {
-        _i2cStatus = err; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
+        this->_setError(err);
+        printf("I2C_Error! WriteReg \n");
         return false;
     }
     return true;
+}
+
+void I2cBase::_setError(uint8_t err)
+{
+    switch (err)
+    {
+    case -PICO_ERROR_GENERIC:
+        _i2cStatus = I2C_NO_ACK;
+        printf("# I2C_NO_ACK # \n");
+        break;
+    case -PICO_ERROR_TIMEOUT:
+        _i2cStatus = I2C_TIMEOUT;
+        printf("# I2C_TIMEOUT # \n");
+        break;
+    default:
+        break;
+    }
 }

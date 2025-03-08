@@ -13,7 +13,7 @@ void initUart(void)
 {
     gpio_set_function(Tx_UART0, GPIO_FUNC_UART);
     gpio_set_function(Rx_UART0, GPIO_FUNC_UART);
-    uart_init(UART_INSTANCE_RASPBERRYHAT, UART0_BAUDRATE);
+    uart_init(uart0, UART0_BAUDRATE);
 
     gpio_set_function(Tx_UART1, GPIO_FUNC_UART);
     gpio_set_function(Rx_UART1, GPIO_FUNC_UART);
@@ -47,6 +47,11 @@ void initI2c(void)
     i2c_init(I2C_INSTANCE_DEVICES, I2C_BAUDRATE_KHZ * 1e3); // set Baudrate
     gpio_set_function(I2C0_SCK, GPIO_FUNC_I2C);
     gpio_set_function(I2C0_SDA, GPIO_FUNC_I2C);
+
+    #if ACTIVATE_INTERNAL_PULLUP == 1
+        gpio_pull_up(I2C0_SCK);
+        gpio_pull_up(I2C0_SDA);
+    #endif
 
     return;
 }

@@ -16,7 +16,7 @@ private:
     bool _crossDetected;
 
 public:
-    LineSensor(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
+    LineSensor(i2c_inst_t *i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
     ~LineSensor();
 
     int8_t getLinePosition();

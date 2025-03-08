@@ -1,6 +1,12 @@
 #ifndef LINESENSORCONFIG_H
 #define LINESENSORCONFIG_H
 
+/* ==============================================================
+
+                Basic Settings Line Sensor
+
+============================================================== */
+
 #define NUMBER_OF_CELLS (8)
 
 #define ADC_TRESHHOLD (1000)

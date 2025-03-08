@@ -31,7 +31,6 @@ include(pico_sdk_import.cmake)
 
 project(MotionController C CXX ASM)
 
-
 # ================================== FreeRTOS ==========================================
 # Set any variables required for importing libraries
 SET(FREERTOS_KERNEL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/lib/FreeRTOS-Kernel)
@@ -48,6 +47,7 @@ pico_sdk_init()
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(config)
+add_subdirectory(tests)
 
 # file to the "lib" directory
 # add_subdirectory(lib)

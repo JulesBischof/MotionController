@@ -1,6 +1,6 @@
 #include "LineSensor.hpp"
 
-LineSensor::LineSensor(i2c_inst_t i2cInstance, uint8_t i2cAddress, uint8_t uvGpio) : Tla2528(i2cInstance, i2cAddress)
+LineSensor::LineSensor(i2c_inst_t *i2cInstance, uint8_t i2cAddress, uint8_t uvGpio) : Tla2528(i2cInstance, i2cAddress)
 {
     _uvGpio = uvGpio;
     _uvLedState = false;

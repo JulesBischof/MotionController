@@ -22,11 +22,14 @@ typedef enum taskCommand_t
     GET_DISTANCE,
     GET_LINE_POSITION,
     GET_ANGLE,
+    GET_STATUSFLAGS,
+    SEND_ERROR,
 } taskCommand_t;
 
 typedef struct dispatcherMessage_t
 {
-    dispatcherTaskId_t taskId;
+    dispatcherTaskId_t senderTaskId;
+    dispatcherTaskId_t recieverTaskId;
     taskCommand_t command;
     uint32_t data;
 } dispatcherMessage_t;

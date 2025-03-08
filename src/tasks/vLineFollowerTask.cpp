@@ -2,10 +2,22 @@
 
 typedef enum RunModeFlag_t
 {
-    MOTOR_RUNNING = 1 << 0, // 0001
-    LINE_FOLLOWER = 1 << 1, // 0010
-    TURN_COMMAND = 1 << 2   // 0100
+    MOTOR_RUNNING = 1 << 0,       // 0001
+    MAXDISTANCE_REACHED = 1 << 1, // 0010
+    LINE_FOLLOWER = 1 << 2,       // 0100
+    TURN_COMMAND = 1 << 3         // 1000
 } RunModeFlag_t;
+
+dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcherTaskId_t recieverTaskId, taskCommand_t command, uint32_t data)
+{
+    dispatcherMessage_t response;
+    response.senderTaskId = senderTaskId;
+    response.recieverTaskId = recieverTaskId;
+    response.command = command;
+    response.data = data;
+
+    return response;
+}
 
 void vLineFollowerTask(void *pvParameters)
 {
@@ -13,7 +25,7 @@ void vLineFollowerTask(void *pvParameters)
     Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0);
     Tmc5240 driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1);
 
-    LineSensor lineSensor = LineSensor(*I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS, UV_LED_GPIO);
+    LineSensor lineSensor = LineSensor(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS, UV_LED_GPIO);
 
     // get queues
     QueueHandle_t xLineFollwerQueue = getLineFollowerTaskQueue();
@@ -35,11 +47,13 @@ void vLineFollowerTask(void *pvParameters)
             xQueueReceive(xDispatcherQueue, &message, 0);
 
             // TODO: check if message is meant for this task
+            dispatcherMessage_t response;
 
             switch (message.command)
             {
             case DRIVE:
                 flags &= ~TURN_COMMAND;
+                flags &= ~MAXDISTANCE_REACHED;
                 flags |= LINE_FOLLOWER;
                 flags |= MOTOR_RUNNING;
                 break;
@@ -59,16 +73,17 @@ void vLineFollowerTask(void *pvParameters)
                 break;
 
             case GET_LINE_POSITION:
-                dispatcherMessage_t response;
-                    response.taskId = LINE_FOLLOWER_TASK;
-                    response.command = GET_LINE_POSITION;
-                    response.data = (uint32_t)linePosition;
-                
+                response = generateResponse(LINE_FOLLOWER_TASK, message.senderTaskId, GET_LINE_POSITION, (uint32_t)linePosition);
+                xQueueSend(xDispatcherQueue, &response, 0);
+                break;
+
+            case GET_STATUSFLAGS:
+                response = generateResponse(LINE_FOLLOWER_TASK, message.senderTaskId, GET_STATUSFLAGS, (uint32_t)flags);
                 xQueueSend(xDispatcherQueue, &response, 0);
                 break;
 
             default:
-                // error! command not found assert() ? 
+                // error! command not found assert() ?
                 break;
             }
         } // end of message handling

@@ -3,6 +3,8 @@
 #include "queues.hpp"
 
 #include "pico/stdlib.h"
+#include "AppConfig.h"
+#include "tests.h"
 
 #include "MotionControllerInit.hpp"
 
@@ -13,6 +15,13 @@ int main()
 {
     stdio_init_all();
     MotionControllerInit();
+
+#if APP_MODE == 0
+    testApp();
+#endif
+
+#if APP_MODE == 1
+    // -------------- init Queues ---------------
     vInitQueues();
 
     // -------------- init Tasks ---------------
@@ -26,4 +35,5 @@ int main()
     while (1)
     {
     };
+#endif
 }

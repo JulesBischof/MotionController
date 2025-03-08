@@ -1,4 +1,4 @@
- add_executable(MotionController
+add_executable(MotionController
      main.cpp
 )
 
@@ -38,6 +38,6 @@ target_link_libraries(MotionController
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(MotionController 1)
-pico_enable_stdio_usb(MotionController 1)
+# pico_enable_stdio_usb(MotionController 1)
 
 pico_add_extra_outputs(MotionController)
