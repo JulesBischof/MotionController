@@ -25,6 +25,8 @@ public:
     float getTemperature();
     
     float ConvertLsbToDps(int16_t rawVal);
+
+    static float getAngle(int32_t xActualDriver0, int32_t xActualDriver1);
 };
 
 #endif

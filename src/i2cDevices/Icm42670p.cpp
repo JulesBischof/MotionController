@@ -22,6 +22,18 @@ float Icm42670p::ConvertLsbToDps(int16_t rawVal)
     return val;
 }
 
+
+
+/// @brief calculates absolut angle in degree, given by how many steps both drivers did 
+/// @param xActualDriver0 xActual Value driver 0
+/// @param xActualDriver1 xActual Value driver 1
+/// @return angle in °
+float Icm42670p::getAngle(int32_t xActualDriver0, int32_t xActualDriver1)
+{
+    float retval = (xActualDriver0 / xActualDriver1) * (180 / 3.14);
+    return 0.0f;
+}
+
 /// @brief basic settings for Device
 void Icm42670p::_initDevice()
 {
