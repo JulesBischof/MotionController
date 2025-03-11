@@ -1,43 +1,43 @@
 #include "tests.h"
 
-void testApp(void)
+void testTask(void *pvParameters)
 {
-    while (1)
-    {
-        printf("TestMode is active \n");
-        printf("Running tests...\n");
+        while (1)
+        {
+                printf("TestMode is active \n");
+                printf("Running tests...\n");
 
 #if BROADCAST_I2C_DEVICES == 1
-        printf("Broadcasting I2C devices...\n");
-        i2cBroadcast();
+                printf("Broadcasting I2C devices...\n");
+                i2cBroadcast();
 #endif
 #if TEST_TMC5240 == 1
-        printf("Running TMC5240 Test...\n");
-        Tmc5240Test();
+                printf("Running TMC5240 Test...\n");
+                Tmc5240Test();
 #endif
 #if TEST_ICM42670 == 1
-        printf("Running ICM42670 Test...\n");
-        Icm42670Test();
+                printf("Running ICM42670 Test...\n");
+                Icm42670Test();
 #endif
 #if TEST_TLA2528 == 1
-        printf("Running TLA2528 Test...\n");
-        Tla2528Test();
+                printf("Running TLA2528 Test...\n");
+                Tla2528Test();
 #endif
 #if TEST_LINESENSOR == 1
-        printf("Running LineSensor Test...\n");
-        LineSensorTest();
+                printf("Running LineSensor Test...\n");
+                LineSensorTest();
 #endif
 #if TEST_HCSR04 == 1
-        printf("Running HcSr04 Test...\n");
-        HcSr04Test();
+                printf("Running HcSr04 Test...\n");
+                HcSr04Test();
 #endif
 #if TEST_ARDUINO_ADC == 1
-        printf("Running ArduinoNanoAdcUartSlave Test...\n");
-        ArduinoAdcSlaveTest();
+                printf("Running ArduinoNanoAdcUartSlave Test...\n");
+                ArduinoAdcSlaveTest();
 #endif
-        printf("Tests done - LOOP \n");
-        // sleep_ms(1000);
-    }
+                printf("Tests done - LOOP \n");
+                vTaskDelay(pdMS_TO_TICKS(1000));
+        }
 }
 
 // I2C reserves some addresses for special purposes. We exclude these from the scan.
@@ -93,4 +93,17 @@ void i2cBroadcast(void)
                 printf(addr % 16 == 15 ? "\n" : "  ");
         }
         printf("Done.\n");
+}
+
+// entry point for tests
+void testApp(void)
+{
+        // create test-task - some Devices depend on running inside a task
+        xTaskCreate(testTask, "TestTask", 2048, NULL, 1, NULL);
+        // start scheduler
+        vTaskStartScheduler();
+        // never reached
+        while (1)
+                ;
+        return;
 }

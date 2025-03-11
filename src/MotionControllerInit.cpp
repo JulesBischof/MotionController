@@ -31,11 +31,11 @@ void initSpi(void)
 
     gpio_init(SPI_CS_DRIVER_0);
     gpio_set_dir(SPI_CS_DRIVER_0, GPIO_OUT);
-    gpio_put(SPI_CS_DRIVER_0, true); // pull up CS
-    gpio_init(SPI_CS_DRIVER_1);
+    gpio_put(SPI_CS_DRIVER_0, 1); // pull up CS
 
+    gpio_init(SPI_CS_DRIVER_1);
     gpio_set_dir(SPI_CS_DRIVER_1, GPIO_OUT);
-    gpio_put(SPI_CS_DRIVER_1, true); // pull up CS
+    gpio_put(SPI_CS_DRIVER_1, 1); // pull up CS
 
     spi_set_format(TMC5240_SPI_INSTANCE, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 

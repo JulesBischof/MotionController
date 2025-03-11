@@ -17,8 +17,13 @@ Tmc5240::~Tmc5240()
 /// @brief initializes device
 void Tmc5240::_initDevice()
 {
+    printf("start init Current settings TMC5240 ... \n");
     _initCurrentSetting();
+
+    printf("init SpreadCycle Mode ... \n");
     _initSpreadCycle();
+
+    printf("initialisation TMC5240 DONE! \n");
 }
 
 /// @brief checks, if the device is still reachable
