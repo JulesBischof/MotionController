@@ -31,7 +31,10 @@ void testApp(void)
         printf("Running HcSr04 Test...\n");
         HcSr04Test();
 #endif
-
+#if TEST_ARDUINO_ADC == 1
+        printf("Running ArduinoNanoAdcUartSlave Test...\n");
+        ArduinoAdcSlaveTest();
+#endif
         printf("Tests done - LOOP \n");
         // sleep_ms(1000);
     }

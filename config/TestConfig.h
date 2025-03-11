@@ -10,7 +10,7 @@
 ============================================================== */
 
 
-#define BROADCAST_I2C_DEVICES (1)
+#define BROADCAST_I2C_DEVICES (0)
 
 #define TEST_TMC5240 (0)
 
@@ -21,5 +21,7 @@
 #define TEST_LINESENSOR (0)
 
 #define TEST_HCSR04 (0)
+
+#define TEST_ARDUINO_ADC (1)
 
 #endif // TESTCONFIG_H
