@@ -1,27 +1,38 @@
 #ifndef LINESENSOR_H
 #define LINESENSOR_H
 
-#include "Tla2528.hpp"
+#include "ArduinoAdcSlave.hpp"
 #include "LineSensorConfig.h"
 
-class LineSensor : public Tla2528
+#include <stdio.h>
+
+typedef enum LineSensorStatus_t
+{
+    LINESENSOR_OK = 1,
+    LINESENSOR_UV_ACTIVE = 2,
+    LINESENSOR_CROSS_DETECTED = 4,
+} LineSensorStatus_t;
+
+class LineSensor
 {
 private:
 
+    uint8_t _status;
+
+    ArduinoAdcSlave *_adcInstance;
+
     uint8_t _uvGpio;
-    bool _uvLedState;
+
     void _toggleUvLed(bool state);
     void _initUvLed();
 
-    bool _crossDetected;
-
 public:
-    LineSensor(i2c_inst_t *i2cInstance, uint8_t i2cAddress, uint8_t uvGpio);
+    LineSensor(ArduinoAdcSlave *adcInstance, uint8_t uvGpio);
     ~LineSensor();
 
     int8_t getLinePosition();
 
-    bool getUvLedState() { return _uvLedState; };
+    uint8_t getStatus() { return _status; };
 };
 
 #endif

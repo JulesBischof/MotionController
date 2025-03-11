@@ -3,8 +3,11 @@
 /// @brief creates instance of Trinamics TMC5240 stepper driver
 /// @param spiInstance spi instance - refer pico c/c++ sdk
 /// @param csPin chip select pin
-Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin) : SpiBase(spiInstance, csPin)
+Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin, bool stdDir) : SpiBase(spiInstance, csPin)
 {
+    _stdDir = stdDir;
+
+    printf("Startup TMC5240 CS_GPIO #%d ... \n", csPin);
     _initDevice();
     _checkDevice();
 }
@@ -94,6 +97,10 @@ void Tmc5240::setShaftDirection(bool direction)
 /// @param amax maximum acceleration TODO: unit???
 void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 {
+    // flip direction if std direction ain't matching
+    if(!_stdDir)
+        direction = !direction;
+
     _spiWriteReg(TMC5240_RAMPMODE, direction ? TMC5240_MODE_VELPOS : TMC5240_MODE_VELNEG);
 
     _spiWriteReg(TMC5240_VMAX, vmax);
@@ -107,10 +114,10 @@ void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 }
 
 /// @brief moves Motor to specific location using position mode
-/// @param xTargetVal relative position! in steps
+/// @param xTargetVal ABSOLUTE position! in steps
 /// @param vmax maximum velocity
 /// @param amax maxmimum acceleration
-void Tmc5240::movePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
+void Tmc5240::moveAbsolutePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
 {
     // activate position mode
     _spiWriteReg(TMC5240_RAMPMODE, TMC5240_MODE_POSITION);
@@ -122,6 +129,26 @@ void Tmc5240::movePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
 
     // set Target position
     _spiWriteReg(TMC5240_XTARGET, xTargetVal);
+}
+
+/// @brief moves Motor to specific location using position mode
+/// @param xTargetVal RELATIVE position! in steps
+/// @param vmax maximum velocity
+/// @param amax maxmimum acceleration
+void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax)
+{
+    // get XACTUAL - Register value
+    int32_t xActualVal = _spiReadReg(TMC5240_XACTUAL);
+
+    // set direction
+    if(!_stdDir)
+        targexPos = -targexPos;
+
+    // set new target position
+    int32_t xTargetVal = xActualVal + targexPos;
+    _spiWriteReg(TMC5240_XTARGET, xTargetVal);
+
+    return;
 }
 
 /// @brief reads out xActual register
@@ -150,9 +177,19 @@ void Tmc5240::toggleToff(bool val)
 /// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
 /// @param mps meter mer second value
 /// @return microsteps
-uint32_t Tmc5240::mpsToUStepsConversion(float mps)
+uint32_t Tmc5240::meterToUStepsConversion(float mps)
 {
     const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-    float usps = (mps / (1e3 * STEPPERCONFIG_WHEEL_DIAMETER_MM) ) * microstepsPerRevolution;
+    float usps = (mps / (1e3 * STEPPERCONFIG_WHEEL_DIAMETER_MM)) * microstepsPerRevolution;
+    return static_cast<uint32_t>(round(usps));
+}
+
+/// @brief convert degree to microsteps
+/// @param degrees float degrees
+/// @return 
+uint32_t Tmc5240::degreeToUStepsConversion(float degrees)
+{
+    const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
+    float usps = (degrees / 360.0f) * microstepsPerRevolution;
     return static_cast<uint32_t>(round(usps));
 }

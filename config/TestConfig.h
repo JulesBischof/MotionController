@@ -10,15 +10,24 @@
 ============================================================== */
 
 
-#define BROADCAST_I2C_DEVICES (0)
 
-#define TEST_TMC5240 (1)
+
+// ------------- stepper devices ------------------
+#define TEST_TMC5240 (0)
+#define TEST_TMC5260_VELOCITY_MODE (0)
+#define TEST_TMC5260_POSITION_MODE (0)
+
+// --------------- i2c devices ------------------
+
+#define BROADCAST_I2C_DEVICES (0)
 
 #define TEST_ICM42670 (0)
 
 #define TEST_TLA2528 (0)
 
-#define TEST_LINESENSOR (0)
+// --------------- misc devices ------------------
+
+#define TEST_LINESENSOR (1)
 
 #define TEST_HCSR04 (0)
 

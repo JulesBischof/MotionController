@@ -22,10 +22,12 @@ dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcher
 void vLineFollowerTask(void *pvParameters)
 {
     // initialize peripherals neccessary for line follower
-    Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0);
-    Tmc5240 driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1);
+    Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+    Tmc5240 driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 0);
 
-    LineSensor lineSensor = LineSensor(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS, UV_LED_GPIO);
+    // init adc device and line Sensor
+    ArduinoAdcSlave adc = ArduinoAdcSlave(UART_INSTANCE_GRIPCONTROLLER);
+    LineSensor lineSensor = LineSensor(&adc, UV_LED_GPIO);
 
     // get queues
     QueueHandle_t xLineFollwerQueue = getLineFollowerTaskQueue();
