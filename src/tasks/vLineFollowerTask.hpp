@@ -3,6 +3,7 @@
 
 #include "MotionControllerPinning.h"
 #include "MotionControllerConfig.h"
+#include "LineFollowerTaskConfig.h"
 
 #include "queues.hpp"
 

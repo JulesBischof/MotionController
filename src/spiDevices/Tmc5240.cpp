@@ -80,6 +80,15 @@ void Tmc5240::_initSpreadCycle()
     return;
 }
 
+uint8_t Tmc5240::getCurrentStatusFlag()
+{
+    // trigger dummy Register Read
+    _spiReadReg(TMC5240_XACTUAL);
+
+    // get status flags
+    return _spiStatus;
+}
+
 /// @brief sets motor direction
 /// @param direction true/false
 void Tmc5240::setShaftDirection(bool direction)
@@ -97,9 +106,13 @@ void Tmc5240::setShaftDirection(bool direction)
 /// @param amax maximum acceleration TODO: unit???
 void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 {
-    // flip direction if std direction ain't matching
-    if(!_stdDir)
-        direction = !direction;
+    // protection against too high values
+    if (vmax > STEPPERCONFIG_MAXSPEED)
+        vmax = STEPPERCONFIG_MAXSPEED;
+
+        // flip direction if std direction ain't matching
+        if (!_stdDir)
+            direction = !direction;
 
     _spiWriteReg(TMC5240_RAMPMODE, direction ? TMC5240_MODE_VELPOS : TMC5240_MODE_VELNEG);
 
@@ -157,6 +170,11 @@ int32_t Tmc5240::getXActual()
 {
     int32_t retVal = _spiReadReg(TMC5240_XACTUAL);
     return retVal;
+}
+
+int32_t Tmc5240::getVmax()
+{
+    return _spiReadReg(TMC5240_VMAX);
 }
 
 /// @brief disables Driver

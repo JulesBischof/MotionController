@@ -16,13 +16,13 @@ typedef enum dispatcherTaskId_t
 
 typedef enum taskCommand_t
 {
-    DRIVE,
-    STOP,
-    TURN,
-    GET_DISTANCE,
-    GET_LINE_POSITION,
+    COMMAND_FOLLOW_LINE,
+    COMMAND_STOP,
+    COMMAND_TURN,
+    COMMAND_GET_DISTANCE,
+    COMMAND_GET_LINE_POSITION,
     GET_ANGLE,
-    GET_STATUSFLAGS,
+    COMMAND_GET_STATUSFLAGS,
     SEND_ERROR,
 } taskCommand_t;
 

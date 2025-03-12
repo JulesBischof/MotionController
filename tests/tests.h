@@ -5,6 +5,7 @@
 #include "MotionControllerConfig.h"
 
 #include <stdio.h>
+#include "queues.hpp"
 
 #include "hardware/i2c.h"
 #include "pico/stdlib.h"
@@ -15,6 +16,7 @@
 #include "LineSensorTest.h"
 #include "HcSr04Test.h"
 #include "ArduinoAdcSlaveTest.h"
+#include "vLineFollowerTaskTest.h"
 
 void testApp(void);
 

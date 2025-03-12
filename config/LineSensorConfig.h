@@ -9,7 +9,7 @@
 
 #define NUMBER_OF_CELLS (8)
 
-#define ADC_TRESHHOLD (100)
+#define ADC_TRESHHOLD (50)
 
 #define LINECOUNTER_CROSS_DETECTED (4)
 

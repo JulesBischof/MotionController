@@ -10,7 +10,7 @@
 void LineSensorTest(void)
 {
     ArduinoAdcSlave adc = ArduinoAdcSlave(UART_INSTANCE_GRIPCONTROLLER);
-    LineSensor lineSensor = LineSensor(&adc, 0);
+    LineSensor lineSensor = LineSensor(&adc, UV_LED_GPIO);
 
     while(1)
     {

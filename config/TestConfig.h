@@ -27,10 +27,16 @@
 
 // --------------- misc devices ------------------
 
-#define TEST_LINESENSOR (1)
+#define TEST_LINESENSOR (0)
 
 #define TEST_HCSR04 (0)
 
 #define TEST_ARDUINO_ADC (0)
+
+// ------------------ Tasks ---------------------
+
+// ## LineFollowerTask ##
+#define TEST_VLINEFOLLOWERTASK (1)
+
 
 #endif // TESTCONFIG_H

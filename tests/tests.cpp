@@ -35,6 +35,10 @@ void testTask(void *pvParameters)
                 printf("Running ArduinoNanoAdcUartSlave Test...\n");
                 ArduinoAdcSlaveTest();
 #endif
+#if TEST_VLINEFOLLOWERTASK == 1
+                printf("Running vLineFollowerTask Test...\n");
+                vLineFollowerTaskTest();
+#endif
                 printf("Tests done - LOOP \n");
                 vTaskDelay(pdMS_TO_TICKS(1000));
         }
@@ -98,6 +102,8 @@ void i2cBroadcast(void)
 // entry point for tests
 void testApp(void)
 {
+        // init queues
+        vInitQueues();
         // create test-task - some Devices depend on running inside a task
         xTaskCreate(testTask, "TestTask", 2048, NULL, 1, NULL);
         // start scheduler
