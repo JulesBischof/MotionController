@@ -54,7 +54,7 @@ bool I2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
 
     _i2cStatus = I2C_STATUSOK;
 
-    if (err != 1)
+    if (err != num)
     {
         this->_setError(err);
         printf("I2C_Error! ReadFrame \n");

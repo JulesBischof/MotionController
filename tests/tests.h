@@ -5,10 +5,11 @@
 #include "MotionControllerConfig.h"
 
 #include <stdio.h>
+#include "pico/stdlib.h"
+
 #include "queues.hpp"
 
 #include "hardware/i2c.h"
-#include "pico/stdlib.h"
 
 #include "Icm42670pTest.h"
 #include "Tmc5240Test.h"

@@ -10,6 +10,8 @@ Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin, bool stdDir) : SpiBase(
     printf("Startup TMC5240 CS_GPIO #%d ... \n", csPin);
     _initDevice();
     _checkDevice();
+
+    this->moveVelocityMode(0, 0, 5000); // initially Stop running Motors
 }
 
 Tmc5240::~Tmc5240()
@@ -106,10 +108,6 @@ void Tmc5240::setShaftDirection(bool direction)
 /// @param amax maximum acceleration TODO: unit???
 void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 {
-    // protection against too high values
-    if (vmax > STEPPERCONFIG_MAXSPEED)
-        vmax = STEPPERCONFIG_MAXSPEED;
-
         // flip direction if std direction ain't matching
         if (!_stdDir)
             direction = !direction;

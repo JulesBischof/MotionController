@@ -49,9 +49,8 @@ void Tla2528::_checkDevice()
 
 /// @brief reads ADC-Value
 /// @return vector containing all raw ADC-Values
-std::vector<uint16_t> Tla2528::readAdc()
+bool Tla2528::readAdc(uint16_t *buffer)
 {
-    std::vector<uint16_t> retVal;
 
     for(size_t i = 0; i < 8; i++)
     {
@@ -60,10 +59,10 @@ std::vector<uint16_t> Tla2528::readAdc()
         uint8_t rawValue[2] = {0};
         i2cReadFrame(rawValue, 2);
 
-        retVal.push_back(rawValue[1] << 8 | rawValue[0]);
+        buffer[i] = (rawValue[0] << 8) | rawValue[1];
     }
 
-    return retVal;
+    return true;
 }
 
 /// @brief performs a single register read. Overrides base-class due to individual Operation-Codes

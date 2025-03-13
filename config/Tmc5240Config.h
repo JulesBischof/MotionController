@@ -80,11 +80,5 @@ Set I_ref to 16k (R2 = HIGH, R3 = LOW)
 
 #define STEPPERCONFIG_WHEELDISTANCE_AXIS_MM 800
 
-/* ####################################################################
-
-                        SAFETY_SETTINGS 
-
-    #################################################################### */
-#define STEPPERCONFIG_MAXSPEED 300000
 
 #endif

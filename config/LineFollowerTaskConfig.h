@@ -14,17 +14,21 @@
                    set Controller Parameter
 
 ============================================================== */
+#define LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P (1000)
+#define LINEFOLLERCONFIG_VALUE_X (0)
 
-#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (5000)
+#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (2) 
 
 /* ==============================================================
 
-                         set VMAX / AMAX
+                set VMAX / AMAX / MaxDistance
 
 ============================================================== */
 
-#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST (100000)
-#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW (100000)
+#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST (50000)
+#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW (25000)
+
+#define LINEFOLLOWERCONFIG_MAXDISTANCE (5)
 
 #define LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED (5000)
 

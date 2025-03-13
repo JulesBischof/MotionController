@@ -12,7 +12,11 @@ typedef enum dispatcherTaskId_t
 {
     DISPATCHER_TASK,
     LINE_FOLLOWER_TASK,
-} dispatcherTaskId_t;
+    RASPBERRY_HAT_COM_TASK,
+    GETSENSORDATA_TASK,
+    GRIPCONTROLLER_COM_TASK
+}
+dispatcherTaskId_t;
 
 typedef enum taskCommand_t
 {
@@ -21,9 +25,10 @@ typedef enum taskCommand_t
     COMMAND_TURN,
     COMMAND_GET_DISTANCE,
     COMMAND_GET_LINE_POSITION,
-    GET_ANGLE,
+    COMMAND_GET_ANGLE,
     COMMAND_GET_STATUSFLAGS,
-    SEND_ERROR,
+    COMMAND_SEND_WARNING,
+    COMMAND_SEND_ERROR,
 } taskCommand_t;
 
 typedef struct dispatcherMessage_t

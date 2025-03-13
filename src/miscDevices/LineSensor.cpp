@@ -2,7 +2,7 @@
 
 LineSensor::LineSensor(ArduinoAdcSlave *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
 {
-    _status = 0 | LINESENSOR_OK | !LINESENSOR_UV_ACTIVE | !LINESENSOR_CROSS_DETECTED;
+    _status = 0;
 
     _initUvLed();
 }
@@ -46,13 +46,19 @@ int8_t LineSensor::getLinePosition()
         }
     }
 
+    // check if there is a Line
+    if (!lineCounter)
+        _status |= LINESENSOR_NO_LINE;
+    else
+        _status &= ~LINESENSOR_NO_LINE;
+
     // check if there has been a crossway
     if (lineCounter >= LINECOUNTER_CROSS_DETECTED)
         _status |= LINESENSOR_CROSS_DETECTED;
     else
         _status &= ~LINESENSOR_CROSS_DETECTED;
 
-    // determine line position (negative means more left, positive more right)
+    // determine line position
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
         if (digArray[i])
@@ -68,6 +74,46 @@ int8_t LineSensor::getLinePosition()
         else
             break;
     }
+
+    return linePosition;
+}
+
+/// @brief get Line Position as an Analog value - see LineSensorConfig.h for maximum value
+/// @return lineposition
+uint32_t LineSensor::getLinePositionAnalog()
+{
+    // get ADC-value
+    uint16_t adcValues[NUMBER_OF_CELLS] = {0};
+
+    _toggleUvLed(true);
+    bool err = _adcInstance->readAdc(adcValues);
+    _toggleUvLed(false);
+
+    if (!err)
+    {
+        printf("ERROR OCCURRED read adcValue in Line Sensor instance\n");
+        _status |= LINESENSOR_ERROR;
+        return -1;
+    }
+
+    // sum up all values
+    uint32_t numerator = 0;
+    uint32_t denumerator = 0;
+
+    for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+    {
+        numerator += adcValues[i] * i * LINEPOSITION_ANALOG_SCALEFACTOR;
+        denumerator += adcValues[i];
+    }
+
+    if (!denumerator)
+    {
+        printf("LineSensor Read Analog DIVIDE ZERO!");
+        _status |= LINESENSOR_ERROR;
+        return -1;
+    }
+
+    int16_t linePosition = numerator / denumerator;
 
     return linePosition;
 }

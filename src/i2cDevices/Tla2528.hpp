@@ -19,7 +19,7 @@ public:
     Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress);
     ~Tla2528();
 
-    std::vector<uint16_t> readAdc();
+    bool readAdc(uint16_t *buffer);
 
     bool i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num) override;
 

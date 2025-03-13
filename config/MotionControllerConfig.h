@@ -17,7 +17,7 @@
 /* -------------------- I2C ----------------------- */
 #define I2C_BAUDRATE_KHZ (100)
 
-#define I2C_DEVICE_TLA2528_ADDRESS (0x10)
+#define I2C_DEVICE_TLA2528_ADDRESS (0x14)
 #define I2C_DEVICE_ICM42670P_ADDRESS (0x68)
 
 #define ACTIVATE_INTERNAL_PULLUP (1)

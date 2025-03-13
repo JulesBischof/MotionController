@@ -23,20 +23,22 @@
 
 #define TEST_ICM42670 (0)
 
-#define TEST_TLA2528 (0)
+#define TEST_TLA2528 (1)
 
 // --------------- misc devices ------------------
 
 #define TEST_LINESENSOR (0)
+#define TEST_LINESENSOR_ANALOGMODE (0)
 
 #define TEST_HCSR04 (0)
 
 #define TEST_ARDUINO_ADC (0)
 
+
 // ------------------ Tasks ---------------------
 
 // ## LineFollowerTask ##
-#define TEST_VLINEFOLLOWERTASK (1)
+#define TEST_VLINEFOLLOWERTASK (0)
 
 
 #endif // TESTCONFIG_H

@@ -8,9 +8,10 @@
 
 typedef enum LineSensorStatus_t
 {
-    LINESENSOR_OK = 1,
-    LINESENSOR_UV_ACTIVE = 2,
-    LINESENSOR_CROSS_DETECTED = 4,
+    LINESENSOR_ERROR = 1 << 0,
+    LINESENSOR_UV_ACTIVE = 1 << 1,
+    LINESENSOR_CROSS_DETECTED = 1 << 2,
+    LINESENSOR_NO_LINE = 1 << 3
 } LineSensorStatus_t;
 
 class LineSensor
@@ -31,6 +32,8 @@ public:
     ~LineSensor();
 
     int8_t getLinePosition();
+
+    uint32_t getLinePositionAnalog();
 
     uint8_t getStatus() { return _status; };
 };
