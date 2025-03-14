@@ -1,5 +1,12 @@
 #include "MotionControllerInit.hpp"
 
+#include "pico/stdlib.h"
+#include "hardware/i2c.h"
+#include "hardware/spi.h"
+
+#include "MotionControllerPinning.h"
+#include "MotionControllerConfig.h"
+
 void MotionControllerInit(void)
 {
     initUart();

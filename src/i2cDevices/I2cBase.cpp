@@ -1,5 +1,7 @@
 #include "I2cBase.hpp"
 
+#include <stdio.h>
+
 // init static class members
 SemaphoreHandle_t I2cBase::_i2cMutex = NULL;
 bool I2cBase::_i2cMutexInititalized = false;

@@ -1,5 +1,8 @@
 #include "Tla2528.hpp"
 
+#include "Tla2528_HW_Abstraction.h"
+#include <stdio.h>
+
 Tla2528::Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
 {
     _initDevice();

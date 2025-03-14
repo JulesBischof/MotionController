@@ -1,5 +1,13 @@
 #include "Tmc5240.hpp"
 
+#include <cmath>
+
+#include "TMC5240_HW_Abstraction.h"
+#include "Tmc5240Config.h"
+
+#include "pico/stdlib.h"
+#include <stdio.h>
+
 /// @brief creates instance of Trinamics TMC5240 stepper driver
 /// @param spiInstance spi instance - refer pico c/c++ sdk
 /// @param csPin chip select pin

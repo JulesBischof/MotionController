@@ -2,9 +2,6 @@
 #define TLA2528_H
 
 #include "I2cBase.hpp"
-#include "Tla2528_HW_Abstraction.h"
-#include <vector>
-#include <stdio.h>
 
 #define OPCODE_SINGLE_REGISTER_READ 0x10
 #define OPCODE_SINGLE_REGISTER_WRITE 0x08

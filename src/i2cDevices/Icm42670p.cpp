@@ -1,5 +1,10 @@
 #include "Icm42670p.hpp"
 
+#include "Icm42670p_HW_Abstraction.h"
+#include "Icm42670pConfig.h"
+
+#include <stdio.h>
+
 /// @brief creates instance of ICM42670p Gyroscope
 /// @param i2cInstance i2cInstance ref c/c++ sdk raspberry pico
 /// @param i2cAddress i2c address
@@ -22,9 +27,7 @@ float Icm42670p::ConvertLsbToDps(int16_t rawVal)
     return val;
 }
 
-
-
-/// @brief calculates absolut angle in degree, given by how many steps both drivers did 
+/// @brief calculates absolut angle in degree, given by how many steps both drivers did
 /// @param xActualDriver0 xActual Value driver 0
 /// @param xActualDriver1 xActual Value driver 1
 /// @return angle in °

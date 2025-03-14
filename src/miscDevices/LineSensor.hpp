@@ -1,10 +1,7 @@
 #ifndef LINESENSOR_H
 #define LINESENSOR_H
 
-#include "ArduinoAdcSlave.hpp"
-#include "LineSensorConfig.h"
-
-#include <stdio.h>
+#include "Tla2528.hpp"
 
 typedef enum LineSensorStatus_t
 {
@@ -20,7 +17,7 @@ private:
 
     uint8_t _status;
 
-    ArduinoAdcSlave *_adcInstance;
+    Tla2528 *_adcInstance;
 
     uint8_t _uvGpio;
 
@@ -28,7 +25,8 @@ private:
     void _initUvLed();
 
 public:
-    LineSensor(ArduinoAdcSlave *adcInstance, uint8_t uvGpio);
+    LineSensor(Tla2528 *adcInstance, uint8_t uvGpio);
+
     ~LineSensor();
 
     int8_t getLinePosition();

@@ -1,13 +1,7 @@
 #ifndef TMC5240_H
 #define TMC5240_H
 
-#include <stdio.h>
-
-#include "TMC5240_HW_Abstraction.h"
-#include "Tmc5240Config.h"
 #include "SpiBase.hpp"
-
-#include <cmath>
 
 class Tmc5240 : public SpiBase
 {
@@ -44,4 +38,4 @@ public:
     static uint32_t degreeToUStepsConversion(float degrees);
 };
 
-#endif
+#endif //TMC5240_H

@@ -1,6 +1,11 @@
 #include "LineSensor.hpp"
 
-LineSensor::LineSensor(ArduinoAdcSlave *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
+#include "LineSensorConfig.h"
+
+#include "pico/stdlib.h"
+#include <stdio.h>
+
+LineSensor::LineSensor(Tla2528 *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
 {
     _status = 0;
 
@@ -48,9 +53,15 @@ int8_t LineSensor::getLinePosition()
 
     // check if there is a Line
     if (!lineCounter)
+    {
         _status |= LINESENSOR_NO_LINE;
+        return 0;
+    }
+
     else
+    {
         _status &= ~LINESENSOR_NO_LINE;
+    }
 
     // check if there has been a crossway
     if (lineCounter >= LINECOUNTER_CROSS_DETECTED)

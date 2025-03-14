@@ -1,12 +1,11 @@
 #ifndef I2CBASE_H
 #define I2CBASE_H
 
-#include "hardware/i2c.h"
-#include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 
-#include <stdio.h>
+#include "hardware/i2c.h"
+#include "pico/stdlib.h"
 
 // I2C ERRORCODES
 typedef enum I2cStatus_t
@@ -25,7 +24,7 @@ protected:
     static SemaphoreHandle_t _i2cMutex;
     i2c_inst_t *_i2cInstance;
     uint8_t _i2cAddress;
-    I2cStatus_t _i2cStatus; // Ändere den Typ von uint8_t zu I2cStatus_t
+    I2cStatus_t _i2cStatus;
 
     virtual void _initDevice() = 0;
     virtual void _checkDevice() = 0;
@@ -38,7 +37,7 @@ public:
 
     static void i2cInit(uint8_t sdaPin, uint8_t sckPin, i2c_inst_t *i2cInstance, uint16_t baudrate);
 
-    I2cStatus_t getStatus() { return this->_i2cStatus; }; // Ändere den Rückgabetyp zu I2cStatus_t
+    I2cStatus_t getStatus() { return this->_i2cStatus; };
 
     virtual bool i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num);
     virtual bool i2cReadFrame(uint8_t *buffer, uint8_t num);

@@ -2,10 +2,6 @@
 #define ICM42670_H
 
 #include "I2cBase.hpp"
-#include "Icm42670p_HW_Abstraction.h"
-#include "tests.h"
-
-#include "Icm42670pConfig.h"
 
 class Icm42670p : public I2cBase
 {
@@ -29,4 +25,4 @@ public:
     static float getAngle(int32_t xActualDriver0, int32_t xActualDriver1);
 };
 
-#endif
+#endif //ICM42670_H

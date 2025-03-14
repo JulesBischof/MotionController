@@ -1,5 +1,10 @@
 #include "hcsr04.hpp"
 
+#include <map>
+
+#include "pico/stdlib.h"
+#include <stdio.h>
+
 /// @brief creates instance of HCSR04 Ultrasonic distance-Sensor
 /// @param triggerPin GPIO conntected to trigger
 /// @param echoPin GPIO connected to echo

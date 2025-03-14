@@ -1,5 +1,8 @@
 #include "SpiBase.hpp"
 
+#include "pico/stdlib.h"
+#include <stdio.h>
+
 // init static class members
 SemaphoreHandle_t SpiBase::_spiMutex = NULL;
 bool SpiBase::_spiMutexInititalized = false;
@@ -10,12 +13,14 @@ bool SpiBase::_spiMutexInititalized = false;
 SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
     : _spiInstance(spiInstance), _csPin(csPin)
 {
+    taskENTER_CRITICAL();
     if (!this->_spiMutexInititalized)
     {
         _spiMutex = xSemaphoreCreateMutex();
         _spiMutexInititalized = true;
     }
     _initCsGpio(csPin);
+    taskEXIT_CRITICAL();
 }
 
 /// @brief deconstructor - not implemented yet

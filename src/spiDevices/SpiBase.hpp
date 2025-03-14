@@ -2,7 +2,6 @@
 #define SPIBASE_H
 
 #include "hardware/spi.h"
-#include "pico/stdlib.h"
 #include "FreeRTOS.h"
 #include "semphr.h"
 
