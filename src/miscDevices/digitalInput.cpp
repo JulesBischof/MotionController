@@ -3,6 +3,9 @@
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 
+// statics
+std::map<uint8_t, SemaphoreHandle_t> DigitalInput::_semaphoresMap;
+
 DigitalInput::DigitalInput(uint8_t gpio)
 {
     _gpio = gpio;

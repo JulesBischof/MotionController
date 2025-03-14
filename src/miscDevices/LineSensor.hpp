@@ -25,6 +25,7 @@ private:
     uint16_t _calibValuesLow[NUMBER_OF_CELLS];
     uint16_t _calibValuesHigh[NUMBER_OF_CELLS];
 
+    static uint16_t _minMaxNormalize(uint16_t val, uint16_t calibMin, uint16_t calibMax);
     void _toggleUvLed(bool state);
     void _initDefaultCalibration();
     void _initUvLed();

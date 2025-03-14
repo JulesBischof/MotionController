@@ -14,8 +14,8 @@ void vLineFollowerTaskTest()
     {
         // define example Command
         dispatcherMessage_t message;
-        message.senderTaskId = DISPATCHER_TASK;
-        message.recieverTaskId = LINE_FOLLOWER_TASK;
+        message.senderTaskId = TASKID_DISPATCHER_TASK;
+        message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
         message.command = COMMAND_FOLLOW_LINE;
         message.data = 0;
 
@@ -28,8 +28,8 @@ void vLineFollowerTaskTest()
         vTaskDelay(pdMS_TO_TICKS(5000));
 
         // define example Command
-        message.senderTaskId = DISPATCHER_TASK;
-        message.recieverTaskId = LINE_FOLLOWER_TASK;
+        message.senderTaskId = TASKID_DISPATCHER_TASK;
+        message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
         message.command = COMMAND_STOP;
         message.data = 0;
 

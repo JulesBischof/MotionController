@@ -38,7 +38,7 @@ int8_t LineSensor::getLinePosition()
     // convert ADC-values to digital values
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
-        if (adcValues[i] >= ADC_TRESHHOLD)
+        if (adcValues[i] >= ADC_RAW_LINE_TRESHHOLD)
         {
             digArray[i] = 1;
         }
@@ -55,7 +55,6 @@ int8_t LineSensor::getLinePosition()
         _status |= LINESENSOR_NO_LINE;
         return 0;
     }
-
     else
     {
         _status &= ~LINESENSOR_NO_LINE;
@@ -105,10 +104,40 @@ uint32_t LineSensor::getLinePositionAnalog()
         return -1;
     }
 
+    uint8_t lineCounter = 0;
+
+    // normalize and invert ADC values 
+    // invert values due to sensor is low active
+    for (size_t i = 0; i > NUMBER_OF_CELLS; i++)
+    {
+        adcValues[i] = LINESENSOR_NORMALIZE_REFERENCE_HIGH - _minMaxNormalize(adcValues[i], _calibValuesLow[i], _calibValuesHigh[i]);
+        
+        if (adcValues[i] > LINESENSOR_LINE_DETECTED_NORMLIZED) // bigger then due to values were invertet right before
+        {
+            lineCounter++;
+        }
+    }
+
+    // check if there is a Line
+    if (!lineCounter)
+    {
+        _status |= LINESENSOR_NO_LINE;
+        return LINESENSOR_MIDDLE_POSITION;
+    }
+    else
+    {
+        _status &= ~LINESENSOR_NO_LINE;
+    }
+
+    // check if there has been a crossway
+    if (lineCounter > LINECOUNTER_CROSS_DETECTED)
+        _status |= LINESENSOR_CROSS_DETECTED;
+    else
+        _status &= ~LINESENSOR_CROSS_DETECTED;
+
     // sum up all values
     uint32_t numerator = 0;
     uint32_t denumerator = 0;
-
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
         numerator += adcValues[i] * i * LINEPOSITION_ANALOG_SCALEFACTOR;
@@ -119,11 +148,10 @@ uint32_t LineSensor::getLinePositionAnalog()
     {
         printf("LineSensor Read Analog DIVIDE ZERO!");
         _status |= LINESENSOR_ERROR;
-        return -1;
+        return LINESENSOR_MIDDLE_POSITION;
     }
 
     int16_t linePosition = numerator / denumerator;
-
     return linePosition;
 }
 
@@ -135,6 +163,16 @@ void LineSensor::_initUvLed()
     _toggleUvLed(false);
 
     return;
+}
+
+uint16_t LineSensor::_minMaxNormalize(uint16_t val, uint16_t calibMin, uint16_t calibMax)
+{
+    if (calibMax <= calibMin)
+    {
+        printf("ERROR - wrong calibration! _minMaxNormalize \n");
+        return 0; // wrong calibration
+    }
+    return (uint16_t(val - calibMin) * LINESENSOR_NORMALIZE_REFERENCE_HIGH) / (calibMax - calibMin);
 }
 
 /// @brief toggles UV-Transmitter due to safety reasons
@@ -158,5 +196,5 @@ void LineSensor::_initDefaultCalibration()
         this->_calibValuesHigh[i] = defValuesHigh[i];
     }
 
-    printf("LINESENSOR - default calibration set");
+    printf("LINESENSOR - default calibration set \n");
 }

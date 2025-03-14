@@ -8,6 +8,7 @@
 ============================================================== */
 
 #define LINEFOLLERCONFIG_USE_P_CONTROLLER (1)
+#define LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR (0)
 
 /* ==============================================================
 
@@ -15,9 +16,10 @@
 
 ============================================================== */
 #define LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P (1000)
-#define LINEFOLLERCONFIG_VALUE_X (0)
+#define LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL (0)
+#define LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG (3500)
 
-#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (2) 
+#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (4) 
 
 /* ==============================================================
 
@@ -25,8 +27,8 @@
 
 ============================================================== */
 
-#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST (20000)
-#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW (10000)
+#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST (50000)
+#define LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW (20000)
 
 #define LINEFOLLOWERCONFIG_MAXDISTANCE (5)
 

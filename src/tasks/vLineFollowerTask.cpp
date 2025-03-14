@@ -1,17 +1,22 @@
 #include "vLineFollowerTask.hpp"
 
 #include "Tla2528.hpp"
+#include <stdio.h>
 
+#define RUNMODEFLAG_T_EVENTFLAGS_BITMASK (0xFF00)
 typedef enum RunModeFlag_t
 {
+    // lower 8 bits statemaschine relevant flags
     MOTOR_RUNNING = 1 << 0,
     RUNMODE_SLOW = 1 << 1,
-    CROSSPOINT_DETECTED = 1 << 2,
-    LOST_LINE = 1 << 3,
-    MAXDISTANCE_REACHED = 1 << 4,
-    LINE_FOLLOWER_MODE = 1 << 5,
-    TURN_MODE = 1 << 6,
-    SAFETY_BUTTON_PRESSED = 1 << 7
+    LINE_FOLLOWER_MODE = 1 << 2,
+    TURN_MODE = 1 << 3,
+
+    // upper 8 bits events and infos
+    CROSSPOINT_DETECTED = 1 << 8,
+    LOST_LINE = 1 << 9,
+    MAXDISTANCE_REACHED = 1 << 10,
+    SAFETY_BUTTON_PRESSED = 1 << 11
 } RunModeFlag_t;
 
 /// @brief creates a dispatcherMessage_t struct as message for inter task communication
@@ -19,7 +24,7 @@ typedef enum RunModeFlag_t
 /// @param recieverTaskId RecieverTask
 /// @param command command wich is meant to send
 /// @param data parameter for the command
-/// @return 
+/// @return
 dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcherTaskId_t recieverTaskId, taskCommand_t command, uint32_t data)
 {
     dispatcherMessage_t response;
@@ -34,8 +39,8 @@ dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcher
 void vLineFollowerTask(void *pvParameters)
 {
     // initialize peripherals neccessary for line follower
-    Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 0);
-    Tmc5240 driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 0);
+    Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+    Tmc5240 driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
 
     // init adc device and line Sensor
     Tla2528 adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
@@ -58,6 +63,8 @@ void vLineFollowerTask(void *pvParameters)
     int32_t X_ACTUAL_startValueDriver1 = driver1.getXActual();
     int32_t drivenDistanceDriver1 = 0;
 
+    uint32_t maxDistance = 0;
+
     // loop forever
     for (;;)
     {
@@ -66,7 +73,12 @@ void vLineFollowerTask(void *pvParameters)
             dispatcherMessage_t message;
             xQueueReceive(xLineFollwerQueue, &message, pdMS_TO_TICKS(10));
 
-            // TODO: check if message is meant for this task
+            if (message.recieverTaskId != TASKID_LINE_FOLLOWER_TASK)
+            {
+                printf("LINEFOLLOWERTASK - Message contains wrong Task ID \n");
+                continue;
+            }
+
             dispatcherMessage_t response;
 
             switch (message.command)
@@ -75,6 +87,8 @@ void vLineFollowerTask(void *pvParameters)
                 flags &= ~TURN_MODE;
                 flags &= ~MAXDISTANCE_REACHED;
                 flags &= ~RUNMODE_SLOW;
+                flags &= ~LOST_LINE;
+                flags &= ~CROSSPOINT_DETECTED;
                 flags |= LINE_FOLLOWER_MODE;
                 flags |= MOTOR_RUNNING;
 
@@ -102,8 +116,8 @@ void vLineFollowerTask(void *pvParameters)
                 break;
 
             case COMMAND_GET_STATUSFLAGS:
-                response = generateResponse(LINE_FOLLOWER_TASK,
-                                            message.senderTaskId, 
+                response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
+                                            message.senderTaskId,
                                             COMMAND_GET_STATUSFLAGS,
                                             (uint32_t)flags);
                 xQueueSend(xDispatcherQueue, &response, 0);
@@ -115,48 +129,70 @@ void vLineFollowerTask(void *pvParameters)
             }
         } // end of message handling
 
-        // check if safety button is pressed
+        /// ------- stm check safetybutton -------
         if (!safetyButton.getValue())
         {
             flags &= ~MOTOR_RUNNING;
             flags | SAFETY_BUTTON_PRESSED;
-            dispatcherMessage_t response;
-            response = generateResponse(LINE_FOLLOWER_TASK,
-                                        RASPBERRY_HAT_COM_TASK,
-                                        COMMAND_SEND_WARNING,
-                                        (uint32_t)flags);
-            xQueueSend(xDispatcherQueue, &response, 0);
         }
         else
         {
             flags &= ~SAFETY_BUTTON_PRESSED;
         }
 
-        // Mode line follower
-        if ( (flags & MOTOR_RUNNING) && (flags & LINE_FOLLOWER_MODE ))
+        // ------- stm check hcsr04 distance -------
+
+        // TODO: check distance
+
+        // ------- stm line follower -------
+        if ((flags & MOTOR_RUNNING) && (flags & LINE_FOLLOWER_MODE))
         {
             followLine(&driver0,
                        &driver1,
                        &lineSensor,
                        &flags);
+
+            drivenDistanceDriver0 = driver0.getXActual();
+            drivenDistanceDriver1 = driver0.getXActual();
+
+            // maxdistance reached - send Info to RaspberryHAT
+            if (drivenDistanceDriver0 > maxDistance || drivenDistanceDriver1 > maxDistance)
+            {
+                flags &= ~MOTOR_RUNNING;
+                flags | MAXDISTANCE_REACHED;
+                dispatcherMessage_t response;
+                response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
+                                            TASKID_RASPBERRY_HAT_COM_TASK,
+                                            COMMAND_SEND_WARNING, // TODO: change command to Info
+                                            (uint32_t)flags);
+                xQueueSend(xDispatcherQueue, &response, 0);
+            }
         }
 
-        // Stop drives
-        if ( !(flags & MOTOR_RUNNING))
+        /// ------- stm turn vehicle -------
+        if ((flags & MOTOR_RUNNING) && (flags & TURN_MODE))
+        {
+            // TODO turnRobot(int16_t angle); -- angle * 10!
+        }
+
+        /// ------- stm check and send info flags -------
+        if (flags & RUNMODEFLAG_T_EVENTFLAGS_BITMASK)
+        {
+            dispatcherMessage_t response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
+                                                            TASKID_RASPBERRY_HAT_COM_TASK,
+                                                            COMMAND_SEND_WARNING,
+                                                            (uint32_t)flags);
+        }
+
+        /// ------- stm stop drives -------
+        if (!(flags & MOTOR_RUNNING))
         {
             stopDrives(&driver0, &driver1, &flags);
         }
 
-        if ((flags & MOTOR_RUNNING) && (flags & TURN_MODE))
-        {
-            // TODO turnRobot(float angle);
-        }
-
-        // TODO: check if max distance is reached
-
         vTaskDelay(pdMS_TO_TICKS(100));
     }
-}
+} // end vLineFollowerTask
 
 void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint32_t *flags)
 {
@@ -169,12 +205,20 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
     // get Sensor values
     int8_t y = lineSensor->getLinePosition();
 
+#if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
+    int8_t y = lineSensor->getLinePosition();
+#else
+    uint16_t y = lineSensor->getLinePositionAnalog();
+#endif
+
     // check for LineSensor events
-    if(lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
+    if (lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
     {
         *flags |= CROSSPOINT_DETECTED;
         *flags & ~MOTOR_RUNNING;
         *flags & ~LINE_FOLLOWER_MODE;
+
+        printf("LINESENSOR detected Crosspoint \n");
         return;
     }
     if (lineSensor->getStatus() & LINESENSOR_NO_LINE)
@@ -182,6 +226,8 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
         *flags |= LOST_LINE;
         *flags & ~MOTOR_RUNNING;
         *flags & ~LINE_FOLLOWER_MODE;
+
+        printf("LINESENSOR lost Line \n");
         return;
     }
 
@@ -189,7 +235,12 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
 
     // get error
     int8_t e = 0;
-    e = LINEFOLLERCONFIG_VALUE_X - y;
+
+#if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
+    e = LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL - y;
+#else
+    e = LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG - y;
+#endif
 
     // calc control variable
     int32_t u = 0;
@@ -210,7 +261,7 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
     // set Motor values
     Driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     Driver1->moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-}
+} // end followLine
 
 int32_t ControllerC(int8_t e)
 {
@@ -220,7 +271,7 @@ int32_t ControllerC(int8_t e)
     u = e * LINEFOLLERCONFIG_CONTROLLERVALUE_KP;
 #endif
     return u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
-}
+} // end Control
 
 void stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags)
 {
@@ -235,5 +286,4 @@ void stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags)
     }
 
     return;
-}
-
+} // end stop Drives
