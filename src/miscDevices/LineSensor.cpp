@@ -1,14 +1,12 @@
 #include "LineSensor.hpp"
 
-#include "LineSensorConfig.h"
-
 #include "pico/stdlib.h"
 #include <stdio.h>
 
 LineSensor::LineSensor(Tla2528 *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
 {
     _status = 0;
-
+    _initDefaultCalibration();
     _initUvLed();
 }
 
@@ -146,4 +144,19 @@ void LineSensor::_toggleUvLed(bool state)
     gpio_put(_uvGpio, state);
     _status = state ? (_status | LINESENSOR_UV_ACTIVE) : (_status & ~LINESENSOR_UV_ACTIVE);
     return;
+}
+
+/// @brief sets default values out of LineFollowerConfig.h file to calibration values
+void LineSensor::_initDefaultCalibration()
+{
+    uint16_t defValuesLow[NUMBER_OF_CELLS] = LINESENSOR_DEFAULT_CALIBRATION_LOW_VALUES;
+    uint16_t defValuesHigh[NUMBER_OF_CELLS] = LINESENSOR_DEFAULT_CALIBRATION_HIGH_VALUES;
+
+    for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+    {
+        this->_calibValuesLow[i] = defValuesLow[i];
+        this->_calibValuesHigh[i] = defValuesHigh[i];
+    }
+
+    printf("LINESENSOR - default calibration set");
 }

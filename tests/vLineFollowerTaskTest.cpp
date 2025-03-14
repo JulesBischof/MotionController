@@ -1,6 +1,7 @@
 #include "vLineFollowerTaskTest.h"
 
 #include "vLineFollowerTask.hpp"
+#include <stdio.h>
 #include "queues.hpp"
 
 void vLineFollowerTaskTest()

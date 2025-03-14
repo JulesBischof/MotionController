@@ -2,6 +2,7 @@
 #define LINESENSOR_H
 
 #include "Tla2528.hpp"
+#include "LineSensorConfig.h"
 
 typedef enum LineSensorStatus_t
 {
@@ -21,7 +22,11 @@ private:
 
     uint8_t _uvGpio;
 
+    uint16_t _calibValuesLow[NUMBER_OF_CELLS];
+    uint16_t _calibValuesHigh[NUMBER_OF_CELLS];
+
     void _toggleUvLed(bool state);
+    void _initDefaultCalibration();
     void _initUvLed();
 
 public:

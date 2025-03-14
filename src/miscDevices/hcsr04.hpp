@@ -4,6 +4,8 @@
 #include "pico/stdlib.h"
 #include "hardware/pio.h"
 
+#include <map>
+
 #include "FreeRTOS.h"
 #include "event_groups.h"
 

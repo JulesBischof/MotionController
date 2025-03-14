@@ -13,8 +13,8 @@
 
 
 // ------------- stepper devices ------------------
-#define TEST_TMC5240 (1)
-#define TEST_TMC5260_VELOCITY_MODE (1)
+#define TEST_TMC5240 (0)
+#define TEST_TMC5260_VELOCITY_MODE (0)
 #define TEST_TMC5260_POSITION_MODE (0)
 
 // --------------- i2c devices ------------------
@@ -39,7 +39,7 @@
 // ------------------ Tasks ---------------------
 
 // ## LineFollowerTask ##
-#define TEST_VLINEFOLLOWERTASK (0)
+#define TEST_VLINEFOLLOWERTASK (1)
 
 
 #endif // TESTCONFIG_H

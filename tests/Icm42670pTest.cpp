@@ -1,5 +1,8 @@
 #include "Icm42670pTest.h"
 
+#include "MotionControllerConfig.h"
+#include "Icm42670pConfig.h"
+
 void Icm42670Test(void)
 {
     // init device
