@@ -60,19 +60,6 @@ LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue)
     xTaskCreate(_run, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
 } // end ctor
 
-/// @brief signleton pattern
-/// @param dispatcherQueue Queue of dispatcher Task
-/// @param lineFollowerQueue Queue of LineFollower Task
-/// @return instance of LineFollowerTask
-LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *dispatcherQueue)
-{
-    if (_instance == nullptr)
-    {
-        _instance = new LineFollowerTask(dispatcherQueue);
-    }
-    return *_instance;
-}
-
 #define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
 #define LINEFOLLOWERCONFIG_STACKSIZE (1024)
 #define LINEFOLLOWERCONFIG_PRIORITY (1)
@@ -335,6 +322,19 @@ void LineFollowerTask::_stopDrives()
 /* ================================= */
 /*              getters              */
 /* ================================= */
+
+/// @brief signleton pattern
+/// @param dispatcherQueue Queue of dispatcher Task
+/// @param lineFollowerQueue Queue of LineFollower Task
+/// @return instance of LineFollowerTask
+LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *messageDispatcherQueue)
+{
+    if (_instance == nullptr)
+    {
+        _instance = new LineFollowerTask(messageDispatcherQueue);
+    }
+    return *_instance;
+}
 
 QueueHandle_t LineFollowerTask::getQueue()
 {

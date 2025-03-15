@@ -53,7 +53,7 @@ void MessageDispatcherTask::_run(void *pvParameters)
     }
 }
 
-/// @brief deconstructot - not done implementing yet
+/// @brief deconstructot
 MessageDispatcherTask::~MessageDispatcherTask()
 {
     if (_instance != nullptr)
