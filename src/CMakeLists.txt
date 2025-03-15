@@ -25,7 +25,7 @@ target_sources(MotionController PRIVATE ${SPI_SOURCES})
 target_sources(MotionController PRIVATE ${MISC_SOURCES})
 
 # links libraries
-target_link_libraries(MotionController
+target_link_libraries(MotionController PRIVATE
     pico_stdlib 
 
     hardware_spi

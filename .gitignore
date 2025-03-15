@@ -36,3 +36,4 @@ build
 
 # cache folder
 .cache
+src/tasks/vLineFollowerTask.cpp
