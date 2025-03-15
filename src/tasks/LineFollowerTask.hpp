@@ -15,13 +15,22 @@ private:
     static LineFollowerTask *_instance;
 
     static TaskHandle_t _taskHandle;
-    static QueueHandle_t _dispatcherQueue;
-    static QueueHandle_t _lineFollowerQueue;
+    static QueueHandle_t _dispatcherQueue, _lineFollowerQueue;
 
-    static void _followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint32_t *flags);
+    static void _initDevices();
+
+    static void _followLine();
     static int32_t _controllerC(int8_t e);
-    static void _stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags);
+    static void _stopDrives();
     static void _run(void *pvParameters);
+
+    static uint32_t _statusFlags;
+
+    static Tmc5240 _driver0, _driver1;
+
+    static Tla2528 _adc;
+    static LineSensor _lineSensor;
+    static DigitalInput _safetyButton;
 
 public:
     ~LineFollowerTask();
