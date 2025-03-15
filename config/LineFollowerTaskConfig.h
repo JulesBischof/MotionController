@@ -3,6 +3,16 @@
 
 /* ==============================================================
 
+                    general Settings
+
+============================================================== */
+#define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
+#define LINEFOLLOWERCONFIG_STACKSIZE (1024)
+#define LINEFOLLOWERCONFIG_PRIORITY (1)
+
+
+/* ==============================================================
+
                     select controllertype
 
 ============================================================== */

@@ -2,13 +2,17 @@
 
 #include "vLineFollowerTask.hpp"
 #include <stdio.h>
+
 #include "queues.hpp"
 
 void vLineFollowerTaskTest()
 {
-    QueueHandle_t Queue = getLineFollowerTaskQueue();
+    // create queues
+    QueueHandle_t dispatcherQueue = xQueueCreate(100, sizeof(dispatcherMessage_t));
+    QueueHandle_t lineFollowerQueue = xQueueCreate(10, sizeof(dispatcherMessage_t));
 
-    xTaskCreate(vLineFollowerTask, "LineFollowerTask", 1000, NULL, 1, NULL);
+    // create LineFollowerTask instance
+    LineFollowerTask lineFollower = LineFollowerTask::getInstance(&dispatcherQueue, &lineFollowerQueue);
 
     while (1)
     {
@@ -20,18 +24,10 @@ void vLineFollowerTaskTest()
         message.data = 0;
 
         // send msg to queue
-        if (xQueueSend(getLineFollowerTaskQueue(), &message, portMAX_DELAY) != pdPASS)
+        if (xQueueSend(lineFollower.getQueue(), &message, portMAX_DELAY) != pdPASS)
         {
             printf("Failed to send message to Line Follower Task\n");
         }
-
-        vTaskDelay(pdMS_TO_TICKS(5000));
-
-        // define example Command
-        message.senderTaskId = TASKID_DISPATCHER_TASK;
-        message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
-        message.command = COMMAND_STOP;
-        message.data = 0;
 
         vTaskDelay(pdMS_TO_TICKS(5000));
     }

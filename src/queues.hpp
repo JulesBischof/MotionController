@@ -40,19 +40,9 @@ typedef struct dispatcherMessage_t
 } dispatcherMessage_t;
 
 /* -------------------------------------------------- */
-/*             declaration global queues              */
+/*             declaration global queue Fn            */
 /* -------------------------------------------------- */
 
-extern QueueHandle_t xDispatcherQueue;
-extern QueueHandle_t xLineFollowerTaskQueue;
-extern QueueHandle_t xCom0TaskQueue;
-
-// init global queues
-void vInitQueues(void);
-
-// getters
-QueueHandle_t getDispatcherTaskQueue(void);
-QueueHandle_t getLineFollowerTaskQueue(void);
-QueueHandle_t getCom0TaskQueue(void);
+dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcherTaskId_t recieverTaskId, taskCommand_t command, uint32_t data);
 
 #endif

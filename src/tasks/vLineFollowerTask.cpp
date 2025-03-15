@@ -1,7 +1,29 @@
 #include "vLineFollowerTask.hpp"
 
+#include "MotionControllerPinning.h"
+#include "MotionControllerConfig.h"
+#include "LineFollowerTaskConfig.h"
+
+#include "queues.hpp"
+
+#include "digitalInput.hpp"
 #include "Tla2528.hpp"
+
 #include <stdio.h>
+
+
+/* ================================= */
+/*         static Members            */
+/* ================================= */
+
+LineFollowerTask *LineFollowerTask::_instance = nullptr;
+TaskHandle_t LineFollowerTask::_taskHandle = nullptr;
+QueueHandle_t LineFollowerTask::_dispatcherQueue = nullptr;
+QueueHandle_t LineFollowerTask::_lineFollowerQueue = nullptr;
+
+/* ================================= */
+/*           status Flags            */
+/* ================================= */
 
 #define RUNMODEFLAG_T_EVENTFLAGS_BITMASK (0xFF00)
 typedef enum RunModeFlag_t
@@ -19,24 +41,43 @@ typedef enum RunModeFlag_t
     SAFETY_BUTTON_PRESSED = 1 << 11
 } RunModeFlag_t;
 
-/// @brief creates a dispatcherMessage_t struct as message for inter task communication
-/// @param senderTaskId Sender task
-/// @param recieverTaskId RecieverTask
-/// @param command command wich is meant to send
-/// @param data parameter for the command
-/// @return
-dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcherTaskId_t recieverTaskId, taskCommand_t command, uint32_t data)
+/// @brief creates an instance of LineFollower Task and creates Linefollower Task
+/// @param dispatcherQueue queue message dispatcher
+/// @param lineFollowerQueue queue line follower queue
+LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue, QueueHandle_t *lineFollowerQueue)
 {
-    dispatcherMessage_t response;
-    response.senderTaskId = senderTaskId;
-    response.recieverTaskId = recieverTaskId;
-    response.command = command;
-    response.data = data;
+    _dispatcherQueue = *dispatcherQueue;
+    _lineFollowerQueue = *lineFollowerQueue;
 
-    return response;
+    xTaskCreate(_vLineFollowerTask, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
+} // end ctor
+
+/// @brief signleton pattern
+/// @param dispatcherQueue Queue of dispatcher Task
+/// @param lineFollowerQueue Queue of LineFollower Task
+/// @return instance of LineFollowerTask
+LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *dispatcherQueue, QueueHandle_t *lineFollowerQueue)
+{
+    if (_instance == nullptr)
+    {
+        _instance = new LineFollowerTask(dispatcherQueue, lineFollowerQueue);
+    }
+    return *_instance;
 }
 
-void vLineFollowerTask(void *pvParameters)
+#define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
+#define LINEFOLLOWERCONFIG_STACKSIZE (1024)
+#define LINEFOLLOWERCONFIG_PRIORITY (1)
+
+LineFollowerTask::~LineFollowerTask()
+{
+    if (_instance != nullptr)
+    {
+        delete _instance;
+    }
+}; // end dctor
+
+void LineFollowerTask::_vLineFollowerTask(void *pvParameters)
 {
     // initialize peripherals neccessary for line follower
     Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
@@ -48,10 +89,6 @@ void vLineFollowerTask(void *pvParameters)
 
     // int safety button
     DigitalInput safetyButton = DigitalInput(DIN_4);
-
-    // get queues
-    QueueHandle_t xLineFollwerQueue = getLineFollowerTaskQueue();
-    QueueHandle_t xDispatcherQueue = getDispatcherTaskQueue();
 
     // Flags
     uint32_t flags = 0;
@@ -68,10 +105,10 @@ void vLineFollowerTask(void *pvParameters)
     // loop forever
     for (;;)
     {
-        if (uxQueueMessagesWaiting(xLineFollwerQueue) > 0)
+        if (uxQueueMessagesWaiting(_lineFollowerQueue) > 0)
         {
             dispatcherMessage_t message;
-            xQueueReceive(xLineFollwerQueue, &message, pdMS_TO_TICKS(10));
+            xQueueReceive(_lineFollowerQueue, &message, pdMS_TO_TICKS(10));
 
             if (message.recieverTaskId != TASKID_LINE_FOLLOWER_TASK)
             {
@@ -120,7 +157,7 @@ void vLineFollowerTask(void *pvParameters)
                                             message.senderTaskId,
                                             COMMAND_GET_STATUSFLAGS,
                                             (uint32_t)flags);
-                xQueueSend(xDispatcherQueue, &response, 0);
+                xQueueSend(_dispatcherQueue, &response, 0);
                 break;
 
             default:
@@ -147,7 +184,7 @@ void vLineFollowerTask(void *pvParameters)
         // ------- stm line follower -------
         if ((flags & MOTOR_RUNNING) && (flags & LINE_FOLLOWER_MODE))
         {
-            followLine(&driver0,
+            _followLine(&driver0,
                        &driver1,
                        &lineSensor,
                        &flags);
@@ -165,7 +202,7 @@ void vLineFollowerTask(void *pvParameters)
                                             TASKID_RASPBERRY_HAT_COM_TASK,
                                             COMMAND_SEND_WARNING, // TODO: change command to Info
                                             (uint32_t)flags);
-                xQueueSend(xDispatcherQueue, &response, 0);
+                xQueueSend(_dispatcherQueue, &response, 0);
             }
         }
 
@@ -182,19 +219,20 @@ void vLineFollowerTask(void *pvParameters)
                                                             TASKID_RASPBERRY_HAT_COM_TASK,
                                                             COMMAND_SEND_WARNING,
                                                             (uint32_t)flags);
+            xQueueSend(_dispatcherQueue, &response, 0);
         }
 
         /// ------- stm stop drives -------
         if (!(flags & MOTOR_RUNNING))
         {
-            stopDrives(&driver0, &driver1, &flags);
+            _stopDrives(&driver0, &driver1, &flags);
         }
 
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 } // end vLineFollowerTask
 
-void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint32_t *flags)
+void LineFollowerTask::_followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint32_t *flags)
 {
     // init vars
     bool speedMode = (*flags & RUNMODE_SLOW) ? true : false;
@@ -244,7 +282,7 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
 
     // calc control variable
     int32_t u = 0;
-    u = ControllerC(e);
+    u = _controllerC(e);
 
     // set Motor values (Process P)
     if (!speedMode)
@@ -263,7 +301,7 @@ void followLine(Tmc5240 *Driver0, Tmc5240 *Driver1, LineSensor *lineSensor, uint
     Driver1->moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
 } // end followLine
 
-int32_t ControllerC(int8_t e)
+int32_t LineFollowerTask::_controllerC(int8_t e)
 {
 #if LINEFOLLERCONFIG_USE_P_CONTROLLER == 1
     // P-Type Controller
@@ -273,7 +311,7 @@ int32_t ControllerC(int8_t e)
     return u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
 } // end Control
 
-void stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags)
+void LineFollowerTask::_stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags)
 {
     // check if stop command is already sent
     uint32_t vmax0 = Driver0->getVmax();
@@ -287,3 +325,8 @@ void stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t *flags)
 
     return;
 } // end stop Drives
+
+QueueHandle_t LineFollowerTask::getQueue()
+{
+    return _lineFollowerQueue;
+}
