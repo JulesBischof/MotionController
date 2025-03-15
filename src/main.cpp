@@ -8,8 +8,8 @@
 
 #include "MotionControllerInit.hpp"
 
-#include "vMessageDispatcherTask.hpp"
-#include "vLineFollowerTask.hpp"
+#include "MessageDispatcherTask.hpp"
+#include "LineFollowerTask.hpp"
 
 int main()
 {

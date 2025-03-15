@@ -1,4 +1,4 @@
-#include "digitalInput.hpp"
+#include "DigitalInput.hpp"
 
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"

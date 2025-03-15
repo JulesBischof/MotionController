@@ -3,6 +3,7 @@
 
 #include "Tmc5240.hpp"
 #include "LineSensor.hpp"
+#include "DigitalInput.hpp"
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -17,6 +18,15 @@ private:
     static TaskHandle_t _taskHandle;
     static QueueHandle_t _dispatcherQueue, _lineFollowerQueue;
 
+    static uint32_t _statusFlags;
+
+    static Tmc5240 *_driver0;
+    static Tmc5240 *_driver1;
+
+    static Tla2528 *_adc;
+    static LineSensor *_lineSensor;
+    static DigitalInput *_safetyButton;
+
     static void _initDevices();
 
     static void _followLine();
@@ -24,19 +34,11 @@ private:
     static void _stopDrives();
     static void _run(void *pvParameters);
 
-    static uint32_t _statusFlags;
-
-    static Tmc5240 _driver0, _driver1;
-
-    static Tla2528 _adc;
-    static LineSensor _lineSensor;
-    static DigitalInput _safetyButton;
-
 public:
     ~LineFollowerTask();
     // singleton
     static LineFollowerTask getInstance(QueueHandle_t *dispatcherQueue);
-    
+
     static QueueHandle_t getQueue();
     static TaskHandle_t getTaskHandle();
 };

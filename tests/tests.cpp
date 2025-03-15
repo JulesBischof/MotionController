@@ -102,8 +102,6 @@ void i2cBroadcast(void)
 // entry point for tests
 void testApp(void)
 {
-        // init queues
-        vInitQueues();
         // create test-task - some Devices depend on running inside a task
         xTaskCreate(testTask, "TestTask", 2048, NULL, 1, NULL);
         // start scheduler

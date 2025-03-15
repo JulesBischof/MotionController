@@ -6,7 +6,7 @@
 
 #include "queues.hpp"
 
-#include "digitalInput.hpp"
+#include "DigitalInput.hpp"
 #include "Tla2528.hpp"
 
 #include <stdio.h>
@@ -16,10 +16,17 @@
 /*         static Members            */
 /* ================================= */
 
-LineFollowerTask *LineFollowerTask::_instance = nullptr;
-TaskHandle_t LineFollowerTask::_taskHandle = nullptr;
-QueueHandle_t LineFollowerTask::_dispatcherQueue = nullptr;
-QueueHandle_t LineFollowerTask::_lineFollowerQueue = nullptr;
+LineFollowerTask *LineFollowerTask::_instance;
+TaskHandle_t LineFollowerTask::_taskHandle;
+QueueHandle_t LineFollowerTask::_dispatcherQueue;
+QueueHandle_t LineFollowerTask::_lineFollowerQueue;
+uint32_t LineFollowerTask::_statusFlags = 0;
+
+Tmc5240* LineFollowerTask::_driver0;
+Tmc5240* LineFollowerTask::_driver1;
+Tla2528* LineFollowerTask::_adc;
+LineSensor* LineFollowerTask::_lineSensor;
+DigitalInput* LineFollowerTask::_safetyButton;
 
 /* ================================= */
 /*           status Flags            */
@@ -68,6 +75,12 @@ LineFollowerTask::~LineFollowerTask()
 {
     if (_instance != nullptr)
     {
+        // delete memory of static member objects
+        delete _driver0;
+        delete _driver1;
+        delete _adc;
+        delete _lineSensor;
+        delete _safetyButton;
         delete _instance;
     }
 }; // end dctor
@@ -75,10 +88,10 @@ LineFollowerTask::~LineFollowerTask()
 void LineFollowerTask::_run(void *pvParameters)
 {
     // Variables
-    int32_t X_ACTUAL_startValueDriver0 = _driver0.getXActual();
+    int32_t X_ACTUAL_startValueDriver0 = _driver0->getXActual();
     int32_t drivenDistanceDriver0 = 0;
 
-    int32_t X_ACTUAL_startValueDriver1 = _driver1.getXActual();
+    int32_t X_ACTUAL_startValueDriver1 = _driver1->getXActual();
     int32_t drivenDistanceDriver1 = 0;
 
     uint32_t maxDistance = 0;
@@ -110,8 +123,8 @@ void LineFollowerTask::_run(void *pvParameters)
                 _statusFlags |= LINE_FOLLOWER_MODE;
                 _statusFlags |= MOTOR_RUNNING;
 
-                X_ACTUAL_startValueDriver0 = _driver0.getXActual();
-                X_ACTUAL_startValueDriver1 = _driver1.getXActual();
+                X_ACTUAL_startValueDriver0 = _driver0->getXActual();
+                X_ACTUAL_startValueDriver1 = _driver1->getXActual();
                 break;
 
             case COMMAND_STOP:
@@ -148,7 +161,7 @@ void LineFollowerTask::_run(void *pvParameters)
         } // end of message handling
 
         /// ------- stm check safetybutton -------
-        if (!_safetyButton.getValue())
+        if (!_safetyButton->getValue())
         {
             _statusFlags &= ~MOTOR_RUNNING;
             _statusFlags | SAFETY_BUTTON_PRESSED;
@@ -167,8 +180,8 @@ void LineFollowerTask::_run(void *pvParameters)
         {
             _followLine();
 
-            drivenDistanceDriver0 = _driver0.getXActual();
-            drivenDistanceDriver1 = _driver0.getXActual();
+            drivenDistanceDriver0 = _driver0->getXActual();
+            drivenDistanceDriver1 = _driver0->getXActual();
 
             // maxdistance reached - send Info to RaspberryHAT
             if (drivenDistanceDriver0 > maxDistance || drivenDistanceDriver1 > maxDistance)
@@ -214,15 +227,15 @@ void LineFollowerTask::_run(void *pvParameters)
 void LineFollowerTask::_initDevices()
 {
     // initialize peripherals neccessary for line follower
-    _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
-    _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
+    _driver0 = new Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+    _driver1 = new Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
 
     // init adc device and line Sensor
-    _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
-    _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
+    _adc = new Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
+    _lineSensor = new LineSensor(_adc, UV_LED_GPIO);
 
     // int safety button
-    _safetyButton = DigitalInput(DIN_4);
+    _safetyButton = new DigitalInput(DIN_4);
 }
 
 void LineFollowerTask::_followLine()
@@ -234,16 +247,14 @@ void LineFollowerTask::_followLine()
     int32_t v2 = 0;
 
     // get Sensor values
-    int8_t y = _lineSensor.getLinePosition();
-
 #if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
-    int8_t y = lineSensor->getLinePosition();
+    int8_t y = lineSensor.getLinePosition();
 #else
-    uint16_t y = _lineSensor.getLinePositionAnalog();
+    uint16_t y = _lineSensor->getLinePositionAnalog();
 #endif
 
     // check for LineSensor events
-    if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
+    if (_lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
     {
         _statusFlags |= CROSSPOINT_DETECTED;
         _statusFlags & ~MOTOR_RUNNING;
@@ -252,7 +263,7 @@ void LineFollowerTask::_followLine()
         printf("LINESENSOR detected Crosspoint \n");
         return;
     }
-    if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
+    if (_lineSensor->getStatus() & LINESENSOR_NO_LINE)
     {
         _statusFlags |= LOST_LINE;
         _statusFlags & ~MOTOR_RUNNING;
@@ -290,8 +301,8 @@ void LineFollowerTask::_followLine()
     }
 
     // set Motor values
-    _driver0.moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-    _driver1.moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+    _driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+    _driver1->moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
 } // end followLine
 
 int32_t LineFollowerTask::_controllerC(int8_t e)
@@ -307,13 +318,13 @@ int32_t LineFollowerTask::_controllerC(int8_t e)
 void LineFollowerTask::_stopDrives()
 {
     // check if stop command is already sent
-    uint32_t vmax0 = _driver0.getVmax();
-    uint32_t vmax1 = _driver1.getVmax();
+    uint32_t vmax0 = _driver0->getVmax();
+    uint32_t vmax1 = _driver1->getVmax();
 
     if (vmax0 != 0 || vmax1 != 0)
     {
-        _driver0.moveVelocityMode(1, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-        _driver1.moveVelocityMode(0, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver0->moveVelocityMode(1, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver1->moveVelocityMode(0, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     }
 
     return;
