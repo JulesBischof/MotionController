@@ -1,6 +1,6 @@
-#include "vLineFollowerTaskTest.h"
+#include "LineFollowerTaskTest.h"
 
-#include "vLineFollowerTask.hpp"
+#include "LineFollowerTask.hpp"
 #include <stdio.h>
 
 #include "queues.hpp"
@@ -9,10 +9,9 @@ void vLineFollowerTaskTest()
 {
     // create queues
     QueueHandle_t dispatcherQueue = xQueueCreate(100, sizeof(dispatcherMessage_t));
-    QueueHandle_t lineFollowerQueue = xQueueCreate(10, sizeof(dispatcherMessage_t));
 
     // create LineFollowerTask instance
-    LineFollowerTask lineFollower = LineFollowerTask::getInstance(&dispatcherQueue, &lineFollowerQueue);
+    LineFollowerTask lineFollower = LineFollowerTask::getInstance(&dispatcherQueue);
 
     while (1)
     {

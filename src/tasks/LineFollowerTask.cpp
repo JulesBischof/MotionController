@@ -1,4 +1,4 @@
-#include "vLineFollowerTask.hpp"
+#include "LineFollowerTask.hpp"
 
 #include "MotionControllerPinning.h"
 #include "MotionControllerConfig.h"
@@ -41,26 +41,30 @@ typedef enum RunModeFlag_t
     SAFETY_BUTTON_PRESSED = 1 << 11
 } RunModeFlag_t;
 
+/* ================================= */
+/*           Definition              */
+/* ================================= */
+
 /// @brief creates an instance of LineFollower Task and creates Linefollower Task
 /// @param dispatcherQueue queue message dispatcher
 /// @param lineFollowerQueue queue line follower queue
-LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue, QueueHandle_t *lineFollowerQueue)
+LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue)
 {
     _dispatcherQueue = *dispatcherQueue;
-    _lineFollowerQueue = *lineFollowerQueue;
 
-    xTaskCreate(_vLineFollowerTask, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
+    _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
+    xTaskCreate(_run, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
 } // end ctor
 
 /// @brief signleton pattern
 /// @param dispatcherQueue Queue of dispatcher Task
 /// @param lineFollowerQueue Queue of LineFollower Task
 /// @return instance of LineFollowerTask
-LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *dispatcherQueue, QueueHandle_t *lineFollowerQueue)
+LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *dispatcherQueue)
 {
     if (_instance == nullptr)
     {
-        _instance = new LineFollowerTask(dispatcherQueue, lineFollowerQueue);
+        _instance = new LineFollowerTask(dispatcherQueue);
     }
     return *_instance;
 }
@@ -77,7 +81,7 @@ LineFollowerTask::~LineFollowerTask()
     }
 }; // end dctor
 
-void LineFollowerTask::_vLineFollowerTask(void *pvParameters)
+void LineFollowerTask::_run(void *pvParameters)
 {
     // initialize peripherals neccessary for line follower
     Tmc5240 driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
@@ -329,4 +333,9 @@ void LineFollowerTask::_stopDrives(Tmc5240 *Driver0, Tmc5240 *Driver1, uint32_t 
 QueueHandle_t LineFollowerTask::getQueue()
 {
     return _lineFollowerQueue;
+}
+
+TaskHandle_t LineFollowerTask::getTaskHandle()
+{
+    return _taskHandle;
 }

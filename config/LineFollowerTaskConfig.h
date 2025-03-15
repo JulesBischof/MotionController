@@ -10,6 +10,7 @@
 #define LINEFOLLOWERCONFIG_STACKSIZE (1024)
 #define LINEFOLLOWERCONFIG_PRIORITY (1)
 
+#define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (10)
 
 /* ==============================================================
 
@@ -18,6 +19,7 @@
 ============================================================== */
 
 #define LINEFOLLERCONFIG_USE_P_CONTROLLER (1)
+
 #define LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR (0)
 
 /* ==============================================================
