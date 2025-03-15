@@ -20,7 +20,7 @@ LineFollowerTask *LineFollowerTask::_instance;
 TaskHandle_t LineFollowerTask::_taskHandle;
 QueueHandle_t LineFollowerTask::_dispatcherQueue;
 QueueHandle_t LineFollowerTask::_lineFollowerQueue;
-uint32_t LineFollowerTask::_statusFlags = 0;
+uint32_t LineFollowerTask::_statusFlags;
 
 Tmc5240* LineFollowerTask::_driver0;
 Tmc5240* LineFollowerTask::_driver1;
@@ -67,10 +67,6 @@ LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue)
     xTaskCreate(_run, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
 } // end ctor
 
-#define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
-#define LINEFOLLOWERCONFIG_STACKSIZE (1024)
-#define LINEFOLLOWERCONFIG_PRIORITY (1)
-
 LineFollowerTask::~LineFollowerTask()
 {
     if (_instance != nullptr)
@@ -114,7 +110,7 @@ void LineFollowerTask::_run(void *pvParameters)
 
             switch (message.command)
             {
-            case COMMAND_FOLLOW_LINE:
+            case COMMAND_MOVE:
                 _statusFlags &= ~TURN_MODE;
                 _statusFlags &= ~MAXDISTANCE_REACHED;
                 _statusFlags &= ~RUNMODE_SLOW;
@@ -138,18 +134,18 @@ void LineFollowerTask::_run(void *pvParameters)
                 // TODO: TURN void turnRobot(float angle);
                 break;
 
-            case COMMAND_GET_DISTANCE:
+            case COMMAND_POLL_DISTANCE:
                 // TODO
                 break;
 
-            case COMMAND_GET_LINE_POSITION:
+            case COMMAND_POLL_LINE_POSITION:
                 // TODO
                 break;
 
-            case COMMAND_GET_STATUSFLAGS:
+            case COMMAND_POLL_STATUSFLAGS:
                 response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                             message.senderTaskId,
-                                            COMMAND_GET_STATUSFLAGS,
+                                            COMMAND_POLL_STATUSFLAGS,
                                             (uint32_t)_statusFlags);
                 xQueueSend(_dispatcherQueue, &response, 0);
                 break;
@@ -191,7 +187,7 @@ void LineFollowerTask::_run(void *pvParameters)
                 dispatcherMessage_t response;
                 response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                             TASKID_RASPBERRY_HAT_COM_TASK,
-                                            COMMAND_SEND_WARNING, // TODO: change command to Info
+                                            COMMAND_INFO, // TODO: change command to Info
                                             (uint32_t)_statusFlags);
                 xQueueSend(_dispatcherQueue, &response, 0);
             }
@@ -208,7 +204,7 @@ void LineFollowerTask::_run(void *pvParameters)
         {
             dispatcherMessage_t response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                                             TASKID_RASPBERRY_HAT_COM_TASK,
-                                                            COMMAND_SEND_WARNING,
+                                                            COMMAND_INFO,
                                                             (uint32_t)_statusFlags);
             xQueueSend(_dispatcherQueue, &response, 0);
         }

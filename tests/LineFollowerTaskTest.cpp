@@ -19,7 +19,7 @@ void vLineFollowerTaskTest()
         dispatcherMessage_t message;
         message.senderTaskId = TASKID_DISPATCHER_TASK;
         message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
-        message.command = COMMAND_FOLLOW_LINE;
+        message.command = COMMAND_MOVE;
         message.data = 0;
 
         // send msg to queue

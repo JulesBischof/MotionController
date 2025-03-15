@@ -18,6 +18,8 @@ private:
 
     static void _run(void* pvParameters);
 
+    static void sendUartMsg(frame *data);
+
 public:
     ~RaspberryHatComTask();
 
