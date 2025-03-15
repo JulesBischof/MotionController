@@ -332,6 +332,10 @@ void LineFollowerTask::_stopDrives()
     return;
 } // end stop Drives
 
+/* ================================= */
+/*              getters              */
+/* ================================= */
+
 QueueHandle_t LineFollowerTask::getQueue()
 {
     return _lineFollowerQueue;

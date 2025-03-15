@@ -36,6 +36,7 @@ public:
     ~LineFollowerTask();
     // singleton
     static LineFollowerTask getInstance(QueueHandle_t *dispatcherQueue);
+    
     static QueueHandle_t getQueue();
     static TaskHandle_t getTaskHandle();
 };
