@@ -10,6 +10,7 @@
 
 typedef enum dispatcherTaskId_t
 {
+    TASKID_DEFAULT_NOTASK,
     TASKID_DISPATCHER_TASK,
     TASKID_LINE_FOLLOWER_TASK,
     TASKID_RASPBERRY_HAT_COM_TASK,
@@ -20,6 +21,7 @@ dispatcherTaskId_t;
 typedef enum taskCommand_t
 {
     COMMAND_MOVE,
+    COMMAND_REVERSE,
     COMMAND_TURN,
     COMMAND_STOP,
     COMMAND_INFO,
@@ -27,9 +29,10 @@ typedef enum taskCommand_t
     COMMAND_PONG,
     COMMAND_ERROR,
     COMMAND_POLL_DISTANCE,
-    COMMAND_POLL_LINE_POSITION,
-    COMMAND_POLL_ANGLE,
+    COMMAND_POLL_LINE_SENSOR,
+    COMMAND_POLL_DEGREE,
     COMMAND_POLL_STATUSFLAGS,
+    COMMAND_HAND_THROUGH_MESSAGE,
 } taskCommand_t;
 
 typedef struct dispatcherMessage_t
@@ -37,7 +40,7 @@ typedef struct dispatcherMessage_t
     dispatcherTaskId_t senderTaskId;
     dispatcherTaskId_t recieverTaskId;
     taskCommand_t command;
-    uint32_t data;
+    uint64_t data;
 } dispatcherMessage_t;
 
 /* -------------------------------------------------- */

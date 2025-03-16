@@ -138,7 +138,7 @@ void LineFollowerTask::_run(void *pvParameters)
                 // TODO
                 break;
 
-            case COMMAND_POLL_LINE_POSITION:
+            case COMMAND_POLL_LINE_SENSOR:
                 // TODO
                 break;
 

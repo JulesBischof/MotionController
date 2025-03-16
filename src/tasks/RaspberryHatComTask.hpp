@@ -5,6 +5,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "semphr.h"
 
 class RaspberryHatComTask
 {
@@ -15,10 +16,16 @@ private:
 
     static TaskHandle_t _taskHandle;
     static QueueHandle_t _dispatcherQueue, _raspberryHatComQueue;
+    static xSemaphoreHandle _uartRxSemaphore;
 
     static void _run(void* pvParameters);
 
+    static dispatcherMessage_t _getUartMsg();
+
     static void sendUartMsg(frame *data);
+    static void _uartFlushTxWithTimeout(uart_inst_t *uart, uint32_t timeout_ms);
+
+    static void _uartRxIrqHandler();
 
 public:
     ~RaspberryHatComTask();
