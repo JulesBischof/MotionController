@@ -27,11 +27,11 @@
                    set Controller Parameter
 
 ============================================================== */
-#define LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P (1000)
+#define LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P (1)
 #define LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL (0)
 #define LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG (3500)
 
-#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (4) 
+#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (30) 
 
 /* ==============================================================
 

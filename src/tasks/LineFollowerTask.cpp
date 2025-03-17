@@ -33,8 +33,8 @@ DigitalInput *LineFollowerTask::_safetyButton;
 /*           status Flags            */
 /* ================================= */
 
-constexpr uint32_t RUNMODEFLAG_T_EVENTFLAGS_BITMASK(0xFFFF0000);
-constexpr uint32_t RUNMODEFLAG_T_STATUSFLAGS_BITMASK(0x0000FFFF);
+constexpr uint32_t RUNMODEFLAG_T_UPPER_BITMASK(0xFFFF0000);
+constexpr uint32_t RUNMODEFLAG_T_LOWER_BITMASK(0x0000FFFF);
 
 typedef enum RunModeFlag_t
 {
@@ -133,24 +133,24 @@ void LineFollowerTask::_run(void *pvParameters)
                 if (message.data == 0)
                 {
                     maxDistance = 0; // TODO: 2m in usteps
-                    _statusFlags = STM_LINEFOLLOWER_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                    _statusFlags = STM_LINEFOLLOWER_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 }
 
                 // move in Position Mode
                 if (message.data != 0)
                 {
                     maxDistance = Tmc5240::meterToUStepsConversion(message.data) / 1e2; // 1e2 due to distance gets send in cm to avoid floats in protocoll
-                    _statusFlags = STM_MOVE_POSITIONMODE_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                    _statusFlags = STM_MOVE_POSITIONMODE_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 }
                 break;
 
             case COMMAND_STOP:
-                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 break;
 
             case COMMAND_TURN:
                 _statusFlags &= ~POSITION_REACHED;
-                _statusFlags = STM_TURNROBOT_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                _statusFlags = STM_TURNROBOT_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 break;
 
             case COMMAND_POLL_DISTANCE:
@@ -201,7 +201,7 @@ void LineFollowerTask::_run(void *pvParameters)
             if ((maxDistance != 0 && drivenDistanceDriver0 > maxDistance) ||
                 (maxDistance != 0 && drivenDistanceDriver1 > maxDistance))
             {
-                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 _statusFlags |= POSITION_REACHED;
             }
         }
@@ -217,7 +217,7 @@ void LineFollowerTask::_run(void *pvParameters)
 
             if (_checkForStandstill())
             {
-                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 _statusFlags |= POSITION_REACHED;
             }
         }
@@ -229,13 +229,13 @@ void LineFollowerTask::_run(void *pvParameters)
 
             if (_checkForStandstill())
             {
-                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+                _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 _statusFlags |= POSITION_REACHED;
             }
         }
 
         /// ------- stm check and send info flags -------
-        if (_statusFlags & RUNMODEFLAG_T_EVENTFLAGS_BITMASK)
+        if (_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK)
         { 
             dispatcherMessage_t response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                                             TASKID_RASPBERRY_HAT_COM_TASK,
@@ -323,7 +323,7 @@ void LineFollowerTask::_followLine()
     if (_lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
     {
         _statusFlags |= CROSSPOINT_DETECTED;
-        _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+        _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
 
         printf("LINESENSOR detected Crosspoint \n");
         return;
@@ -331,7 +331,7 @@ void LineFollowerTask::_followLine()
     if (_lineSensor->getStatus() & LINESENSOR_NO_LINE)
     {
         _statusFlags |= LOST_LINE;
-        _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
+        _statusFlags = STM_STOPMOTOR_BITSET | (_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
 
         printf("LINESENSOR lost Line \n");
         return;
@@ -376,7 +376,8 @@ int32_t LineFollowerTask::_controllerC(int8_t e)
     int32_t u = 0; // default 0
     u = e * LINEFOLLERCONFIG_CONTROLLERVALUE_KP;
 #endif
-    return u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
+    int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
+    return retVal;
 } // end Control
 
 void LineFollowerTask::_stopDrives()
