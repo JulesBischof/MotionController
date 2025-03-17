@@ -165,7 +165,7 @@ void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_
 
     // set new target position
     int32_t xTargetVal = xActualVal + targexPos;
-    _spiWriteReg(TMC5240_XTARGET, xTargetVal);
+    moveAbsolutePositionMode(xTargetVal, vmax, amax);
 
     return;
 }
