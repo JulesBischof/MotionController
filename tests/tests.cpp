@@ -37,7 +37,7 @@ void testTask(void *pvParameters)
 #endif
 #if TEST_VLINEFOLLOWERTASK == 1
                 printf("Running vLineFollowerTask Test...\n");
-                vLineFollowerTaskTest();
+                LineFollowerTaskTest();
 #endif
                 printf("Tests done - LOOP \n");
                 vTaskDelay(pdMS_TO_TICKS(1000));
@@ -106,7 +106,6 @@ void testApp(void)
         xTaskCreate(testTask, "TestTask", 2048, NULL, 1, NULL);
         // start scheduler
         vTaskStartScheduler();
-        // never reached
         while (1)
                 ;
         return;

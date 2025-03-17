@@ -10,7 +10,7 @@ MessageDispatcherTask *MessageDispatcherTask::_instance;
 TaskHandle_t MessageDispatcherTask::_taskHandle;
 QueueHandle_t MessageDispatcherTask::_dispatcherQueue;
 QueueHandle_t MessageDispatcherTask::_lineFollowerQueue;
-QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
+// QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
 uint16_t MessageDispatcherTask::_statusFlags;
 
 /* ================================= */
@@ -53,7 +53,7 @@ void MessageDispatcherTask::_run(void *pvParameters)
                 xQueueSend(_lineFollowerQueue, &message, 0);
                 break;
             case (TASKID_RASPBERRY_HAT_COM_TASK):
-                xQueueSend(_raspberryHatComQueue, &message, 0);
+                // xQueueSend(_raspberryHatComQueue, &message, 0);
                 break;
             case (TASKID_GRIPCONTROLLER_COM_TASK):
                 // xQueueSend(_gripControllerComQueue, &message, 0);
@@ -92,17 +92,17 @@ MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t *lineFoll
     return *_instance;
 }
 
-QueueHandle_t MessageDispatcherTask::initQueue()
+QueueHandle_t* MessageDispatcherTask::initQueue()
 {
     _dispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
-    return _dispatcherQueue;
+    return &_dispatcherQueue;
 }
 
 /// @brief getter to MessageDispatcherTask queue
 /// @return QueueHandle to MessageDispatcherTask queue
-QueueHandle_t MessageDispatcherTask::getQueue()
+QueueHandle_t *MessageDispatcherTask::getQueue()
 {
-    return _dispatcherQueue;
+    return &_dispatcherQueue;
 }
 
 /// @brief getter to MessageDispatcherTask Handle

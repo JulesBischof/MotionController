@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # Initialise pico_sdk from installed location
@@ -54,7 +57,7 @@ add_subdirectory(tests)
 # ====== prain Uart =======
 
 # add header files
-# add_subdirectory(lib/prain_uart)
+add_subdirectory(lib/prain_uart)
 # =========================
 
 # file to the "lib" directory

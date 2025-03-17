@@ -24,8 +24,8 @@ public:
 
     // singleton
     static MessageDispatcherTask getInstance(QueueHandle_t *lineFollowerQueue);
-    static QueueHandle_t initQueue();
-    static QueueHandle_t getQueue();
+    static QueueHandle_t *initQueue();
+    static QueueHandle_t *getQueue();
     static TaskHandle_t getTaskHandle();
 };
 

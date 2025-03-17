@@ -8,6 +8,7 @@
 
 #include "MotionControllerInit.hpp"
 
+#include "RaspberryHatComTask.hpp"
 #include "MessageDispatcherTask.hpp"
 #include "LineFollowerTask.hpp"
 
@@ -24,11 +25,10 @@ int main()
     // -------------- init Tasks ---------------
 
     // first set dispatcher queue
-    QueueHandle_t messageDispatcherQueue = MessageDispatcherTask::initQueue();
+    QueueHandle_t *messageDispatcherQueue = MessageDispatcherTask::initQueue();
 
     // create task istances
-
-    LineFollowerTask lineFollowerTask = LineFollowerTask::getInstance(&messageDispatcherQueue);
+    LineFollowerTask lineFollowerTask = LineFollowerTask::getInstance(messageDispatcherQueue);
     QueueHandle_t lineFollowerQueue = lineFollowerTask.getQueue();
 
     // last of all -create dispatcher instance

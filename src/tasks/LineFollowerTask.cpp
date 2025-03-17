@@ -191,11 +191,11 @@ void LineFollowerTask::_run(void *pvParameters)
         // TODO: check distance
 
         // ------- stm line follower -------
-        if (_statusFlags & STM_LINEFOLLOWER_BITSET)
+        if ((_statusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
         {
             _followLine();
             drivenDistanceDriver0 = _driver0->getXActual() - X_ACTUAL_startValueDriver0;
-            drivenDistanceDriver1 = _driver0->getXActual() - X_ACTUAL_startValueDriver1;
+            drivenDistanceDriver1 = _driver1->getXActual() - X_ACTUAL_startValueDriver1;
 
             // maxdistance reached - send Info to RaspberryHAT
             if ((maxDistance != 0 && drivenDistanceDriver0 > maxDistance) ||
@@ -207,7 +207,7 @@ void LineFollowerTask::_run(void *pvParameters)
         }
 
         // ------- stm move Positionmode -------
-        if (_statusFlags & STM_MOVE_POSITIONMODE_BITSET)
+        if ((_statusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
         {
             if (!(_statusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
             {
@@ -223,7 +223,7 @@ void LineFollowerTask::_run(void *pvParameters)
         }
 
         /// ------- stm turn vehicle -------
-        if (_statusFlags & STM_TURNROBOT_BITSET)
+        if ((_statusFlags & STM_TURNROBOT_BITSET) == STM_TURNROBOT_BITSET)
         {
             _turnRobot(message.data);
 

@@ -40,6 +40,9 @@
 
 // ## LineFollowerTask ##
 #define TEST_VLINEFOLLOWERTASK (1)
-
+#define TEST_SENDMESSAGE_VIA_DISPATCHER (1)
+#define TEST_FOLLOW_LINE (1)
+#define TEST_TURN (0)
+#define TEST_POSITIONMODE (0)
 
 #endif // TESTCONFIG_H

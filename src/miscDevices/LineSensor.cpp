@@ -106,13 +106,15 @@ uint32_t LineSensor::getLinePositionAnalog()
 
     uint8_t lineCounter = 0;
 
+    volatile uint16_t normValues[NUMBER_OF_CELLS] = {0};
+
     // normalize and invert ADC values 
     // invert values due to sensor is low active
-    for (size_t i = 0; i > NUMBER_OF_CELLS; i++)
+    for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
-        adcValues[i] = LINESENSOR_NORMALIZE_REFERENCE_HIGH - _minMaxNormalize(adcValues[i], _calibValuesLow[i], _calibValuesHigh[i]);
-        
-        if (adcValues[i] > LINESENSOR_LINE_DETECTED_NORMLIZED) // bigger then due to values were invertet right before
+        normValues[i] = _minMaxNormalize(adcValues[i], _calibValuesLow[i], _calibValuesHigh[i]);
+        normValues[i] = 1000 - normValues[i];
+        if (normValues[i] > LINESENSOR_LINE_DETECTED_NORMLIZED) // bigger then due to values were invertet right before
         {
             lineCounter++;
         }
@@ -140,8 +142,8 @@ uint32_t LineSensor::getLinePositionAnalog()
     uint32_t denumerator = 0;
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
     {
-        numerator += adcValues[i] * i * LINEPOSITION_ANALOG_SCALEFACTOR;
-        denumerator += adcValues[i];
+        numerator += normValues[i] * i * LINEPOSITION_ANALOG_SCALEFACTOR;
+        denumerator += normValues[i];
     }
 
     if (!denumerator)
@@ -170,9 +172,27 @@ uint16_t LineSensor::_minMaxNormalize(uint16_t val, uint16_t calibMin, uint16_t 
     if (calibMax <= calibMin)
     {
         printf("ERROR - wrong calibration! _minMaxNormalize \n");
-        return 0; // wrong calibration
+        return 0;
     }
-    return (uint16_t(val - calibMin) * LINESENSOR_NORMALIZE_REFERENCE_HIGH) / (calibMax - calibMin);
+
+    double val_d = static_cast<double>(val);
+    double calibMin_d = static_cast<double>(calibMin);
+    double calibMax_d = static_cast<double>(calibMax);
+
+    double normalized = ((val_d - calibMin_d) / (calibMax_d - calibMin_d)) * static_cast<double>(LINESENSOR_NORMALIZE_REFERENCE_HIGH);
+
+    if (normalized >= LINESENSOR_NORMALIZE_REFERENCE_HIGH)
+    {
+        normalized = LINESENSOR_NORMALIZE_REFERENCE_HIGH;
+    }
+
+    if (normalized <= 0)
+    {
+        normalized = 0;
+    }
+
+    uint16_t retVal = static_cast<uint16_t>(normalized);
+    return retVal;
 }
 
 /// @brief toggles UV-Transmitter due to safety reasons
