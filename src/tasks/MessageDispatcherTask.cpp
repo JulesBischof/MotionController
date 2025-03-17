@@ -2,17 +2,29 @@
 
 #include "MessageDispatcherTaskConfig.h"
 
+/* ================================= */
+/*         static Members            */
+/* ================================= */
+MessageDispatcherTask *MessageDispatcherTask::_instance;
+
+TaskHandle_t MessageDispatcherTask::_taskHandle;
+QueueHandle_t MessageDispatcherTask::_dispatcherQueue;
+QueueHandle_t MessageDispatcherTask::_lineFollowerQueue;
+QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
+uint16_t MessageDispatcherTask::_statusFlags;
+
+/* ================================= */
+/*           Definitions             */
+/* ================================= */
+
 /// @brief creates instance of MessageDispatcherTask - private due to singleton pattern
 /// @param lineFollowerQueue QueueHandle of LineFollowerTask
 /// @param raspberryComQueue QueueHandle of RaspberryComTask
 /// @param gripControllerComQueue QueueHandle of GripControllerComQueue
-MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t *lineFollowerQueue, QueueHandle_t *raspberryComQueue, QueueHandle_t *gripControllerComQueue)
+MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t *lineFollowerQueue)
 {
     _lineFollowerQueue = *lineFollowerQueue;
-    _raspberryHatComQueue = *raspberryComQueue;
-    _gripControllerComQueue = *gripControllerComQueue;
-
-    _dispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
+    // _gripControllerComQueue = *gripControllerComQueue;
 
     _statusFlags = 0;
 
@@ -44,7 +56,7 @@ void MessageDispatcherTask::_run(void *pvParameters)
                 xQueueSend(_raspberryHatComQueue, &message, 0);
                 break;
             case (TASKID_GRIPCONTROLLER_COM_TASK):
-                xQueueSend(_gripControllerComQueue, &message, 0);
+                // xQueueSend(_gripControllerComQueue, &message, 0);
                 break;
             default:
                 break;
@@ -71,13 +83,19 @@ MessageDispatcherTask::~MessageDispatcherTask()
 /// @param raspberryComQueue QueueHandle of RaspberryComTask
 /// @param gripControllerComQueue QueueHandle of GripControllerComQueue
 /// @return
-MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t *lineFollowerQueue, QueueHandle_t *raspberryComQueue, QueueHandle_t *gripControllerComQueue)
+MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t *lineFollowerQueue)
 {
     if (_instance == nullptr)
     {
-        _instance = new MessageDispatcherTask(lineFollowerQueue, raspberryComQueue, gripControllerComQueue);
+        _instance = new MessageDispatcherTask(lineFollowerQueue);
     }
     return *_instance;
+}
+
+QueueHandle_t MessageDispatcherTask::initQueue()
+{
+    _dispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
+    return _dispatcherQueue;
 }
 
 /// @brief getter to MessageDispatcherTask queue

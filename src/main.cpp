@@ -20,13 +20,19 @@ int main()
     testApp();
 #endif
 
-#if APP_MODE == 1
-    // -------------- init Queues ---------------
-    vInitQueues();
-
+#if APP_MODE == 0
     // -------------- init Tasks ---------------
-    // xTaskCreate(vMessageDispatcherTask, "QueueDispatcherTask", 1000, NULL, 1, NULL);
-    xTaskCreate(vLineFollowerTask, "LineFollowerTask", 1000, NULL, 1, NULL);
+
+    // first set dispatcher queue
+    QueueHandle_t messageDispatcherQueue = MessageDispatcherTask::initQueue();
+
+    // create task istances
+
+    LineFollowerTask lineFollowerTask = LineFollowerTask::getInstance(&messageDispatcherQueue);
+    QueueHandle_t lineFollowerQueue = lineFollowerTask.getQueue();
+
+    // last of all -create dispatcher instance
+    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(&lineFollowerQueue);
 
     // ------------ start scheduler --------------
     vTaskStartScheduler();

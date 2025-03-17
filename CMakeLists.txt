@@ -43,6 +43,9 @@ include(${FREERTOS_KERNEL_PATH}/portable/ThirdParty/GCC/RP2040/FreeRTOS_Kernel_i
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+# enable exceptions
+set(PICO_CXX_ENABLE_EXCEPTIONS 1)
+
 # Add subdirectories
 add_subdirectory(src)
 add_subdirectory(config)
@@ -50,15 +53,8 @@ add_subdirectory(tests)
 
 # ====== prain Uart =======
 
-# set path to .a library (build directory)
-set(PRAIN_UART_LIB ${CMAKE_CURRENT_SOURCE_DIR}/lib/prain_uart/build/libprain_uart.a)
-
-# link library to main executable
-target_link_libraries(MotionController PRIVATE ${PRAIN_UART_LIB})
-
 # add header files
-target_include_directories(MotionController PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib/prain_uart/include)
-
+# add_subdirectory(lib/prain_uart)
 # =========================
 
 # file to the "lib" directory

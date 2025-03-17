@@ -139,7 +139,7 @@ void LineFollowerTask::_run(void *pvParameters)
                 // move in Position Mode
                 if (message.data != 0)
                 {
-                    maxDistance = Tmc5240::meterToUStepsConversion(message.data / 1e2); // 1e2 due to distance gets send in cm to avoid floats in protocoll
+                    maxDistance = Tmc5240::meterToUStepsConversion(message.data) / 1e2; // 1e2 due to distance gets send in cm to avoid floats in protocoll
                     _statusFlags = STM_MOVE_POSITIONMODE_BITSET | (_statusFlags & RUNMODEFLAG_T_STATUSFLAGS_BITMASK);
                 }
                 break;
@@ -207,7 +207,7 @@ void LineFollowerTask::_run(void *pvParameters)
         }
 
         // ------- stm move Positionmode -------
-        if (_statusFlags & STM_MOVE_POSITIONMODE_BITSET | MOTOR_POSITIONMODE_REQUEST_SEND)
+        if (_statusFlags & STM_MOVE_POSITIONMODE_BITSET)
         {
             if (!(_statusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
             {
@@ -223,7 +223,7 @@ void LineFollowerTask::_run(void *pvParameters)
         }
 
         /// ------- stm turn vehicle -------
-        if ((_statusFlags & MOTOR_RUNNING) && (_statusFlags & TURN_MODE))
+        if (_statusFlags & STM_TURNROBOT_BITSET)
         {
             _turnRobot(message.data);
 
