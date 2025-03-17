@@ -29,7 +29,11 @@ private:
 
     static void _initDevices();
 
+    static bool _checkForStandstill();
+
     static void _followLine();
+    static void _turnRobot(uint32_t angle);
+    static void _movePositionMode(int32_t distance);
     static int32_t _controllerC(int8_t e);
     static void _stopDrives();
     static void _run(void *pvParameters);

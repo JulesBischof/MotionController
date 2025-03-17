@@ -201,19 +201,19 @@ void Tmc5240::toggleToff(bool val)
 /// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
 /// @param mps meter mer second value
 /// @return microsteps
-uint32_t Tmc5240::meterToUStepsConversion(float mps)
+int32_t Tmc5240::meterToUStepsConversion(float mps)
 {
     const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
     float usps = (mps / (1e3 * STEPPERCONFIG_WHEEL_DIAMETER_MM)) * microstepsPerRevolution;
-    return static_cast<uint32_t>(round(usps));
+    return static_cast<int32_t>(round(usps));
 }
 
 /// @brief convert degree to microsteps
 /// @param degrees float degrees
 /// @return 
-uint32_t Tmc5240::degreeToUStepsConversion(float degrees)
+int32_t Tmc5240::degreeToUStepsConversion(float degrees)
 {
     const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
     float usps = (degrees / 360.0f) * microstepsPerRevolution;
-    return static_cast<uint32_t>(round(usps));
+    return static_cast<int32_t>(round(usps));
 }
