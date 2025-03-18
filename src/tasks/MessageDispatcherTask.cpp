@@ -21,10 +21,11 @@ uint16_t MessageDispatcherTask::_statusFlags;
 /// @param lineFollowerQueue QueueHandle of LineFollowerTask
 /// @param raspberryComQueue QueueHandle of RaspberryComTask
 /// @param gripControllerComQueue QueueHandle of GripControllerComQueue
-MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue)
+MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryHatComQueue)
 {
     _lineFollowerQueue = lineFollowerQueue;
     _messageDispatcherQueue = messageDispatcherQueue;
+    _raspberryHatComQueue = raspberryHatComQueue;
     // _gripControllerComQueue = *gripControllerComQueue;
 
     _statusFlags = 0;
@@ -84,11 +85,11 @@ MessageDispatcherTask::~MessageDispatcherTask()
 /// @param raspberryComQueue QueueHandle of RaspberryComTask
 /// @param gripControllerComQueue QueueHandle of GripControllerComQueue
 /// @return
-MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue)
+MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryHatComQueue)
 {
     if (_instance == nullptr)
     {
-        _instance = new MessageDispatcherTask(messageDispatcherQueue, lineFollowerQueue);
+        _instance = new MessageDispatcherTask(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
     }
     return *_instance;
 }

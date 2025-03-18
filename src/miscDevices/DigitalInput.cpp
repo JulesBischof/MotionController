@@ -21,6 +21,10 @@ DigitalInput::DigitalInput(uint8_t gpio)
     }
 }
 
+DigitalInput::~DigitalInput()
+{
+}
+
 bool DigitalInput::getValue()
 {
     bool retVal;

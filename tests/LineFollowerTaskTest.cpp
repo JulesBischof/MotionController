@@ -2,6 +2,7 @@
 
 #include "LineFollowerTask.hpp"
 #include "MessageDispatcherTask.hpp"
+#include "RaspberryHatComTask.hpp"
 #include "TestConfig.h"
 
 #include "FreeRTOS.h"
@@ -18,12 +19,16 @@ void LineFollowerTaskTest()
     initGlobalQueues();
     QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
     QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
+    QueueHandle_t raspberryHatComQueue = getRaspberryComQueue();
 
     // create LineFollowerTask instance
     LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
 
+    // create RaspberryCom instance
+    RaspberryHatComTask raspberryHatComTask = RaspberryHatComTask::getInstance(messageDispatcherQueue, raspberryHatComQueue);
+
     // create DipatcherTask instance
-    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
+    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
 
     dispatcherMessage_t message;
 

@@ -10,7 +10,7 @@ class MessageDispatcherTask
 {
 private:
     // singleton
-    MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue);
+    MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryComQueueHandle);
     static MessageDispatcherTask *_instance;
 
     static TaskHandle_t _taskHandle;
@@ -23,7 +23,7 @@ public:
     ~MessageDispatcherTask();
 
     // singleton
-    static MessageDispatcherTask getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue);
+    static MessageDispatcherTask getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryComQueueHandle);
     static QueueHandle_t getQueue();
     static TaskHandle_t getTaskHandle();
 };

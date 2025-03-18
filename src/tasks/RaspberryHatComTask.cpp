@@ -25,7 +25,7 @@ using namespace encoder;
 RaspberryHatComTask *RaspberryHatComTask::_instance = nullptr;
 
 TaskHandle_t RaspberryHatComTask::_taskHandle = nullptr;
-QueueHandle_t RaspberryHatComTask::_dispatcherQueue = nullptr;
+QueueHandle_t RaspberryHatComTask::_messageDispatcherQueue = nullptr;
 QueueHandle_t RaspberryHatComTask::_raspberryHatComQueue = nullptr;
 xSemaphoreHandle RaspberryHatComTask::_uartRxSemaphore = nullptr;
 
@@ -33,7 +33,7 @@ xSemaphoreHandle RaspberryHatComTask::_uartRxSemaphore = nullptr;
 /*         implementation            */
 /* ================================= */
 
-RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t *dispatcherQueue)
+RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
 {
     // set rx irq
     uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
@@ -41,7 +41,7 @@ RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t *dispatcherQueue)
     irq_set_enabled(UART0_IRQ, true);
 
     // init static members
-    _dispatcherQueue = *dispatcherQueue;
+    _messageDispatcherQueue = messageDispatcherQueue;
     _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
     _uartRxSemaphore = xSemaphoreCreateCounting(100, 0);
     xTaskCreate(_run, RASPBERRYHATCOMTASK_NAME, RASPBERRYHATCOMTASK_STACKSIZE, this, RASPBERRYHATCOMTASK_PRIORITY, &_taskHandle);
@@ -61,7 +61,7 @@ void RaspberryHatComTask::_run(void *pvParameters)
     // loop forever
     for (;;)
     {
-        if (uxQueueMessagesWaiting(_dispatcherQueue) > 0 || uxSemaphoreGetCount(_uartRxSemaphore) >= PROTOCOL_SIZE_IN_BYTES)
+        if (uxQueueMessagesWaiting(_messageDispatcherQueue) > 0 || uxSemaphoreGetCount(_uartRxSemaphore) >= PROTOCOL_SIZE_IN_BYTES)
         {
             // check if there is some data to send
             dispatcherMessage_t message;
@@ -105,15 +105,15 @@ void RaspberryHatComTask::_run(void *pvParameters)
             {
                 xSemaphoreTake(_uartRxSemaphore, 0);
                 dispatcherMessage_t msg;
-                msg = _getUartMsg();
+                msg = _getCommand();
 
-                xQueueSend(_dispatcherQueue, &msg, 10);
+                xQueueSend(_messageDispatcherQueue, &msg, 10);
             }
         }
     }
 }
 
-dispatcherMessage_t RaspberryHatComTask::_getUartMsg()
+dispatcherMessage_t RaspberryHatComTask::_getCommand()
 {
     if (!uart_is_readable(UART_INSTANCE_RASPBERRYHAT))
     {
@@ -264,11 +264,11 @@ void RaspberryHatComTask::_uartRxIrqHandler()
 /*              getters              */
 /* ================================= */
 
-RaspberryHatComTask RaspberryHatComTask::getInstance(QueueHandle_t *raspberryHatComQueue)
+RaspberryHatComTask RaspberryHatComTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
 {
     if (_instance == nullptr)
     {
-        _instance = new RaspberryHatComTask(raspberryHatComQueue);
+        _instance = new RaspberryHatComTask(messageDispatcherQueue, raspberryHatComQueue);
     }
     return *_instance;
 }

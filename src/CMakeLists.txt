@@ -34,8 +34,6 @@ target_link_libraries(MotionController PUBLIC
     hardware_pio
 
     FreeRTOS-Kernel-Heap4 
-
-    prain_uart
     )
 
 # Modify the below lines to enable/disable output over UART/USB
