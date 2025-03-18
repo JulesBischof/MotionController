@@ -44,9 +44,24 @@ typedef struct dispatcherMessage_t
 } dispatcherMessage_t;
 
 /* -------------------------------------------------- */
+/*                 define global queues               */
+/* -------------------------------------------------- */
+static QueueHandle_t raspberryComQueueHandle = NULL;
+static QueueHandle_t lineFollowerTaskQueueHandle = NULL;
+static QueueHandle_t messageDispatcherTaskQueueHandle = NULL;
+
+/* -------------------------------------------------- */
+/*                  queue getters                     */
+/* -------------------------------------------------- */
+QueueHandle_t getRaspberryComQueue();
+QueueHandle_t getLineFollowerQueue();
+QueueHandle_t getMessageDispatcherQueue();
+
+/* -------------------------------------------------- */
 /*             declaration global queue Fn            */
 /* -------------------------------------------------- */
 
+void initGlobalQueues();
 dispatcherMessage_t generateResponse(dispatcherTaskId_t senderTaskId, dispatcherTaskId_t recieverTaskId, taskCommand_t command, uint32_t data);
 
 #endif

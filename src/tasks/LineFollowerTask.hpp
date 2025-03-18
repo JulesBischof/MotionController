@@ -12,7 +12,7 @@ class LineFollowerTask
 {
 private:
     // singleton
-    LineFollowerTask(QueueHandle_t *dispatcherQueue);
+    LineFollowerTask(QueueHandle_t dispatcherQueue, QueueHandle_t lineFollowerQueue);
     static LineFollowerTask *_instance;
 
     static TaskHandle_t _taskHandle;
@@ -32,7 +32,7 @@ private:
     static bool _checkForStandstill();
 
     static void _followLine();
-    static void _turnRobot(uint32_t angle);
+    static void _turnRobot(int32_t angle);
     static void _movePositionMode(int32_t distance);
     static int32_t _controllerC(int8_t e);
     static void _stopDrives();
@@ -41,7 +41,7 @@ private:
 public:
     ~LineFollowerTask();
     // singleton
-    static LineFollowerTask getInstance(QueueHandle_t *dispatcherQueue);
+    static LineFollowerTask getInstance(QueueHandle_t dispatcherQueue, QueueHandle_t lineFollowerQueue);
 
     static QueueHandle_t getQueue();
     static TaskHandle_t getTaskHandle();

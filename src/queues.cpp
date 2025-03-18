@@ -1,4 +1,26 @@
-#include "queues.hpp"
+#include "queues.h"
+
+QueueHandle_t getRaspberryComQueue()
+{
+    return raspberryComQueueHandle;
+}
+
+QueueHandle_t getLineFollowerQueue()
+{
+    return lineFollowerTaskQueueHandle;
+}
+
+QueueHandle_t getMessageDispatcherQueue()
+{
+    return messageDispatcherTaskQueueHandle;
+}
+
+void initGlobalQueues()
+{
+    raspberryComQueueHandle = xQueueCreate(1000, sizeof(dispatcherMessage_t));
+    lineFollowerTaskQueueHandle = xQueueCreate(1000, sizeof(dispatcherMessage_t));
+    messageDispatcherTaskQueueHandle = xQueueCreate(1000, sizeof(dispatcherMessage_t));
+}
 
 /// @brief creates a dispatcherMessage_t struct as message for inter task communication
 /// @param senderTaskId Sender task

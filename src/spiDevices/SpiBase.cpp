@@ -64,7 +64,7 @@ uint32_t SpiBase::_spiReadReg(uint8_t reg)
         0}; // Read command - MSB = 0
     uint8_t rx_buffer[5] = {0};
 
-    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
+    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(1000));
 
     // push address - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
@@ -72,12 +72,7 @@ uint32_t SpiBase::_spiReadReg(uint8_t reg)
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
-    xSemaphoreGive(_spiMutex);
-
-    // wait some time
-    vTaskDelay(pdMS_TO_TICKS(2));
-
-    xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
+    sleep_us(10);
 
     // get actual data - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS

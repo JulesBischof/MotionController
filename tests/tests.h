@@ -7,7 +7,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 
-#include "queues.hpp"
+#include "queues.h"
 
 #include "hardware/i2c.h"
 

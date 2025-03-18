@@ -211,9 +211,8 @@ int32_t Tmc5240::meterToUStepsConversion(float mps)
 /// @brief convert degree to microsteps
 /// @param degrees float degrees
 /// @return 
-int32_t Tmc5240::degreeToUStepsConversion(float degrees)
+int32_t Tmc5240::degreeToUStepsConversion(int32_t degrees)
 {
-    const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-    float usps = (degrees / 360.0f) * microstepsPerRevolution;
+    float usps = (degrees / 360.0f) * MICROSTEPS_PER_REVOLUTION;
     return static_cast<int32_t>(round(usps));
 }

@@ -1,6 +1,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queues.hpp"
+#include "queues.h"
 
 #include "pico/stdlib.h"
 #include "AppConfig.h"
@@ -21,7 +21,7 @@ int main()
     testApp();
 #endif
 
-#if APP_MODE == 0
+#if APP_MODE == 1
     // -------------- init Tasks ---------------
 
     // first set dispatcher queue

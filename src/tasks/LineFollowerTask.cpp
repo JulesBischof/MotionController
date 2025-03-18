@@ -5,13 +5,16 @@
 #include "LineFollowerTaskConfig.h"
 
 #include "TMC5240_HW_Abstraction.h"
+#include "Tmc5240Config.h"
+#include "Tmc5240.hpp"
 
-#include "queues.hpp"
+#include "queues.h"
 
 #include "DigitalInput.hpp"
 #include "Tla2528.hpp"
 
 #include <stdio.h>
+#include <cmath>
 
 /* ================================= */
 /*         static Members            */
@@ -67,11 +70,10 @@ constexpr uint32_t STM_TURNROBOT_BITSET = 0 | (TURN_MODE | MOTOR_RUNNING);
 /// @brief creates an instance of LineFollower Task and creates Linefollower Task
 /// @param dispatcherQueue queue message dispatcher
 /// @param lineFollowerQueue queue line follower queue
-LineFollowerTask::LineFollowerTask(QueueHandle_t *dispatcherQueue)
+LineFollowerTask::LineFollowerTask(QueueHandle_t dispatcherQueue, QueueHandle_t lineFollowerQueue)
 {
-    _dispatcherQueue = *dispatcherQueue;
-
-    _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
+    _dispatcherQueue = dispatcherQueue;
+    _lineFollowerQueue = lineFollowerQueue;
 
     _initDevices();
     _statusFlags = 0;
@@ -150,6 +152,7 @@ void LineFollowerTask::_run(void *pvParameters)
 
             case COMMAND_TURN:
                 _statusFlags &= ~POSITION_REACHED;
+                _statusFlags &= ~TURNREQUEST_SEND;
                 _statusFlags = STM_TURNROBOT_BITSET | (_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                 break;
 
@@ -236,12 +239,12 @@ void LineFollowerTask::_run(void *pvParameters)
 
         /// ------- stm check and send info flags -------
         if (_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK)
-        { 
+        {
             dispatcherMessage_t response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                                             TASKID_RASPBERRY_HAT_COM_TASK,
                                                             COMMAND_INFO,
                                                             (uint32_t)_statusFlags);
-            xQueueSend(_dispatcherQueue, &response, 0);
+            // xQueueSend(_dispatcherQueue, &response, 0);
         }
 
         /// ------- stm stop drives -------
@@ -288,22 +291,30 @@ void LineFollowerTask::_movePositionMode(int32_t distance)
     _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
 }
 
-void LineFollowerTask::_turnRobot(uint32_t angle)
+void LineFollowerTask::_turnRobot(int32_t angle)
 {
     // check if turn signal got send already
     if (_statusFlags & TURNREQUEST_SEND)
     {
         return;
     }
+    // printf("Stack high water mark: %u\n", uxTaskGetStackHighWaterMark(_taskHandle));
 
-    int32_t nStepsPerDrive = Tmc5240::degreeToUStepsConversion(angle) / 10; // divide by 10 due to unit conversion - angle gets send in (° * 10) to avoid float
+    // Tmc5240::degreeToUStepsConversion(angle) / 10; // divide by 10 due to unit conversion - angle gets send in (° * 10) to avoid float
+    // do some math - get microsteps
+    double dAngle = static_cast<double>(angle);
+    double rawVal = (MICROSTEPS_PER_REVOLUTION / 3600.0f) * dAngle; // magic number - steps per revolution divided by 360°
+
+    //int32_t nStepsDriver = 25599;
+    int32_t nStepsDriver = static_cast<int32_t>(std::round(rawVal));
 
     // move drives in different directions
-    _driver0->moveRelativePositionMode(+1 * nStepsPerDrive, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-    _driver1->moveRelativePositionMode(-1 * nStepsPerDrive, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+    _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+    _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     _statusFlags |= TURNREQUEST_SEND;
-}
 
+
+}
 void LineFollowerTask::_followLine()
 {
     // init vars
@@ -401,11 +412,11 @@ void LineFollowerTask::_stopDrives()
 /// @param dispatcherQueue Queue of dispatcher Task
 /// @param lineFollowerQueue Queue of LineFollower Task
 /// @return instance of LineFollowerTask
-LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t *messageDispatcherQueue)
+LineFollowerTask LineFollowerTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue)
 {
     if (_instance == nullptr)
     {
-        _instance = new LineFollowerTask(messageDispatcherQueue);
+        _instance = new LineFollowerTask(messageDispatcherQueue, lineFollowerQueue);
     }
     return *_instance;
 }

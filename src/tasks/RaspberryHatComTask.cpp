@@ -14,6 +14,8 @@
 #include "prain_uart/helper.hpp"
 #include "prain_uart/protocol.hpp"
 
+#include "queues.h"
+
 using namespace prain_uart;
 using namespace encoder;
 

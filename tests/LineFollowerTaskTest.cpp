@@ -10,28 +10,22 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
-#include "queues.hpp"
+#include "queues.h"
 
 void LineFollowerTaskTest()
 {
     // create queues
-    QueueHandle_t *dispatcherQueue = MessageDispatcherTask::initQueue();
+    initGlobalQueues();
+    QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+    QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
 
     // create LineFollowerTask instance
-    LineFollowerTask lineFollower = LineFollowerTask::getInstance(dispatcherQueue);
-    QueueHandle_t lineFollowerQueue = lineFollower.getQueue();
-    
+    LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
+
     // create DipatcherTask instance
-    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(&lineFollowerQueue);
+    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
 
     dispatcherMessage_t message;
-    QueueHandle_t testRecieverQueue = nullptr;
-
-#if TEST_SENDMESSAGE_VIA_DISPATCHER == 1
-    testRecieverQueue = *dispatcherQueue;
-#else
-    testRecieverQueue = lineFollowerQueue;
-#endif
 
     while (1)
     {
@@ -49,10 +43,7 @@ void LineFollowerTaskTest()
         message.data = 1800; // 180° * 10
 #endif
         // send msg to queue
-        if (xQueueSend(testRecieverQueue, &message, portMAX_DELAY) != pdPASS)
-        {
-            printf("Failed to send message to Line Follower Task\n");
-        }
+        xQueueSend(lineFollowerQueue, &message, portMAX_DELAY);
 
         vTaskDelay(pdMS_TO_TICKS(5000));
     }

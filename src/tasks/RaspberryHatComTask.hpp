@@ -1,7 +1,7 @@
 #ifndef RASPBERRYHATCOM_TASK_H
 #define RASPBERRYHATCOM_TASK_H
 
-#include "queues.hpp"
+#include "queues.h"
 
 #include "prain_uart/protocol.hpp"
 

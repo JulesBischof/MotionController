@@ -35,7 +35,7 @@ public:
     void toggleToff(bool val);
     
     static int32_t meterToUStepsConversion(float meter);
-    static int32_t degreeToUStepsConversion(float degrees);
+    static int32_t degreeToUStepsConversion(int32_t degrees);
 };
 
 #endif //TMC5240_H
