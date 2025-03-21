@@ -38,7 +38,7 @@ int main()
 
     // create DipatcherTask instance
     MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
-    
+
     // ------------ start scheduler --------------
     vTaskStartScheduler();
 

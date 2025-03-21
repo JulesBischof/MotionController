@@ -1,17 +1,87 @@
-#include "MotionController.hpp"
+#include "RaspberryHatComTask.hpp"
+
+#include <stdio.h>
+
+#include <pico/stdlib.h>
+#include <hardware/uart.h>
+
+#include "MotionControllerConfig.h"
+
+#include "RaspberryHatComTaskConfig.h"
+
+#include "prain_uart/encoder.hpp"
+#include "prain_uart/decoder.hpp"
+#include "prain_uart/helper.hpp"
+#include "prain_uart/protocol.hpp"
+
+#include "queues.h"
 
 using namespace prain_uart;
 using namespace encoder;
 
-void MotionController::_raspberryHatComTask()
+/* ================================= */
+/*         static Members            */
+/* ================================= */
+RaspberryHatComTask *RaspberryHatComTask::_instance = nullptr;
+
+TaskHandle_t RaspberryHatComTask::_taskHandle = nullptr;
+QueueHandle_t RaspberryHatComTask::_messageDispatcherQueue = nullptr;
+QueueHandle_t RaspberryHatComTask::_raspberryHatComQueue = nullptr;
+
+SemaphoreHandle_t RaspberryHatComTask::_uartRxSemaphore = nullptr;
+/* ================================= */
+/*         implementation            */
+/* ================================= */
+
+RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
+{
+    int uartIRQId = UART_INSTANCE_RASPBERRYHAT == (uart0) ? UART0_IRQ : UART1_IRQ;
+
+    /*  ---- enable uart interrupt on Rx events ---- */
+
+    // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
+    // uart_set_hw_flow(UART_INSTANCE_RASPBERRYHAT, false, false);
+    
+    // Set our data format
+    // uart_set_format(UART_INSTANCE_RASPBERRYHAT, 8, 1, UART_PARITY_NONE);
+
+    // Turn on FIFO's 
+    uart_set_fifo_enabled(UART_INSTANCE_RASPBERRYHAT, true);
+    // set up and enable isr
+    irq_set_exclusive_handler(uartIRQId, _uartRxIrqHandler);
+    irq_set_enabled(uartIRQId, true);
+    // Now enable the UART to send interrupts - RX only
+    uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
+
+    // init static members
+    _messageDispatcherQueue = messageDispatcherQueue;
+    _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
+    _uartRxSemaphore = xSemaphoreCreateBinary();
+
+    if (xTaskCreate(_run, RASPBERRYHATCOMTASK_NAME, RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t), NULL, RASPBERRYHATCOMTASK_PRIORITY, &_taskHandle) != pdTRUE)
+    {
+        for (;;)
+            ;
+        /* ERROR Todo: error handling */
+    }
+}
+
+RaspberryHatComTask::~RaspberryHatComTask()
+{
+    if (_instance != nullptr)
+    {
+        delete _instance;
+        _instance = nullptr;
+    }
+}
+
+void RaspberryHatComTask::_run(void *pvParameters)
 {
     // loop forever
     for (;;)
     {
         dispatcherMessage_t message;
-
-        // suspend Task until Message is recieved
-        if (xQueueReceive(_raspberryHatComQueue, &message, portMAX_DELAY) == pdTRUE)
+        if (xQueueReceive(_raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             if (message.recieverTaskId != TASKID_RASPBERRY_HAT_COM_TASK)
             {
@@ -53,9 +123,9 @@ void MotionController::_raspberryHatComTask()
             sendUartMsg(&txMsg);
         }
     }
-}
+} // end _run
 
-dispatcherMessage_t MotionController::_getCommand(uart_inst_t uartId)
+dispatcherMessage_t RaspberryHatComTask::_getCommand()
 {
     if (!uart_is_readable(UART_INSTANCE_RASPBERRYHAT))
     {
@@ -68,7 +138,9 @@ dispatcherMessage_t MotionController::_getCommand(uart_inst_t uartId)
         return msg;
     }
 
-    uint64_t rawMessage = 0;
+    // TODO: does the messega get into read buffer MSB or LSB first?
+
+    volatile uint64_t rawMessage = 0;
 
     // IMPLEMENTATION MSB FIRST
     // for (int i = 0; uart_is_readable(UART_INSTANCE_RASPBERRYHAT) && i != PROTOCOL_SIZE_IN_BYTES; i++)
@@ -177,95 +249,7 @@ dispatcherMessage_t MotionController::_getCommand(uart_inst_t uartId)
     uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
 
     return retVal;
-} // end _getCommand
-
-bool sendUartMsg(uart_inst_t uartId);
-bool _uartFlushTxWithTimeout(uart_inst_t uartId);
-static void _uart0RxIrqHandler();
-static void _uart1RxIrqHandler();
-
-////////////////////////////////////////////
-
-
-/* ================================= */
-/*         implementation            */
-/* ================================= */
-
-RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
-{
-
-
-    // init static members
-    _messageDispatcherQueue = messageDispatcherQueue;
-    _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
-    _uartRxSemaphore = xSemaphoreCreateBinary();
-
-    if (xTaskCreate(_run, RASPBERRYHATCOMTASK_NAME, RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t), NULL, RASPBERRYHATCOMTASK_PRIORITY, &_taskHandle) != pdTRUE)
-    {
-        for (;;)
-            ;
-        /* ERROR Todo: error handling */
-    }
 }
-
-RaspberryHatComTask::~RaspberryHatComTask()
-{
-    if (_instance != nullptr)
-    {
-        delete _instance;
-        _instance = nullptr;
-    }
-}
-
-void RaspberryHatComTask::_run(void *pvParameters)
-{
-    // loop forever
-    for (;;)
-    {
-        dispatcherMessage_t message;
-        if (xQueueReceive(_raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) == pdTRUE)
-        {
-            if (message.recieverTaskId != TASKID_RASPBERRY_HAT_COM_TASK)
-            {
-                printf("RASPBERRYHATCOMTASK - Message contains wrong Task ID \n");
-                continue;
-            }
-            frame txMsg;
-            // check incoming commands - messages supposed to go out
-            switch (message.command)
-            {
-            case (COMMAND_INFO):
-                txMsg = encode_info(address::RASPBERRY_HAT, message.data);
-                break;
-            case (COMMAND_ERROR):
-                txMsg = encode_error(address::RASPBERRY_HAT, message.data);
-                break;
-            case (COMMAND_POLL_DISTANCE):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DISTANCE, message.data);
-                break;
-            case (COMMAND_POLL_LINE_SENSOR):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::LINE_SENSOR, message.data);
-                break;
-            case (COMMAND_POLL_DEGREE):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.data);
-                break;
-            case (COMMAND_POLL_STATUSFLAGS):
-                // TODO: missing in prain_uart poll_id
-                break;
-            case (COMMAND_DECODE_MESSAGE):
-                dispatcherMessage_t msg;
-                msg = _getCommand();
-
-                xSemaphoreTake(_uartRxSemaphore, 0);
-                xQueueSend(_messageDispatcherQueue, &msg, 10);
-                break;
-            default:
-                break;
-            }
-            sendUartMsg(&txMsg);
-        }
-    }
-} // end _run
 
 /// @brief sends a message frame on the uart bus
 /// @param data pointer to encoded frame to send
@@ -325,4 +309,27 @@ void RaspberryHatComTask::_uartRxIrqHandler()
     uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+/* ================================= */
+/*              getters              */
+/* ================================= */
+
+RaspberryHatComTask RaspberryHatComTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
+{
+    if (_instance == nullptr)
+    {
+        _instance = new RaspberryHatComTask(messageDispatcherQueue, raspberryHatComQueue);
+    }
+    return *_instance;
+}
+
+QueueHandle_t RaspberryHatComTask::getQueue()
+{
+    return _raspberryHatComQueue;
+}
+
+TaskHandle_t RaspberryHatComTask::getTaskHandle()
+{
+    return _taskHandle;
 }

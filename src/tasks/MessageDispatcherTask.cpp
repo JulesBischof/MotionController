@@ -1,56 +1,19 @@
-#include "MessageDispatcherTask.hpp"
+#include "MotionController.hpp"
 
 #include "MessageDispatcherTaskConfig.h"
+#include "queues.h"
 
-/* ================================= */
-/*         static Members            */
-/* ================================= */
-MessageDispatcherTask *MessageDispatcherTask::_instance;
-
-TaskHandle_t MessageDispatcherTask::_taskHandle;
-QueueHandle_t MessageDispatcherTask::_messageDispatcherQueue;
-QueueHandle_t MessageDispatcherTask::_lineFollowerQueue;
-QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
-uint16_t MessageDispatcherTask::_statusFlags;
-
-/* ================================= */
-/*           Definitions             */
-/* ================================= */
-
-/// @brief creates instance of MessageDispatcherTask - private due to singleton pattern
-/// @param lineFollowerQueue QueueHandle of LineFollowerTask
-/// @param raspberryComQueue QueueHandle of RaspberryComTask
-/// @param gripControllerComQueue QueueHandle of GripControllerComQueue
-MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryHatComQueue)
-{
-    _lineFollowerQueue = lineFollowerQueue;
-    _messageDispatcherQueue = messageDispatcherQueue;
-    _raspberryHatComQueue = raspberryHatComQueue;
-    // _gripControllerComQueue = *gripControllerComQueue;
-
-    _statusFlags = 0;
-
-    if (xTaskCreate(_run, MESSAGEDISPATCHERTASK_NAME, MESSAGEDISPATCHERTASK_STACKSIZE/sizeof(StackType_t), NULL, MESSAGEDISPATCHERTASK_PRIORITY, &_taskHandle) != pdTRUE)
-    {
-        for (;;)
-            ;
-        /* ERROR Todo: error handling */
-    }
-} // end ctor
-
-/// @brief MessageDispatcherTask loop
-/// @param pvParameters void pointer param - contains MessageDispatcherTask instance
-void MessageDispatcherTask::_run(void *pvParameters)
+void MotionController::_messageDispatcherTask()
 {
     // loop forever
     for (;;)
     {
-        if (uxQueueMessagesWaiting(_messageDispatcherQueue) > 0)
-        {
-            dispatcherMessage_t message;
-            xQueueReceive(_messageDispatcherQueue, &message, pdMS_TO_TICKS(10));
+        dispatcherMessage_t message = {};
 
-            // take messages and put them somewhere else
+        // suspend task until something is waiting in Queue
+        if (xQueueReceive(_messageDispatcherQueue, &message, portMAX_DELAY) == pdTRUE)
+        {
+            // take messages and put them to other Queues ... (if possible)
             switch (message.recieverTaskId)
             {
             case (TASKID_DISPATCHER_TASK):
@@ -68,47 +31,11 @@ void MessageDispatcherTask::_run(void *pvParameters)
             default:
                 break;
             }
-        }
-    }
-}
+        } // end Queue msg handling
 
-/// @brief deconstructot
-MessageDispatcherTask::~MessageDispatcherTask()
-{
-    if (_instance != nullptr)
-    {
-        delete _instance;
-    }
-}; // end dctor
+        // ERROR HANDLING IF FALSE ????
 
-/* ================================= */
-/*              getters              */
-/* ================================= */
+    } // end loop
 
-/// @brief signleton - creates a new instance of MessageDispatcherTask - if not already existing
-/// @param lineFollowerQueue QueueHandle of LineFollowerTask
-/// @param raspberryComQueue QueueHandle of RaspberryComTask
-/// @param gripControllerComQueue QueueHandle of GripControllerComQueue
-/// @return
-MessageDispatcherTask MessageDispatcherTask::getInstance(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryHatComQueue)
-{
-    if (_instance == nullptr)
-    {
-        _instance = new MessageDispatcherTask(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
-    }
-    return *_instance;
-}
-
-/// @brief getter to MessageDispatcherTask queue
-/// @return QueueHandle to MessageDispatcherTask queue
-QueueHandle_t MessageDispatcherTask::getQueue()
-{
-    return _messageDispatcherQueue;
-}
-
-/// @brief getter to MessageDispatcherTask Handle
-/// @return TaskHandle MessageDispatcherTask
-TaskHandle_t MessageDispatcherTask::getTaskHandle()
-{
-    return _taskHandle;
+    /* never reached */
 }
