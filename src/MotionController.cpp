@@ -4,10 +4,23 @@
 #include "LineFollowerTaskConfig.h"
 #include "RaspberryHatComTaskConfig.h"
 
+#include "Tmc5240.hpp"
+
 #include "MotionControllerConfig.h"
 #include "MotionControllerPinning.h"
 
 #include "queues.h"
+
+/* ==================================
+    static members & their getters
+   ================================== */
+
+// queue handles delared as static due to they get messages from uart ISR
+QueueHandle_t MotionController::_raspberryHatComQueue = nullptr;
+QueueHandle_t MotionController::_lineFollowerQueue = nullptr;
+QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
+
+QueueHandle_t MotionController::getRaspberryHatComQueue() { return _raspberryHatComQueue; }
 
 /* ==================================
         start Task and Wrapper
@@ -129,20 +142,6 @@ bool MotionController::_initHardware()
     return true;
 }
 
-bool MotionController::_initPeripherals()
-{
-    Tmc5240 _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
-    Tmc5240 _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
-
-    Tla2528 _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
-    LineSensor _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
-
-    _safetyButton = DigitalInput(DIN_4);
-
-    /* ERROR HANDLING ??? */
-    return true;
-}
-
 bool MotionController::_initQueues()
 {
     _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
@@ -152,11 +151,9 @@ bool MotionController::_initQueues()
     return true;
 }
 
-bool MotionController::_initUartIsr(uart_inst_t uartId)
+void MotionController::_initUartIsr()
 {
-    int uartIRQId = (uartId == (uart0) ? UART0_IRQ : UART1_IRQ);
-
-    /*  ---- enable uart interrupt on Rx events ---- */
+    /* -------- UART 0 --------- */
 
     // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
     // uart_set_hw_flow(UART_INSTANCE_RASPBERRYHAT, false, false);
@@ -164,13 +161,69 @@ bool MotionController::_initUartIsr(uart_inst_t uartId)
     // Set our data format
     // uart_set_format(UART_INSTANCE_RASPBERRYHAT, 8, 1, UART_PARITY_NONE);
 
-    // Turn on FIFO's
     uart_set_fifo_enabled(UART_INSTANCE_RASPBERRYHAT, true);
-    // set up and enable isr
-    irq_set_exclusive_handler(uartIRQId, _uartRxIrqHandler);
-    irq_set_enabled(uartIRQId, true);
-    // Now enable the UART to send interrupts - RX only
+    irq_set_exclusive_handler(UART0_IRQ, _uart0RxIrqHandler);
+    irq_set_enabled(UART0_IRQ, true);
     uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
+
+    // TODO: enable interrupts for uart 1 (gripctrl)
+}
+
+/* ==================================
+            UART - Methods
+   ================================== */
+
+void MotionController::sendUartMsg(frame *data, uart_inst_t *uartId)
+{
+    uint64_t rawValue = reinterpret_cast<uint64_t>(data);
+    for (int i = 0; i < 8; i++)
+    { // 64 Bit = 8 Bytes
+        uint8_t byte = (rawValue >> (i * 8)) & 0xFF;
+        uart_putc_raw(UART_INSTANCE_RASPBERRYHAT, byte);
+    }
+
+    _uartFlushTxWithTimeout(UART_INSTANCE_RASPBERRYHAT, 10);
+    return;
+}
+
+void MotionController::_uartFlushTxWithTimeout(uart_inst_t *uart, uint32_t timeout_ms)
+{
+    uint8_t msTicks = 0;
+    while (!uart_is_writable(UART_INSTANCE_RASPBERRYHAT))
+    {
+        msTicks++;
+        vTaskDelay(pdMS_TO_TICKS(1));
+        if (msTicks > timeout_ms)
+        {
+            printf("UART TX ERROR - TIMEOUT");
+            return;
+        }
+    }
+    return;
+}
+
+void MotionController::_uart0RxIrqHandler()
+{
+    /* some message arrived!! send read command to RaspberryHatComQueue
+    buffer-read and decoding shouldn't be handled inside a isr */
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    QueueHandle_t queueHandle = getRaspberryHatComQueue();
+
+    if (queueHandle != nullptr)
+    {
+        dispatcherMessage_t msg;
+        msg.command = COMMAND_DECODE_MESSAGE;
+        msg.recieverTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
+        msg.senderTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
+        msg.data = 0;
+
+        xQueueSendFromISR(queueHandle, &msg, &xHigherPriorityTaskWoken);
+    }
+    // disable uart interrupts
+    uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 /* ==================================
@@ -183,10 +236,13 @@ MotionController::~MotionController()
 }
 
 MotionController::MotionController()
+    : _driver0(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1),
+      _driver1(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1),
+      _adc(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS),
+      _lineSensor(&_adc, UV_LED_GPIO),
+      _safetyButton(DIN_4),
+      _lineFollowerStatusFlags(0)
 {
     _initHardware();
-    _initPeripherals();
     _initQueues();
-
-    _lineFollowerStatusFlags = 0;
 }

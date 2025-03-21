@@ -9,6 +9,7 @@ Tla2528::Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInsta
     _checkDevice();
 }
 
+// deconstructor - not implemented yet
 Tla2528::~Tla2528()
 {
 }

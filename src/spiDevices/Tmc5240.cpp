@@ -24,7 +24,7 @@ Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin, bool stdDir) : SpiBase(
 
 Tmc5240::~Tmc5240()
 {
-    // not implemented yet
+    // DECONSTRUCTOR not implemented yet
 }
 
 /// @brief initializes device

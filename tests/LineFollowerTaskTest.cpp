@@ -1,8 +1,6 @@
 #include "LineFollowerTaskTest.hpp"
 
-#include "LineFollowerTask.hpp"
-#include "MessageDispatcherTask.hpp"
-#include "RaspberryHatComTask.hpp"
+#include "MotionController.hpp"
 #include "TestConfig.h"
 
 #include "FreeRTOS.h"
@@ -15,23 +13,10 @@
 
 void LineFollowerTaskTest()
 {
-        // create queues
-        initGlobalQueues();
-        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-        QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
-        QueueHandle_t raspberryHatComQueue = getRaspberryComQueue();
+        MotionController motionController = MotionController();
+        motionController.startScheduler();
 
-        // create LineFollowerTask instance
-        LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
-
-        // create RaspberryCom instance
-        RaspberryHatComTask raspberryHatComTask = RaspberryHatComTask::getInstance(messageDispatcherQueue, raspberryHatComQueue);
-
-        // create DipatcherTask instance
-        MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
-
-        dispatcherMessage_t message;
-
+        dispatcherMessage_t message = {};
         while (1)
         {
                 // define example Command
@@ -48,7 +33,7 @@ void LineFollowerTaskTest()
                 message.data = 1800; // 180° * 10
 #endif
                 // send msg to queue
-                xQueueSend(lineFollowerQueue, &message, portMAX_DELAY);
+                // xQueueSend(lineFollowerQueue, &message, portMAX_DELAY);
 
                 vTaskDelay(pdMS_TO_TICKS(5000));
         }

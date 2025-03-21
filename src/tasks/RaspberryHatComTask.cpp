@@ -1,5 +1,22 @@
 #include "MotionController.hpp"
 
+#include "queues.h"
+#include <stdio.h>
+
+#include "pico/stdlib.h"
+
+#include "prain_uart/decoder.hpp"
+#include "prain_uart/encoder.hpp"
+
+#include "MotionControllerConfig.h"
+#include "MotionControllerPinning.h"
+
+#include "RaspberryHatComTaskConfig.h"
+
+#include "FreeRTOS.h"
+#include "semphr.h"
+#include "queue.h"
+
 using namespace prain_uart;
 using namespace encoder;
 
@@ -42,20 +59,18 @@ void MotionController::_raspberryHatComTask()
                 break;
             case (COMMAND_DECODE_MESSAGE):
                 dispatcherMessage_t msg;
-                msg = _getCommand();
-
-                xSemaphoreTake(_uartRxSemaphore, 0);
+                msg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
                 xQueueSend(_messageDispatcherQueue, &msg, 10);
                 break;
             default:
                 break;
             }
-            sendUartMsg(&txMsg);
+            sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
         }
     }
 }
 
-dispatcherMessage_t MotionController::_getCommand(uart_inst_t uartId)
+dispatcherMessage_t MotionController::_getCommand(uart_inst_t *uartId)
 {
     if (!uart_is_readable(UART_INSTANCE_RASPBERRYHAT))
     {
@@ -178,151 +193,3 @@ dispatcherMessage_t MotionController::_getCommand(uart_inst_t uartId)
 
     return retVal;
 } // end _getCommand
-
-bool sendUartMsg(uart_inst_t uartId);
-bool _uartFlushTxWithTimeout(uart_inst_t uartId);
-static void _uart0RxIrqHandler();
-static void _uart1RxIrqHandler();
-
-////////////////////////////////////////////
-
-
-/* ================================= */
-/*         implementation            */
-/* ================================= */
-
-RaspberryHatComTask::RaspberryHatComTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t raspberryHatComQueue)
-{
-
-
-    // init static members
-    _messageDispatcherQueue = messageDispatcherQueue;
-    _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(dispatcherMessage_t));
-    _uartRxSemaphore = xSemaphoreCreateBinary();
-
-    if (xTaskCreate(_run, RASPBERRYHATCOMTASK_NAME, RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t), NULL, RASPBERRYHATCOMTASK_PRIORITY, &_taskHandle) != pdTRUE)
-    {
-        for (;;)
-            ;
-        /* ERROR Todo: error handling */
-    }
-}
-
-RaspberryHatComTask::~RaspberryHatComTask()
-{
-    if (_instance != nullptr)
-    {
-        delete _instance;
-        _instance = nullptr;
-    }
-}
-
-void RaspberryHatComTask::_run(void *pvParameters)
-{
-    // loop forever
-    for (;;)
-    {
-        dispatcherMessage_t message;
-        if (xQueueReceive(_raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) == pdTRUE)
-        {
-            if (message.recieverTaskId != TASKID_RASPBERRY_HAT_COM_TASK)
-            {
-                printf("RASPBERRYHATCOMTASK - Message contains wrong Task ID \n");
-                continue;
-            }
-            frame txMsg;
-            // check incoming commands - messages supposed to go out
-            switch (message.command)
-            {
-            case (COMMAND_INFO):
-                txMsg = encode_info(address::RASPBERRY_HAT, message.data);
-                break;
-            case (COMMAND_ERROR):
-                txMsg = encode_error(address::RASPBERRY_HAT, message.data);
-                break;
-            case (COMMAND_POLL_DISTANCE):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DISTANCE, message.data);
-                break;
-            case (COMMAND_POLL_LINE_SENSOR):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::LINE_SENSOR, message.data);
-                break;
-            case (COMMAND_POLL_DEGREE):
-                txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.data);
-                break;
-            case (COMMAND_POLL_STATUSFLAGS):
-                // TODO: missing in prain_uart poll_id
-                break;
-            case (COMMAND_DECODE_MESSAGE):
-                dispatcherMessage_t msg;
-                msg = _getCommand();
-
-                xSemaphoreTake(_uartRxSemaphore, 0);
-                xQueueSend(_messageDispatcherQueue, &msg, 10);
-                break;
-            default:
-                break;
-            }
-            sendUartMsg(&txMsg);
-        }
-    }
-} // end _run
-
-/// @brief sends a message frame on the uart bus
-/// @param data pointer to encoded frame to send
-void RaspberryHatComTask::sendUartMsg(frame *data)
-{
-    uint64_t rawValue = reinterpret_cast<uint64_t>(data);
-    for (int i = 0; i < 8; i++)
-    { // 64 Bit = 8 Bytes
-        uint8_t byte = (rawValue >> (i * 8)) & 0xFF;
-        uart_putc_raw(UART_INSTANCE_RASPBERRYHAT, byte);
-    }
-
-    _uartFlushTxWithTimeout(UART_INSTANCE_RASPBERRYHAT, 10);
-    return;
-}
-
-void RaspberryHatComTask::_uartFlushTxWithTimeout(uart_inst_t *uart, uint32_t timeout_ms)
-{
-    uint8_t msTicks = 0;
-    while (!uart_is_writable(UART_INSTANCE_RASPBERRYHAT))
-    {
-        msTicks++;
-        vTaskDelay(pdMS_TO_TICKS(1));
-        if (msTicks > timeout_ms)
-        {
-            printf("UART TX ERROR - TIMEOUT");
-            return;
-        }
-    }
-    return;
-}
-
-void RaspberryHatComTask::_uartRxIrqHandler()
-{
-    /* some message arrived!! send read command to RaspberryHatComQueue
-    buffer-read and decoding shouldn't be handled inside a isr */
-
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-    if (uart_is_readable(UART_INSTANCE_RASPBERRYHAT) && !uxSemaphoreGetCountFromISR(_uartRxSemaphore))
-    {
-        // semaphore makes sure, irq sends decode command only once per message
-        xSemaphoreGiveFromISR(_uartRxSemaphore, &xHigherPriorityTaskWoken);
-
-        dispatcherMessage_t msg;
-        msg.command = COMMAND_DECODE_MESSAGE;
-        msg.recieverTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
-        msg.senderTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
-        msg.data = 0;
-
-        xQueueSendFromISR(_raspberryHatComQueue, &msg, &xHigherPriorityTaskWoken);
-    }
-
-    int uartIRQId = UART_INSTANCE_RASPBERRYHAT == (uart0) ? UART0_IRQ : UART1_IRQ;
-
-    // disable uart interrupts
-    uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
-
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
