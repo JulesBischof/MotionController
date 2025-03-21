@@ -16,20 +16,20 @@ void LineFollowerTaskTest()
         MotionController motionController = MotionController();
         motionController.startScheduler();
 
-        dispatcherMessage_t message = {};
+        DispatcherMessage message = {};
         while (1)
         {
                 // define example Command
-                message.senderTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
-                message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
+                message.senderTaskId = DispatcherTaskId::RaspberryHatComTask;
+                message.receiverTaskId = DispatcherTaskId::LineFollowerTask;
 
 #if TEST_FOLLOW_LINE == 1
-                message.command = COMMAND_MOVE;
+                message.command = TaskCommand::Move;
                 message.data = 0;
 #endif
 
 #if TEST_TURN == 1
-                message.command = COMMAND_TURN;
+                message.command = TaskCommand::Turn;
                 message.data = 1800; // 180° * 10
 #endif
                 // send msg to queue

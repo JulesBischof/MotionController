@@ -1,11 +1,11 @@
 #ifndef MOTIONCONTROLLER_H
 #define MOTIONCONTROLLER_H
 
+#include <bitset>
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
-
-#include "queues.h"
 
 #include "Tmc5240.hpp"
 #include "LineSensor.hpp"
@@ -15,57 +15,109 @@
 #include "prain_uart/protocol.hpp"
 using namespace prain_uart;
 
-class MotionController
+namespace MotionController
 {
-private:
-    bool _initHardware();
-    bool _initQueues();
-    void _initUartIsr();
 
-    static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
-    TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
+    /* ==================================
+                typedefs
+       ================================== */
 
-    Tmc5240 _driver0, _driver1;
-    LineSensor _lineSensor;
-    Tla2528 _adc;
-    DigitalInput _safetyButton;
+    enum class DispatcherTaskId : uint8_t
+    {
+        NoTask,
+        DispatcherTask,
+        LineFollowerTask,
+        RaspberryHatComTask,
+        GripControllerComTask
+    };
 
-    uint32_t _lineFollowerStatusFlags;
+    enum class TaskCommand : uint16_t
+    {
+        NoCommand,
+        Move,
+        Reverse,
+        Turn,
+        Stop,
+        Info,
+        Ping,
+        Pong,
+        Error,
+        PollDistance,
+        PollLineSensor,
+        PollDegree,
+        PollStatusFlags,
+        HandThroughMessage,
+        DecodeMessage
+    };
 
-    void _lineFollowerTask();
-    void _raspberryHatComTask();
-    void _messageDispatcherTask();
+    struct DispatcherMessage
+    {
+        DispatcherTaskId senderTaskId;
+        DispatcherTaskId receiverTaskId;
+        TaskCommand command;
+        uint64_t data;
 
-    void _startLineFollowerTask();
-    void _startRaspberryHatComTask();
-    void _startMessageDispatcherTask();
+        DispatcherMessage(DispatcherTaskId sender, DispatcherTaskId receiver, TaskCommand cmd, uint64_t d = 0)
+            : senderTaskId(sender), receiverTaskId(receiver), command(cmd), data(d) {}
+    };
 
-    static void _LineFollerTaskWrapper(void *pvParameters);
-    static void _RaspberryComTaskWrapper(void *pvParameters);
-    static void _MessageDispatcherTaskWrapper(void *pvParameters);
+    /* ==================================
+              class declaration
+       ================================== */
 
-    // lineFollower relevant members
-    bool _checkForStandstill();
-    void _movePositionMode(int32_t distance);
-    void _followLine();
-    void _turnRobot(int32_t angle);
-    int32_t _controllerC(int8_t e);
-    void _stopDrives();
+    class MotionController
+    {
+    private:
+        bool _initHardware();
+        bool _initQueues();
+        void _initUartIsr();
 
-    // raspberryHatCom relevant members
-    dispatcherMessage_t _getCommand(uart_inst_t *uartId);
-    void sendUartMsg(frame *data, uart_inst_t *uartId);
-    void _uartFlushTxWithTimeout(uart_inst_t *uartId, uint32_t timeout_ms);
-    static void _uart0RxIrqHandler();
-    // static void _uart1RxIrqHandler();
+        static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
+        TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
 
-public:
-    MotionController();
-    ~MotionController();
+        Tmc5240 _driver0, _driver1;
+        LineSensor _lineSensor;
+        Tla2528 _adc;
+        DigitalInput _safetyButton;
 
-    void startScheduler();
+        uint32_t _lineFollowerStatusFlags;
 
-    static QueueHandle_t getRaspberryHatComQueue();
-};
+        void _lineFollowerTask();
+        void _raspberryHatComTask();
+        void _messageDispatcherTask();
+
+        void _startLineFollowerTask();
+        void _startRaspberryHatComTask();
+        void _startMessageDispatcherTask();
+
+        static void _LineFollerTaskWrapper(void *pvParameters);
+        static void _RaspberryComTaskWrapper(void *pvParameters);
+        static void _MessageDispatcherTaskWrapper(void *pvParameters);
+
+        // lineFollower relevant members
+        bool _checkForStandstill();
+        void _movePositionMode(int32_t distance);
+        void _followLine();
+        void _turnRobot(int32_t angle);
+        int32_t _controllerC(int8_t e);
+        void _stopDrives();
+
+        // raspberryHatCom relevant members
+        DispatcherMessage _getCommand(uart_inst_t *uartId);
+        void sendUartMsg(frame *data, uart_inst_t *uartId);
+        void _uartFlushTxWithTimeout(uart_inst_t *uartId, uint32_t timeout_ms);
+        static void _uart0RxIrqHandler();
+        // static void _uart1RxIrqHandler();
+
+    public:
+        MotionController();
+        ~MotionController();
+
+        void startScheduler();
+
+        static QueueHandle_t getRaspberryHatComQueue();
+    };
+
+}
 
 #endif // MOTIONCONTROLLER_H
