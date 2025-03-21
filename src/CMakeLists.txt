@@ -30,6 +30,7 @@ target_link_libraries(MotionController PUBLIC
 
     hardware_spi
     hardware_i2c
+    hardware_uart
     hardware_timer
     hardware_pio
 
@@ -37,7 +38,7 @@ target_link_libraries(MotionController PUBLIC
     )
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(MotionController 1)
-# pico_enable_stdio_usb(MotionController 1)
+pico_enable_stdio_uart(MotionController 0)
+pico_enable_stdio_usb(MotionController 1)
 
 pico_add_extra_outputs(MotionController)

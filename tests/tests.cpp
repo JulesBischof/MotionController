@@ -39,6 +39,10 @@ void testTask(void *pvParameters)
                 printf("Running vLineFollowerTask Test...\n");
                 LineFollowerTaskTest();
 #endif
+#if TEST_UART_IRQ_CONFIGURATION == 1
+                printf("running UART-IRQ Config Test");
+                UartConfigTest();
+#endif
                 printf("Tests done - LOOP \n");
                 vTaskDelay(pdMS_TO_TICKS(1000));
         }

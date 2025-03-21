@@ -24,16 +24,21 @@ int main()
 #if APP_MODE == 1
     // -------------- init Tasks ---------------
 
-    // first set dispatcher queue
-    QueueHandle_t *messageDispatcherQueue = MessageDispatcherTask::initQueue();
+    // create queues
+    initGlobalQueues();
+    QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+    QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
+    QueueHandle_t raspberryHatComQueue = getRaspberryComQueue();
 
-    // create task istances
-    LineFollowerTask lineFollowerTask = LineFollowerTask::getInstance(messageDispatcherQueue);
-    QueueHandle_t lineFollowerQueue = lineFollowerTask.getQueue();
+    // create LineFollowerTask instance
+    LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
 
-    // last of all -create dispatcher instance
-    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(&lineFollowerQueue);
+    // create RaspberryCom instance
+    RaspberryHatComTask raspberryHatComTask = RaspberryHatComTask::getInstance(messageDispatcherQueue, raspberryHatComQueue);
 
+    // create DipatcherTask instance
+    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
+    
     // ------------ start scheduler --------------
     vTaskStartScheduler();
 

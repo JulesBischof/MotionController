@@ -33,6 +33,7 @@ typedef enum taskCommand_t
     COMMAND_POLL_DEGREE,
     COMMAND_POLL_STATUSFLAGS,
     COMMAND_HAND_THROUGH_MESSAGE,
+    COMMAND_DECODE_MESSAGE
 } taskCommand_t;
 
 typedef struct dispatcherMessage_t

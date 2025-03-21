@@ -39,10 +39,13 @@
 // ------------------ Tasks ---------------------
 
 // ## LineFollowerTask ##
-#define TEST_VLINEFOLLOWERTASK (1)
+#define TEST_VLINEFOLLOWERTASK (0)
 #define TEST_SENDMESSAGE_VIA_DISPATCHER (0)
 #define TEST_FOLLOW_LINE (0)
-#define TEST_TURN (1)
+#define TEST_TURN (0)
 #define TEST_POSITIONMODE (0)
+
+// ------------------ Misc ---------------------
+#define TEST_UART_IRQ_CONFIGURATION (0)
 
 #endif // TESTCONFIG_H

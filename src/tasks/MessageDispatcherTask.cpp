@@ -10,7 +10,7 @@ MessageDispatcherTask *MessageDispatcherTask::_instance;
 TaskHandle_t MessageDispatcherTask::_taskHandle;
 QueueHandle_t MessageDispatcherTask::_messageDispatcherQueue;
 QueueHandle_t MessageDispatcherTask::_lineFollowerQueue;
-// QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
+QueueHandle_t MessageDispatcherTask::_raspberryHatComQueue;
 uint16_t MessageDispatcherTask::_statusFlags;
 
 /* ================================= */
@@ -30,7 +30,12 @@ MessageDispatcherTask::MessageDispatcherTask(QueueHandle_t messageDispatcherQueu
 
     _statusFlags = 0;
 
-    xTaskCreate(_run, MESSAGEDISPATCHERTASK_NAME, MESSAGEDISPATCHERTASK_STACKSIZE, this, MESSAGEDISPATCHERTASK_PRIORITY, &_taskHandle);
+    if (xTaskCreate(_run, MESSAGEDISPATCHERTASK_NAME, MESSAGEDISPATCHERTASK_STACKSIZE/sizeof(StackType_t), NULL, MESSAGEDISPATCHERTASK_PRIORITY, &_taskHandle) != pdTRUE)
+    {
+        for (;;)
+            ;
+        /* ERROR Todo: error handling */
+    }
 } // end ctor
 
 /// @brief MessageDispatcherTask loop

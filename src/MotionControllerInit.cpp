@@ -18,12 +18,12 @@ void MotionControllerInit(void)
 
 void initUart(void)
 {
-    gpio_set_function(Tx_UART0, GPIO_FUNC_UART);
-    gpio_set_function(Rx_UART0, GPIO_FUNC_UART);
+    gpio_set_function(Tx_UART0, UART_FUNCSEL_NUM(UART_INSTANCE_RASPBERRYHAT, Tx_UART0));
+    gpio_set_function(Rx_UART0, UART_FUNCSEL_NUM(UART_INSTANCE_RASPBERRYHAT, Rx_UART0));
     uart_init(uart0, UART0_BAUDRATE);
 
-    gpio_set_function(Tx_UART1, GPIO_FUNC_UART);
-    gpio_set_function(Rx_UART1, GPIO_FUNC_UART);
+    gpio_set_function(Tx_UART1, UART_FUNCSEL_NUM(UART_INSTANCE_GRIPCONTROLLER, Tx_UART1));
+    gpio_set_function(Rx_UART1, UART_FUNCSEL_NUM(UART_INSTANCE_GRIPCONTROLLER, Rx_UART1));
     uart_init(UART_INSTANCE_GRIPCONTROLLER, UART1_BAUDRATE);
 
     return;

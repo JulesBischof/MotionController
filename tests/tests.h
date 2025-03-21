@@ -18,6 +18,7 @@
 #include "HcSr04Test.h"
 #include "ArduinoAdcSlaveTest.h"
 #include "LineFollowerTaskTest.hpp"
+#include "UartConfigTest.h"
 
 void testApp(void);
 

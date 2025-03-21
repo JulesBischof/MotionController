@@ -15,41 +15,41 @@
 
 void LineFollowerTaskTest()
 {
-    // create queues
-    initGlobalQueues();
-    QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-    QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
-    QueueHandle_t raspberryHatComQueue = getRaspberryComQueue();
+        // create queues
+        initGlobalQueues();
+        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+        QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
+        QueueHandle_t raspberryHatComQueue = getRaspberryComQueue();
 
-    // create LineFollowerTask instance
-    LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
+        // create LineFollowerTask instance
+        LineFollowerTask lineFollower = LineFollowerTask::getInstance(messageDispatcherQueue, lineFollowerQueue);
 
-    // create RaspberryCom instance
-    RaspberryHatComTask raspberryHatComTask = RaspberryHatComTask::getInstance(messageDispatcherQueue, raspberryHatComQueue);
+        // create RaspberryCom instance
+        RaspberryHatComTask raspberryHatComTask = RaspberryHatComTask::getInstance(messageDispatcherQueue, raspberryHatComQueue);
 
-    // create DipatcherTask instance
-    MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
+        // create DipatcherTask instance
+        MessageDispatcherTask messageDispatcherTask = MessageDispatcherTask::getInstance(messageDispatcherQueue, lineFollowerQueue, raspberryHatComQueue);
 
-    dispatcherMessage_t message;
+        dispatcherMessage_t message;
 
-    while (1)
-    {
-        // define example Command
-        message.senderTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
-        message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
+        while (1)
+        {
+                // define example Command
+                message.senderTaskId = TASKID_RASPBERRY_HAT_COM_TASK;
+                message.recieverTaskId = TASKID_LINE_FOLLOWER_TASK;
 
 #if TEST_FOLLOW_LINE == 1
-        message.command = COMMAND_MOVE;
-        message.data = 0;
+                message.command = COMMAND_MOVE;
+                message.data = 0;
 #endif
 
 #if TEST_TURN == 1
-        message.command = COMMAND_TURN;
-        message.data = 1800; // 180° * 10
+                message.command = COMMAND_TURN;
+                message.data = 1800; // 180° * 10
 #endif
-        // send msg to queue
-        xQueueSend(lineFollowerQueue, &message, portMAX_DELAY);
+                // send msg to queue
+                xQueueSend(lineFollowerQueue, &message, portMAX_DELAY);
 
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
+                vTaskDelay(pdMS_TO_TICKS(5000));
+        }
 }

@@ -12,7 +12,6 @@ private:
     // singleton
     MessageDispatcherTask(QueueHandle_t messageDispatcherQueue, QueueHandle_t lineFollowerQueue, QueueHandle_t raspberryComQueueHandle);
     static MessageDispatcherTask *_instance;
-
     static TaskHandle_t _taskHandle;
     static QueueHandle_t _messageDispatcherQueue, _lineFollowerQueue, _raspberryHatComQueue;
     static uint16_t _statusFlags;

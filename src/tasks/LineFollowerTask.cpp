@@ -39,7 +39,7 @@ DigitalInput *LineFollowerTask::_safetyButton;
 constexpr uint32_t RUNMODEFLAG_T_UPPER_BITMASK(0xFFFF0000);
 constexpr uint32_t RUNMODEFLAG_T_LOWER_BITMASK(0x0000FFFF);
 
-typedef enum RunModeFlag_t
+enum RunModeFlag_t
 {
     // lower 16 bits statemaschine relevant flags
     MOTOR_RUNNING = 1 << 0,
@@ -50,6 +50,7 @@ typedef enum RunModeFlag_t
     LINE_FOLLOWER_MODE = 1 << 5,
     TURN_MODE = 1 << 6,
     TURNREQUEST_SEND = 1 << 7,
+    STATUSFLAGS_SEND = 1 << 8,
 
     // upper 16 bits events and infos
     CROSSPOINT_DETECTED = 1 << 15,
@@ -78,7 +79,12 @@ LineFollowerTask::LineFollowerTask(QueueHandle_t dispatcherQueue, QueueHandle_t 
     _initDevices();
     _statusFlags = 0;
 
-    xTaskCreate(_run, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE, this, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle);
+    if (xTaskCreate(_run, LINEFOLLOWERTASK_NAME, LINEFOLLOWERCONFIG_STACKSIZE/sizeof(StackType_t), NULL, LINEFOLLOWERCONFIG_PRIORITY, &_taskHandle) != pdTRUE)
+    {
+        for (;;)
+            ;
+        /* ERROR Todo: error handling */
+    }
 } // end ctor
 
 LineFollowerTask::~LineFollowerTask()
@@ -238,13 +244,14 @@ void LineFollowerTask::_run(void *pvParameters)
         }
 
         /// ------- stm check and send info flags -------
-        if (_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK)
+        if ((_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK) && !(_statusFlags & STATUSFLAGS_SEND))
         {
             dispatcherMessage_t response = generateResponse(TASKID_LINE_FOLLOWER_TASK,
                                                             TASKID_RASPBERRY_HAT_COM_TASK,
                                                             COMMAND_INFO,
                                                             (uint32_t)_statusFlags);
-            // xQueueSend(_dispatcherQueue, &response, 0);
+            _statusFlags |= STATUSFLAGS_SEND;
+            xQueueSend(_dispatcherQueue, &response, 0);
         }
 
         /// ------- stm stop drives -------
@@ -305,15 +312,13 @@ void LineFollowerTask::_turnRobot(int32_t angle)
     double dAngle = static_cast<double>(angle);
     double rawVal = (MICROSTEPS_PER_REVOLUTION / 3600.0f) * dAngle; // magic number - steps per revolution divided by 360°
 
-    //int32_t nStepsDriver = 25599;
+    // int32_t nStepsDriver = 25599;
     int32_t nStepsDriver = static_cast<int32_t>(std::round(rawVal));
 
     // move drives in different directions
     _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     _statusFlags |= TURNREQUEST_SEND;
-
-
 }
 void LineFollowerTask::_followLine()
 {
