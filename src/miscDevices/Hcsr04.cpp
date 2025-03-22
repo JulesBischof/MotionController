@@ -3,6 +3,10 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+/* ==================================
+        Constructor / Deconstructor
+   ================================== */
+
 /// @brief creates instance of HCSR04 Ultrasonic distance-Sensor
 /// @param triggerPin GPIO conntected to trigger
 /// @param echoPin GPIO connected to echo
@@ -28,6 +32,25 @@ Hcsr04::~Hcsr04()
 {
     // not implemented yet - maybe disable interrupts or else - instances hardly ever get deleted tho
 }
+
+/* ==================================
+            Init Memebers
+   ================================== */
+
+/// @brief inits gpios
+void Hcsr04::_initGpios()
+{
+    gpio_init(_triggerPin);
+    gpio_set_dir(_triggerPin, GPIO_OUT);
+    gpio_put(_triggerPin, false);
+
+    gpio_init(_echoPin);
+    gpio_set_dir(_echoPin, GPIO_IN);
+}
+
+/* ==================================
+            getters & setters
+   ================================== */
 
 /// @brief measures current distance to distant object 
 /// @return distance measured by hcsr04, value in mm
@@ -56,6 +79,10 @@ void Hcsr04::_trigger()
     gpio_put(_triggerPin, false);
 }
 
+/* ==================================
+            IRQ-Handler
+   ================================== */
+
 /// @brief irq callback function for echo-pin interrupt
 /// @param gpio gpio that triggered the interrupt
 /// @param events falling or rising edge
@@ -70,15 +97,4 @@ void Hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
 
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     xEventGroupSetBitsFromISR(inst->_eventGroup, inst->_echoEvent, &xHigherPriorityTaskWoken);
-}
-
-/// @brief inits gpios
-void Hcsr04::_initGpios()
-{
-        gpio_init(_triggerPin);
-        gpio_set_dir(_triggerPin, GPIO_OUT);
-        gpio_put(_triggerPin, false);
-
-        gpio_init(_echoPin);
-        gpio_set_dir(_echoPin, GPIO_IN);
 }

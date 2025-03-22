@@ -6,6 +6,10 @@
 // statics
 std::map<uint8_t, SemaphoreHandle_t> DigitalInput::_semaphoresMap;
 
+/* ==================================
+    Constructor / Deconstructor
+   ================================== */
+
 DigitalInput::DigitalInput(uint8_t gpio)
 {
     _gpio = gpio;
@@ -21,9 +25,18 @@ DigitalInput::DigitalInput(uint8_t gpio)
     }
 }
 
+/// @brief default Constructor
+DigitalInput::DigitalInput(){}
+
+
 DigitalInput::~DigitalInput()
 {
+    /* not implemented yet */
 }
+
+/* ==================================
+        getters & setters
+   ================================== */
 
 bool DigitalInput::getValue()
 {

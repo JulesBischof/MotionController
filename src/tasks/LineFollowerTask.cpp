@@ -101,6 +101,9 @@ namespace MotionController
                     continue;
                 }
 
+                // you cant declare vars inside a switch statement, thats why dataContainer
+                uint64_t dataContainer = 0;
+
                 switch (message.command)
                 {
                 case TaskCommand::Move:
@@ -135,12 +138,12 @@ namespace MotionController
                     break;
 
                 case TaskCommand::PollDistance:
-                    int32_t res = _getDrivenDistance(drivenDistanceDriver0, drivenDistanceDriver1);
+                    dataContainer = static_cast<uint64_t>(_getDrivenDistance(drivenDistanceDriver0, drivenDistanceDriver1));
 
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
-                                                 static_cast<uint64_t>(res));
+                                                 dataContainer);
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 
@@ -156,11 +159,11 @@ namespace MotionController
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
                 case TaskCommand::PollDegree:
-                    int32_t res = _getRotationRelativeToStart();
+                    dataContainer = static_cast<uint64_t>(_getRotationRelativeToStart());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDegree,
-                                                 _lineFollowerStatusFlags);
+                                                 dataContainer);
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 

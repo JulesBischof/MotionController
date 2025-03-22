@@ -23,89 +23,32 @@ namespace MotionController
     QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
 
     /* ==================================
-            start Task and Wrapper
+            Constructor/Deconstructor
        ================================== */
 
-    // line follower
-
-    void MotionController::_LineFollerTaskWrapper(void *pvParameters)
+    MotionController::~MotionController()
     {
-        MotionController *obj = static_cast<MotionController *>(pvParameters);
-        obj->_lineFollowerTask();
+        /* NOT IMPLEMENTED YET */
     }
 
-    void MotionController::_startLineFollowerTask()
+    MotionController::MotionController()
     {
-        if (xTaskCreate(_LineFollerTaskWrapper,
-                        LINEFOLLOWERTASK_NAME,
-                        LINEFOLLOWERTASK_STACKSIZE,
-                        this,
-                        LINEFOLLOWERTASK_PRIORITY,
-                        &_lineFollowerTaskHandle) != pdTRUE)
-        {
-            /* ERROR HANDLING ??? */
-        }
+        _initHardware();
+        _initQueues();
+        _initPeripherals();
     }
 
-    // raspi com
-
-    void MotionController::_RaspberryComTaskWrapper(void *pvParameters)
+    MotionController::MotionController()
     {
-        MotionController *obj = static_cast<MotionController *>(pvParameters);
-        obj->_raspberryHatComTask();
-    }
-
-    void MotionController::_startRaspberryHatComTask()
-    {
-        if (xTaskCreate(_RaspberryComTaskWrapper,
-                        RASPBERRYHATCOMTASK_NAME,
-                        RASPBERRYHATCOMTASK_STACKSIZE,
-                        this,
-                        RASPBERRYHATCOMTASK_PRIORITY,
-                        &_raspberryComTaskHandle) != pdTRUE)
-        {
-            /* ERROR HANDLING ??? */
-        }
-    }
-
-    // msg dispatcher
-
-    void MotionController::_MessageDispatcherTaskWrapper(void *pvParameters)
-    {
-        MotionController *obj = static_cast<MotionController *>(pvParameters);
-        obj->_messageDispatcherTask();
-    }
-
-    void MotionController::_startMessageDispatcherTask()
-    {
-        if (xTaskCreate(_MessageDispatcherTaskWrapper,
-                        MESSAGEDISPATCHERTASK_NAME,
-                        MESSAGEDISPATCHERTASK_STACKSIZE,
-                        this,
-                        MESSAGEDISPATCHERTASK_PRIORITY,
-                        &_messageDispatcherTaskHandle) != pdTRUE)
-        {
-            /* ERROR HANDLING ??? */
-        }
-    }
-
-    void MotionController::startScheduler()
-    {
-        _startLineFollowerTask();
-        _startMessageDispatcherTask();
-        _startRaspberryHatComTask();
-
-        vTaskStartScheduler();
-        for (;;)
-        {
-            /* never reached */
-        }
+        /* default ctor */
     }
 
     /* ==================================
-                    Init
-       ================================== */
+             Init Members
+   ================================== */
 
+    /// @brief initializes all GPIOs and Communication Channels connected to the MotionController
+    /// @return NOT IMPLEMENTED YET
     bool MotionController::_initHardware()
     {
         /* ---------- UART ---------- */
@@ -142,6 +85,7 @@ namespace MotionController
         return true;
     }
 
+    /// @brief initializes all Classmembers such as sensors and drivers
     void MotionController::_initPeripherals()
     {
         _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
@@ -153,6 +97,8 @@ namespace MotionController
         return;
     }
 
+    /// @brief initializes all Queues used for intertask communication
+    /// @return true if all queues got created successfully
     bool MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
@@ -169,6 +115,7 @@ namespace MotionController
         return true;
     }
 
+    /// @brief initializes UART0 channel Rx-ISR - neccessary for RaspberryHat Communication
     void MotionController::_initUart0Isr()
     {
         // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
@@ -184,9 +131,12 @@ namespace MotionController
     }
 
     /* ==================================
-                UART - Methods
+             UART concerning Methods
        ================================== */
 
+    /// @brief sends one package of data using the prain_uart library
+    /// @param data frame of data which is supposed to be send. Needs to be pre-encoded using the encoder-class!
+    /// @param uartId Uart-Channel: uart0 -> RaspberryHat, uart1-> GripController
     void MotionController::sendUartMsg(frame *data, uart_inst_t *uartId)
     {
         // cpy value from data pointer
@@ -204,6 +154,9 @@ namespace MotionController
         return;
     }
 
+    /// @brief Flushes Uart TxChannel after one package of data was send.
+    /// @param uart uart id: uart1/uart0
+    /// @param timeout_ms timeout in ms
     void MotionController::_uartFlushTxWithTimeout(uart_inst_t *uart, uint32_t timeout_ms)
     {
         uint8_t msTicks = 0;
@@ -220,6 +173,7 @@ namespace MotionController
         return;
     }
 
+    /// @brief handles incoming messages. Does not decode data but sends Decode command to RaspberryComTask
     void MotionController::_uart0RxIrqHandler()
     {
         /* some message arrived!! send read command to RaspberryHatComQueue
@@ -245,35 +199,108 @@ namespace MotionController
     }
 
     /* ==================================
-            Constructor/Deconstructor
+          start Task and Methodwrapper
        ================================== */
 
-    MotionController::~MotionController()
+    /// @brief represents a wrapper for the LineFollowerTask due to FreeRTOS only takes static methods 
+    /// @param pvParameters void ptr contains MotionController Instance 
+    void MotionController::_LineFollerTaskWrapper(void *pvParameters)
     {
-        /* NOT IMPLEMENTED YET */
+        MotionController *obj = static_cast<MotionController *>(pvParameters);
+        obj->_lineFollowerTask();
     }
 
-    MotionController::MotionController()
+    /// @brief Creates LineFollower Task.
+    void MotionController::_startLineFollowerTask()
     {
-        _initHardware();
-        _initQueues();
-        _initPeripherals();
+        if (xTaskCreate(_LineFollerTaskWrapper,
+                        LINEFOLLOWERTASK_NAME,
+                        LINEFOLLOWERTASK_STACKSIZE,
+                        this,
+                        LINEFOLLOWERTASK_PRIORITY,
+                        &_lineFollowerTaskHandle) != pdTRUE)
+        {
+            /* ERROR HANDLING ??? */
+        }
+    }
+
+    /// @brief represents a wrapper for the RaspberryComTask due to FreeRTOS only takes static methods
+    /// @param pvParameters void ptr contains MotionController Instance
+    void MotionController::_RaspberryComTaskWrapper(void *pvParameters)
+    {
+        MotionController *obj = static_cast<MotionController *>(pvParameters);
+        obj->_raspberryHatComTask();
+    }
+
+    /// @brief creates RaspberryHatComTask
+    void MotionController::_startRaspberryHatComTask()
+    {
+        if (xTaskCreate(_RaspberryComTaskWrapper,
+                        RASPBERRYHATCOMTASK_NAME,
+                        RASPBERRYHATCOMTASK_STACKSIZE,
+                        this,
+                        RASPBERRYHATCOMTASK_PRIORITY,
+                        &_raspberryComTaskHandle) != pdTRUE)
+        {
+            /* ERROR HANDLING ??? */
+        }
+    }
+
+    /// @brief represents a wrapper for the MessageDispatcherTast due to FreeRTOS only takes static methods
+    /// @param pvParameters void ptr contains MotionController Instance
+    void MotionController::_MessageDispatcherTaskWrapper(void *pvParameters)
+    {
+        MotionController *obj = static_cast<MotionController *>(pvParameters);
+        obj->_messageDispatcherTask();
+    }
+
+    void MotionController::_startMessageDispatcherTask()
+    {
+        if (xTaskCreate(_MessageDispatcherTaskWrapper,
+                        MESSAGEDISPATCHERTASK_NAME,
+                        MESSAGEDISPATCHERTASK_STACKSIZE,
+                        this,
+                        MESSAGEDISPATCHERTASK_PRIORITY,
+                        &_messageDispatcherTaskHandle) != pdTRUE)
+        {
+            /* ERROR HANDLING ??? */
+        }
+    }
+
+    /// @brief initializes all Tasks running inside MotionController and starts the Scheduler
+    void MotionController::startScheduler()
+    {
+        _startLineFollowerTask();
+        _startMessageDispatcherTask();
+        _startRaspberryHatComTask();
+
+        vTaskStartScheduler();
+        for (;;)
+        {
+            /* never reached */
+        }
     }
 
     /* ==================================
                 getters & setters
        ================================== */
 
+    /// @brief get QueueHandle of RaspberryHatComTask
+    /// @return QueueHandle 
     QueueHandle_t MotionController::getRaspberryHatComQueue()
     {
         return _raspberryHatComQueue;
     }
 
+    /// @brief get QueueHandle of LineFollowerQueue
+    /// @return QueueHandle
     QueueHandle_t MotionController::getLineFollowerQueue()
     {
         return _lineFollowerQueue;
     }
 
+    /// @brief get QueueHandle of MessageDispatcherQueue
+    /// @return QueueHandle
     QueueHandle_t MotionController::getMessageDispatcherQueue()
     {
         return _messageDispatcherQueue;

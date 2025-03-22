@@ -13,7 +13,7 @@ protected:
     void _checkDevice() override;
 
 public:
-    Tla2528(){}
+    Tla2528();
     Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress);
     ~Tla2528();
 

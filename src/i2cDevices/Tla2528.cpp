@@ -3,16 +3,27 @@
 #include "Tla2528_HW_Abstraction.h"
 #include <stdio.h>
 
+/* ==================================
+      constructor / deconstructor
+   ================================== */
+
 Tla2528::Tla2528(i2c_inst_t *i2cInstance, uint8_t i2cAddress) : I2cBase(i2cInstance, i2cAddress)
 {
     _initDevice();
     _checkDevice();
 }
 
-// deconstructor - not implemented yet
+/// @brief default constructor
+Tla2528::Tla2528(){}
+
+/// @brief deconstructor - not implemented yet
 Tla2528::~Tla2528()
 {
 }
+
+/* ==================================
+          init Members
+   ================================== */
 
 /// @brief global confgiuration ADC-Converter
 void Tla2528::_initDevice()
@@ -48,26 +59,11 @@ void Tla2528::_checkDevice()
     else
         printf("ADC NO ANSWER");
     return;
-
 }
 
-/// @brief reads ADC-Value
-/// @return vector containing all raw ADC-Values
-bool Tla2528::readAdc(uint16_t *buffer)
-{
-
-    for(size_t i = 0; i < 8; i++)
-    {
-        i2cWriteReg(MANUAL_CH_SEL_ADDRESS, i);
-
-        uint8_t rawValue[2] = {0};
-        i2cReadFrame(rawValue, 2);
-
-        buffer[i] = (rawValue[0] << 8) | rawValue[1];
-    }
-
-    return true;
-}
+/* ==================================
+        read / write operation
+   ================================== */
 
 /// @brief performs a single register read. Overrides base-class due to individual Operation-Codes
 /// @param reg register address
@@ -120,5 +116,27 @@ bool Tla2528::i2cWriteReg(uint8_t reg, uint8_t data)
         _i2cStatus = I2C_TIMEOUT; // errors = PICO_ERROR_GENERIC or PICO_ERROR_TIMEOUT
         return false;
     }
+    return true;
+}
+
+/* ==================================
+          getters & setters
+   ================================== */
+
+/// @brief reads ADC-Value
+/// @return vector containing all raw ADC-Values
+bool Tla2528::readAdc(uint16_t *buffer)
+{
+
+    for(size_t i = 0; i < 8; i++)
+    {
+        i2cWriteReg(MANUAL_CH_SEL_ADDRESS, i);
+
+        uint8_t rawValue[2] = {0};
+        i2cReadFrame(rawValue, 2);
+
+        buffer[i] = (rawValue[0] << 8) | rawValue[1];
+    }
+
     return true;
 }

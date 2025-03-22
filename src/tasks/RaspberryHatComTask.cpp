@@ -1,6 +1,8 @@
 #include "MotionController.hpp"
 
 #include <stdio.h>
+#include <cstdint>
+#include <cstring>
 
 #include "pico/stdlib.h"
 
@@ -113,37 +115,45 @@ namespace MotionController
             return msg;
         }
 
-        uint64_t rawMessage = 0;
-
-        // MSB FIRST
-        // for (int i = 0; uart_is_readable(UART_INSTANCE_RASPBERRYHAT) && i != PROTOCOL_SIZE_IN_BYTES; i++)
-        // {
-        //     rawMessage |= (uart_getc(UART_INSTANCE_RASPBERRYHAT) << ((PROTOCOL_SIZE_IN_BYTES - 1 - i) * 8));
-        // }
+        char rawMessage[8] = {0};
 
         // LSB FIRST
-        for (int i = 0; uart_is_readable_within_us(UART_INSTANCE_RASPBERRYHAT, 1000) && i < PROTOCOL_SIZE_IN_BYTES; i++)
+        for (int i = 0; uart_is_readable_within_us(UART_INSTANCE_RASPBERRYHAT, 1000) && i < 8; i++)
         {
-            rawMessage |= ((uint64_t)uart_getc(UART_INSTANCE_RASPBERRYHAT) << (i * 8));
+            rawMessage[i] = uart_getc(UART_INSTANCE_RASPBERRYHAT);
         }
 
-        decoder dec = decoder(rawMessage);
+        // // MSB FIRST
+        // for (int i = 8; uart_is_readable_within_us(UART_INSTANCE_RASPBERRYHAT, 1000) && i >= 0; i--)
+        // {
+        //     rawMessage[i] = uart_getc(UART_INSTANCE_RASPBERRYHAT);
+        // }
+
+        uint64_t rawFrame = 0;
+        std::memcpy(&rawFrame, rawMessage, sizeof(uint64_t));
+
+        // get address
+        decoder dec = decoder(rawFrame);
+        address addr = dec.get_address();
 
         DispatcherMessage retVal;
         retVal.senderTaskId = DispatcherTaskId::RaspberryHatComTask;
 
+        bool crcCheck = dec.verify_crc();
+        command cmd = dec.get_command();
+
         // Message is meant for Grip Controller
-        if (dec.get_address() == address::GRIP_CTRL)
+        if (addr == address::GRIP_CTRL)
         {
             retVal.receiverTaskId = DispatcherTaskId::GripControllerComTask;
             retVal.command = TaskCommand::HandThroughMessage;
-            retVal.setData(rawMessage);
+            retVal.setData(rawFrame);
         } // end msg grpcntrl
 
         // message is meant for Motion Controller
-        if (dec.get_address() == address::MOTION_CTRL)
+        if (addr == address::MOTION_CTRL)
         {
-            if (!dec.verify_crc())
+            if (!crcCheck)
             {
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Error;
@@ -152,7 +162,7 @@ namespace MotionController
             }
 
             // if crc is correct, disassemble message
-            switch (dec.get_command())
+            switch (cmd)
             {
             case (command::MOVE):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
@@ -205,9 +215,9 @@ namespace MotionController
                 break;
             default:
                 // TODO: define Error code
-                retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
-                retVal.command = TaskCommand::Error;
-                retVal.setData(0);
+                // retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
+                // retVal.command = TaskCommand::Error;
+                // retVal.setData(0);
                 break;
             }
         } // end msg mtnctr

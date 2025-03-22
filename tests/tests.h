@@ -14,7 +14,6 @@
 #include "Tla2528Test.h"
 #include "LineSensorTest.h"
 #include "HcSr04Test.h"
-#include "ArduinoAdcSlaveTest.h"
 #include "LineFollowerTaskTest.hpp"
 #include "UartConfigTest.h"
 

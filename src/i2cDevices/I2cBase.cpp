@@ -1,10 +1,13 @@
 #include "I2cBase.hpp"
-
 #include <stdio.h>
 
 // init static class members
 SemaphoreHandle_t I2cBase::_i2cMutex = NULL;
 bool I2cBase::_i2cMutexInititalized = false;
+
+/* ==================================
+      constructor / deconstructor
+   ================================== */
 
 /// @brief initialises basic i2c Device
 /// @param i2cInstance i2c0 / i2c1 refer pico datasheet
@@ -23,11 +26,18 @@ I2cBase::I2cBase(i2c_inst_t *i2cInstance, uint8_t i2cAddress)
     taskEXIT_CRITICAL();
 }
 
-/// @brief Deconstructor i2c baseclass - not implemented yet
+/// @brief default constructor
+I2cBase::I2cBase(){}
+
+/// @brief deconstructor - not implemented yet
 I2cBase::~I2cBase()
 {
     // no deconstructor
 }
+
+/* ==================================
+            init Members
+   ================================== */
 
 /// @brief initializes i2c Channel
 /// @param sdaPin Serial data Pin
@@ -41,6 +51,10 @@ void I2cBase::i2cInit(uint8_t sdaPin, uint8_t sckPin, i2c_inst_t *i2cInstance, u
     gpio_set_function(sdaPin, GPIO_FUNC_I2C);
     gpio_set_function(sckPin, GPIO_FUNC_I2C);
 }
+
+/* ==================================
+      read / write operations
+   ================================== */
 
 /// @brief provides a readframe for i2c bus. No Register Adress neccessary - just read slave
 /// @param buffer pointer to a buffer
@@ -116,16 +130,18 @@ bool I2cBase::i2cWriteReg(uint8_t reg, uint8_t data)
     return true;
 }
 
+/// @brief sets internal status flag to a value
+/// @param err error set by read / write operation
 void I2cBase::_setError(uint8_t err)
 {
     switch (err)
     {
     case -PICO_ERROR_GENERIC:
-        _i2cStatus = I2C_NO_ACK;
+        this->_i2cStatus = I2C_NO_ACK;
         printf("# I2C_NO_ACK # \n");
         break;
     case -PICO_ERROR_TIMEOUT:
-        _i2cStatus = I2C_TIMEOUT;
+        this->_i2cStatus = I2C_TIMEOUT;
         printf("# I2C_TIMEOUT # \n");
         break;
     default:

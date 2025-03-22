@@ -11,6 +11,10 @@
 constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
 constexpr float WHEELCIRCUMFENCE = (STEPPERCONFIG_WHEEL_DIAMETER_MM * 1e3) * M_PI;
 
+/* ==================================
+      Constructor / Deconstructor
+   ================================== */
+
 /// @brief creates instance of Trinamics TMC5240 stepper driver
 /// @param spiInstance spi instance - refer pico c/c++ sdk
 /// @param csPin chip select pin
@@ -29,6 +33,13 @@ Tmc5240::~Tmc5240()
 {
     // DECONSTRUCTOR not implemented yet
 }
+
+/// @brief default constructor Tmc5240 MotorDrives
+Tmc5240::Tmc5240(){}
+
+/* ==================================
+            Init members
+   ================================== */
 
 /// @brief initializes device
 void Tmc5240::_initDevice()
@@ -93,47 +104,9 @@ void Tmc5240::_initSpreadCycle()
     return;
 }
 
-uint8_t Tmc5240::getCurrentStatusFlag()
-{
-    // trigger dummy Register Read
-    _spiReadReg(TMC5240_XACTUAL);
-
-    // get status flags
-    return _spiStatus;
-}
-
-/// @brief sets motor direction
-/// @param direction true/false
-void Tmc5240::setShaftDirection(bool direction)
-{
-    uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
-    GCONF_val |= direction << TMC5240_SHAFT_SHIFT;
-    _spiWriteReg(TMC5240_GCONF, GCONF_val);
-
-    return;
-}
-
-/// @brief moves motor in velocity mode
-/// @param direction direction the motor has to turn
-/// @param vmax maximum velocity TODO: unit???
-/// @param amax maximum acceleration TODO: unit???
-void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
-{
-        // flip direction if std direction ain't matching
-        if (!_stdDir)
-            direction = !direction;
-
-    _spiWriteReg(TMC5240_RAMPMODE, direction ? TMC5240_MODE_VELPOS : TMC5240_MODE_VELNEG);
-
-    _spiWriteReg(TMC5240_VMAX, vmax);
-    _spiWriteReg(TMC5240_AMAX, amax);
-
-    uint32_t vmax_val = _spiReadReg(TMC5240_VMAX);
-    uint32_t amax_val = _spiReadReg(TMC5240_AMAX);
-    printf("vmax set to: %d ; amax set to: %d \n", vmax_val, amax_val);
-
-    return;
-}
+/* ==================================
+         control targetdevice
+   ================================== */
 
 /// @brief moves Motor to specific location using position mode
 /// @param xTargetVal ABSOLUTE position! in steps
@@ -163,7 +136,7 @@ void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_
     int32_t xActualVal = _spiReadReg(TMC5240_XACTUAL);
 
     // set direction
-    if(!_stdDir)
+    if (!_stdDir)
         targexPos = -targexPos;
 
     // set new target position
@@ -172,6 +145,54 @@ void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_
 
     return;
 }
+
+/// @brief moves motor in velocity mode
+/// @param direction direction the motor has to turn
+/// @param vmax maximum velocity TODO: unit???
+/// @param amax maximum acceleration TODO: unit???
+void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
+{
+    // flip direction if std direction ain't matching
+    if (!_stdDir)
+        direction = !direction;
+
+    _spiWriteReg(TMC5240_RAMPMODE, direction ? TMC5240_MODE_VELPOS : TMC5240_MODE_VELNEG);
+
+    _spiWriteReg(TMC5240_VMAX, vmax);
+    _spiWriteReg(TMC5240_AMAX, amax);
+
+    uint32_t vmax_val = _spiReadReg(TMC5240_VMAX);
+    uint32_t amax_val = _spiReadReg(TMC5240_AMAX);
+    printf("vmax set to: %d ; amax set to: %d \n", vmax_val, amax_val);
+
+    return;
+}
+/* ==================================
+          getters & setters
+   ================================== */
+
+/// @brief performs a dummy write cycle in order to get the devices current spi-statusflags
+/// @return statusflags
+uint8_t Tmc5240::getCurrentStatusFlag()
+{
+    // trigger dummy Register Read
+    _spiReadReg(TMC5240_XACTUAL);
+
+    // get status flags
+    return _spiStatus;
+}
+
+/// @brief sets motor direction
+/// @param direction true/false
+void Tmc5240::setShaftDirection(bool direction)
+{
+    uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
+    GCONF_val |= direction << TMC5240_SHAFT_SHIFT;
+    _spiWriteReg(TMC5240_GCONF, GCONF_val);
+
+    return;
+}
+
 
 /// @brief reads out xActual register
 /// @return actual steps
@@ -201,6 +222,10 @@ void Tmc5240::toggleToff(bool val)
     _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
 }
 
+/* ==================================
+         some static helpers
+   ================================== */
+
 /// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
 /// @param mps meter mer second value
 /// @return microsteps
@@ -212,9 +237,9 @@ int32_t Tmc5240::convertDistanceToMicrosteps(float meters)
     return retVal;
 }
 
-/// @brief convert ustep/s in m
-/// @param mps meter mer second value
-/// @return microsteps
+/// @brief convert ustep/s in cm
+/// @param uSteps microsteps
+/// @return Distance in Centimeter
 int32_t Tmc5240::convertMicrostepsToCentimeter(uint32_t uSteps)
 {
     float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE;
@@ -225,13 +250,16 @@ int32_t Tmc5240::convertMicrostepsToCentimeter(uint32_t uSteps)
 
 /// @brief convert degree to microsteps
 /// @param degrees float degrees
-/// @return 
+/// @return value of Microsteps
 int32_t Tmc5240::convertDegreeToMicrosteps(int32_t degrees)
 {
     float usps = (degrees / 360.0f) * MICROSTEPS_PER_REVOLUTION;
     return static_cast<int32_t>(round(usps));
 }
 
+/// @brief calcs rotatinal angle given by driven distances of 2 wheels on one axis
+/// @param uStepsDifference step difference in Microsteps! 
+/// @return angle
 float Tmc5240::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
 {
     float dsMeters = convertMicrostepsToCentimeter(uStepsDifference) * 1e2;

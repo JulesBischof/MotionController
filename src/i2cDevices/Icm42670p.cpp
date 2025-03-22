@@ -5,6 +5,10 @@
 
 #include <stdio.h>
 
+/* ==================================
+      constructor / deconstructor
+   ================================== */
+
 /// @brief creates instance of ICM42670p Gyroscope
 /// @param i2cInstance i2cInstance ref c/c++ sdk raspberry pico
 /// @param i2cAddress i2c address
@@ -14,28 +18,17 @@ Icm42670p::Icm42670p(i2c_inst_t *i2cInstance, uint8_t i2cAddress) : I2cBase(i2cI
     _checkDevice();
 }
 
+/// @brief default constructor
+Icm42670p::Icm42670p(){}
+
 /// @brief deconstructor not implemented yet
 Icm42670p::~Icm42670p()
 {
 }
 
-/// @brief returns current angular change in °/s
-/// @return signed int - angular change in °/s
-float Icm42670p::ConvertLsbToDps(int16_t rawVal)
-{
-    float val = (float)rawVal / LSB_TO_DPS_SCALE_FACTOR;
-    return val;
-}
-
-/// @brief calculates absolut angle in degree, given by how many steps both drivers did
-/// @param xActualDriver0 xActual Value driver 0
-/// @param xActualDriver1 xActual Value driver 1
-/// @return angle in °
-float Icm42670p::getAngle(int32_t xActualDriver0, int32_t xActualDriver1)
-{
-    float retval = (xActualDriver0 / xActualDriver1) * (180 / 3.14);
-    return 0.0f;
-}
+/* ==================================
+          init Members
+   ================================== */
 
 /// @brief basic settings for Device
 void Icm42670p::_initDevice()
@@ -80,6 +73,32 @@ void Icm42670p::_checkDevice()
     printf("Icm4670p check done! \n");
 
     return;
+}
+
+/* ==================================
+         some helpers
+   ================================== */
+
+/// @brief returns current angular change in °/s
+/// @return signed int - angular change in °/s
+float Icm42670p::ConvertLsbToDps(int16_t rawVal)
+{
+    float val = (float)rawVal / LSB_TO_DPS_SCALE_FACTOR;
+    return val;
+}
+
+/* ==================================
+          getters & setters
+   ================================== */
+
+/// @brief calculates absolut angle in degree, given by how many steps both drivers did
+/// @param xActualDriver0 xActual Value driver 0
+/// @param xActualDriver1 xActual Value driver 1
+/// @return angle in °
+float Icm42670p::getAngle(int32_t xActualDriver0, int32_t xActualDriver1)
+{
+    float retval = (xActualDriver0 / xActualDriver1) * (180 / 3.14);
+    return 0.0f;
 }
 
 /// @brief reads raw value of z-Axis Gyro
