@@ -35,8 +35,10 @@ public:
 
     void toggleToff(bool val);
     
-    static int32_t meterToUStepsConversion(float meter);
-    static int32_t degreeToUStepsConversion(int32_t degrees);
+    static int32_t convertDistanceToMicrosteps(float meter);
+    static int32_t convertMicrostepsToCentimeter(uint32_t uSteps);
+    static int32_t convertDegreeToMicrosteps(int32_t degrees);
+    static float convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference);
 };
 
 #endif //TMC5240_H

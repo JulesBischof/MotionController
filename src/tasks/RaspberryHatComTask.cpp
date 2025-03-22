@@ -34,6 +34,7 @@ namespace MotionController
             QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
             if (raspberryHatComQueue == nullptr)
             {
+                printf("ERROR #raspberryHatComTask# NULLREFERENCE raspberryHatComQueue\n");
                 while (1)
                 { /*  ERROR  */
                 }
@@ -41,6 +42,7 @@ namespace MotionController
             QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
             if (messageDispatcherQueue == nullptr)
             {
+                printf("ERROR #raspberryHatComTask# NULLREFERENCE messageDispatcherQueue\n");
                 while (1)
                 { /*  ERROR  */
                 }
@@ -54,7 +56,7 @@ namespace MotionController
             {
                 if (message.receiverTaskId != DispatcherTaskId::RaspberryHatComTask)
                 {
-                    printf("RASPBERRYHATCOMTASK - Message contains wrong Task ID \n");
+                    printf("ERROR #_raspberryHatComTask# - Message contains wrong Task ID \n");
                     continue;
                 }
                 
@@ -79,13 +81,13 @@ namespace MotionController
                     txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.getData());
                     break;
                 case (TaskCommand::PollStatusFlags):
-                    // TODO: missing in prain_uart poll_id
+                    // TODO: prain_uart poll_id
                     break;
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
                     if(xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
                     {
-                        printf("WRITE TO QUEUE raspiComTask cmd decode msg FAILED");
+                        printf("ERROR #_raspberryHatComTask# WRITE TO QUEUE cmd decode msg FAILED\n");
                     }
                     uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
                     break;
@@ -106,8 +108,8 @@ namespace MotionController
                 DispatcherTaskId::RaspberryHatComTask,
                 DispatcherTaskId::RaspberryHatComTask,
                 TaskCommand::Error,
-                0);
-            printf("ERROR _getuartMsg");
+                static_cast<uint64_t>(error_code::INTRNAL));
+            printf("ERROR #_raspberryHatComTask# _getuartMsg\n");
             return msg;
         }
 

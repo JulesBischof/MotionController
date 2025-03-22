@@ -8,6 +8,9 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
+constexpr float WHEELCIRCUMFENCE = (STEPPERCONFIG_WHEEL_DIAMETER_MM * 1e3) * M_PI;
+
 /// @brief creates instance of Trinamics TMC5240 stepper driver
 /// @param spiInstance spi instance - refer pico c/c++ sdk
 /// @param csPin chip select pin
@@ -201,18 +204,39 @@ void Tmc5240::toggleToff(bool val)
 /// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
 /// @param mps meter mer second value
 /// @return microsteps
-int32_t Tmc5240::meterToUStepsConversion(float mps)
+int32_t Tmc5240::convertDistanceToMicrosteps(float meters)
 {
-    const int microstepsPerRevolution = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-    float usps = (mps / (1e3 * STEPPERCONFIG_WHEEL_DIAMETER_MM)) * microstepsPerRevolution;
-    return static_cast<int32_t>(round(usps));
+    float res = (meters / WHEELCIRCUMFENCE) * MICROSTEPSPERREVOLUTION;
+
+    int32_t retVal = static_cast<int32_t>(std::round(res));
+    return retVal;
+}
+
+/// @brief convert ustep/s in m
+/// @param mps meter mer second value
+/// @return microsteps
+int32_t Tmc5240::convertMicrostepsToCentimeter(uint32_t uSteps)
+{
+    float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE;
+
+    int32_t retVal = static_cast<int32_t>(std::round(res));
+    return retVal;
 }
 
 /// @brief convert degree to microsteps
 /// @param degrees float degrees
 /// @return 
-int32_t Tmc5240::degreeToUStepsConversion(int32_t degrees)
+int32_t Tmc5240::convertDegreeToMicrosteps(int32_t degrees)
 {
     float usps = (degrees / 360.0f) * MICROSTEPS_PER_REVOLUTION;
     return static_cast<int32_t>(round(usps));
+}
+
+float Tmc5240::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
+{
+    float dsMeters = convertMicrostepsToCentimeter(uStepsDifference) * 1e2;
+
+    float res = (dsMeters * 180.0f) / (WHEELCIRCUMFENCE);
+
+    return res;
 }

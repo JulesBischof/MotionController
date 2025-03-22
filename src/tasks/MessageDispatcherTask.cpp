@@ -14,6 +14,7 @@ namespace MotionController
             QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
             if (lineFollowerQueue == nullptr)
             {
+                printf("ERROR #messageDispatcherTask# NULLREFERENCE lineFollowerQueueHandle\n");
                 while (1)
                 { /*  ERROR  */
                 }
@@ -21,6 +22,7 @@ namespace MotionController
             QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
             if (raspberryHatComQueue == nullptr)
             {
+                printf("ERROR #messageDispatcherTask# NULLREFERENCE raspberryHatComQueue\n");
                 while (1)
                 { /*  ERROR  */
                 }
@@ -28,6 +30,7 @@ namespace MotionController
             QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
             if (messageDispatcherQueue == nullptr)
             {
+                printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcherQueue\n");
                 while (1)
                 { /*  ERROR  */
                 }
@@ -45,10 +48,20 @@ namespace MotionController
                     // shouldn't happen - error Handling..? send ERRORCODE to RaspberryHat
                     break;
                 case (DispatcherTaskId::LineFollowerTask):
-                    xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10));
+                    if(xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcher - send to LineFollowerTask\n");
+                        while(1){} /* ERROR */
+                    }
                     break;
                 case (DispatcherTaskId::RaspberryHatComTask):
-                    // xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(10));
+                    if (xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcher - send to RaspiComTask\n");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
                     break;
                 case (DispatcherTaskId::GripControllerComTask):
                     // xQueueSend(_gripControllerComQueue, &message, pdMS_TO_TICKS(10));
@@ -58,7 +71,6 @@ namespace MotionController
                 }
             } // end Queue msg handling
 
-            // ERROR HANDLING IF FALSE ????
             vTaskDelay(pdMS_TO_TICKS(10));
         } // end loop
 
