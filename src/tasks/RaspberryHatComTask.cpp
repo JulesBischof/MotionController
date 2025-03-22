@@ -27,10 +27,25 @@ namespace MotionController
         // loop forever
         for (;;)
         {
-            DispatcherMessage message(DispatcherTaskId::NoTask, DispatcherTaskId::RaspberryHatComTask, TaskCommand::NoCommand);
+            DispatcherMessage message;
+            DispatcherMessage uartMsg;
+
+            // get QueueHandles
+            QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
+            if(raspberryHatComQueue == nullptr)
+            {
+                while(1){/*  ERROR  */}
+            }
+            QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+            if (messageDispatcherQueue == nullptr)
+            {
+                while (1)
+                { /*  ERROR  */
+                }
+            }
 
             // suspend Task until Message is recieved
-            if (xQueueReceive(_raspberryHatComQueue, &message, portMAX_DELAY) == pdTRUE)
+            if (xQueueReceive(raspberryHatComQueue, &message, portMAX_DELAY) == pdTRUE)
             {
                 if (message.receiverTaskId != DispatcherTaskId::RaspberryHatComTask)
                 {
@@ -42,26 +57,26 @@ namespace MotionController
                 switch (message.command)
                 {
                 case (TaskCommand::Info):
-                    txMsg = encode_info(address::RASPBERRY_HAT, message.data);
+                    txMsg = encode_info(address::RASPBERRY_HAT, message.getData());
                     break;
                 case (TaskCommand::Error):
-                    txMsg = encode_error(address::RASPBERRY_HAT, message.data);
+                    txMsg = encode_error(address::RASPBERRY_HAT, message.getData());
                     break;
                 case (TaskCommand::PollDistance):
-                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DISTANCE, message.data);
+                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DISTANCE, message.getData());
                     break;
                 case (TaskCommand::PollLineSensor):
-                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::LINE_SENSOR, message.data);
+                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::LINE_SENSOR, message.getData());
                     break;
                 case (TaskCommand::PollDegree):
-                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.data);
+                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.getData());
                     break;
                 case (TaskCommand::PollStatusFlags):
                     // TODO: missing in prain_uart poll_id
                     break;
                 case (TaskCommand::DecodeMessage):
-                    DispatcherMessage msg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
-                    xQueueSend(_messageDispatcherQueue, &msg, 10);
+                    uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
+                    xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(10));
                     break;
                 default:
                     break;
@@ -102,7 +117,7 @@ namespace MotionController
 
         decoder dec = decoder(rawMessage);
 
-        DispatcherMessage retVal(DispatcherTaskId::NoTask, DispatcherTaskId::RaspberryHatComTask, TaskCommand::NoCommand);
+        DispatcherMessage retVal;
         retVal.senderTaskId = DispatcherTaskId::RaspberryHatComTask;
 
         // Message is meant for Grip Controller
@@ -110,7 +125,7 @@ namespace MotionController
         {
             retVal.receiverTaskId = DispatcherTaskId::GripControllerComTask;
             retVal.command = TaskCommand::HandThroughMessage;
-            retVal.data = rawMessage;
+            // retVal.getData() = rawMessage;
         } // end msg grpcntrl
 
         // message is meant for Motion Controller
@@ -120,7 +135,7 @@ namespace MotionController
             {
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Error;
-                retVal.data = static_cast<uint64_t>(error_code::INVALID_CRC);
+                retVal.setData(static_cast<uint64_t>(error_code::INVALID_CRC) );
                 return retVal;
             }
 
@@ -130,29 +145,31 @@ namespace MotionController
             case (command::MOVE):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Move;
-                retVal.data = dec.get_raw_parameters();
+                retVal.setData(dec.get_raw_parameters());
                 break;
 
             case (command::REVERSE):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Reverse;
-                retVal.data = dec.get_raw_parameters();
+                retVal.setData(dec.get_raw_parameters());
                 break;
 
             case (command::STOP):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Stop;
-                retVal.data = 0;
+                retVal.setData(0);
                 break;
 
             case (command::TURN):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Turn;
+                retVal.setData(0);
                 break;
 
             case (command::PING):
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Pong;
+                retVal.setData(0);
                 break;
 
             case (command::POLL):
@@ -178,7 +195,7 @@ namespace MotionController
                 // TODO: define Error code
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Error;
-                retVal.data = 0;
+                retVal.setData(0);
                 break;
             }
         } // end msg mtnctr

@@ -21,7 +21,9 @@ namespace MotionController
     QueueHandle_t MotionController::_lineFollowerQueue = nullptr;
     QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
 
-    QueueHandle_t MotionController::getRaspberryHatComQueue() { return _raspberryHatComQueue; }
+    xSemaphoreHandle MotionController::_messageDispatcherQueueMutex = nullptr;
+    xSemaphoreHandle MotionController::_lineFollowerQueueMutex = nullptr;
+    xSemaphoreHandle MotionController::_raspberryHatComQueueMutex = nullptr;
 
     /* ==================================
             start Task and Wrapper
@@ -38,10 +40,10 @@ namespace MotionController
     void MotionController::_startLineFollowerTask()
     {
         if (xTaskCreate(_LineFollerTaskWrapper,
-                        MESSAGEDISPATCHERTASK_NAME,
-                        MESSAGEDISPATCHERTASK_STACKSIZE / sizeof(StackType_t),
+                        LINEFOLLOWERTASK_NAME,
+                        LINEFOLLOWERTASK_STACKSIZE,
                         this,
-                        MESSAGEDISPATCHERTASK_PRIORITY,
+                        LINEFOLLOWERTASK_PRIORITY,
                         &_lineFollowerTaskHandle) != pdTRUE)
         {
             /* ERROR HANDLING ??? */
@@ -60,7 +62,7 @@ namespace MotionController
     {
         if (xTaskCreate(_RaspberryComTaskWrapper,
                         RASPBERRYHATCOMTASK_NAME,
-                        RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t),
+                        RASPBERRYHATCOMTASK_STACKSIZE,
                         this,
                         RASPBERRYHATCOMTASK_PRIORITY,
                         &_raspberryComTaskHandle) != pdTRUE)
@@ -74,14 +76,14 @@ namespace MotionController
     void MotionController::_MessageDispatcherTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
-        obj->_raspberryHatComTask();
+        obj->_messageDispatcherTask();
     }
 
     void MotionController::_startMessageDispatcherTask()
     {
         if (xTaskCreate(_MessageDispatcherTaskWrapper,
                         MESSAGEDISPATCHERTASK_NAME,
-                        MESSAGEDISPATCHERTASK_STACKSIZE / sizeof(StackType_t),
+                        MESSAGEDISPATCHERTASK_STACKSIZE,
                         this,
                         MESSAGEDISPATCHERTASK_PRIORITY,
                         &_messageDispatcherTaskHandle) != pdTRUE)
@@ -95,6 +97,13 @@ namespace MotionController
         _startLineFollowerTask();
         _startMessageDispatcherTask();
         _startRaspberryHatComTask();
+
+        /*  
+            alle 3 bumm
+            dispatcher und raspicom: okay
+            dispatcher und line follower: bumm
+            raspicom und line follower: bumm
+        */
 
         vTaskStartScheduler();
         for (;;)
@@ -146,9 +155,21 @@ namespace MotionController
     bool MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+        _raspberryHatComQueueMutex = xSemaphoreCreateMutex();
+
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+        _lineFollowerQueueMutex = xSemaphoreCreateMutex();
+
         _messageDispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
-        /* ERROR HANDLING ??? */
+        _messageDispatcherQueueMutex = xSemaphoreCreateMutex();
+
+        if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr)
+        {
+            for (;;)
+            { /* ERROR??? */
+            }
+            return false; // never reached
+        }
         return true;
     }
 
@@ -237,15 +258,64 @@ namespace MotionController
     }
 
     MotionController::MotionController()
-        : _driver0(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1),
-          _driver1(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1),
-          _adc(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS),
-          _lineSensor(&_adc, UV_LED_GPIO),
-          _safetyButton(DIN_4),
-          _lineFollowerStatusFlags(0)
     {
         _initHardware();
         _initQueues();
+
+        _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+        _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
+        _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
+        _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
+        _safetyButton = DigitalInput(DIN_4);
+        _lineFollowerStatusFlags = 0;
     }
 
+    /* ==================================
+                getters & setters
+       ================================== */
+
+    QueueHandle_t MotionController::getRaspberryHatComQueue()
+    {
+        if (_raspberryHatComQueueMutex == nullptr)
+        {
+            return nullptr;
+        }
+        QueueHandle_t retVal = nullptr;
+        if (xSemaphoreTake(_raspberryHatComQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            retVal = _raspberryHatComQueue;
+            xSemaphoreGive(_raspberryHatComQueueMutex);
+        }
+        return retVal;
+    }
+
+    QueueHandle_t MotionController::getLineFollowerQueue()
+    {
+        if (_lineFollowerQueueMutex == nullptr)
+        {
+            return nullptr;
+        }
+        QueueHandle_t retVal = nullptr;
+        if (xSemaphoreTake(_lineFollowerQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            retVal = _lineFollowerQueue;
+            xSemaphoreGive(_lineFollowerQueueMutex);
+        }
+        return retVal;
+    }
+
+    QueueHandle_t MotionController::getMessageDispatcherQueue()
+    {
+        if (_messageDispatcherQueueMutex == nullptr)
+        {
+            return nullptr;
+        }
+        QueueHandle_t retVal = nullptr;
+        if (xSemaphoreTake(_messageDispatcherQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
+        {
+            retVal = _messageDispatcherQueue;
+            xSemaphoreGive(_messageDispatcherQueueMutex);
+        }
+        return retVal;
+    }
 }

@@ -9,7 +9,7 @@
 #include "FreeRTOS.h"
 #include "event_groups.h"
 
-class hcsr04
+class Hcsr04
 {
     private: 
         uint16_t _distance;
@@ -17,7 +17,7 @@ class hcsr04
         void _trigger();
 
         static void _hcSr04Irq(uint gpio, uint32_t events);
-        static std::map<uint, hcsr04 *> _instancesMap;
+        static std::map<uint, Hcsr04 *> _instancesMap;
         volatile absolute_time_t _timeStampRising;
         volatile absolute_time_t _timeStampFalling;
 
@@ -32,8 +32,9 @@ class hcsr04
         volatile EventBits_t _echoEvent;
 
     public : 
-        hcsr04(uint8_t triggerPin, uint8_t echoPin);
-        ~hcsr04();
+        Hcsr04(){}
+        Hcsr04(uint8_t triggerPin, uint8_t echoPin);
+        ~Hcsr04();
 
         uint16_t getDistance_mm();
 };

@@ -10,10 +10,33 @@ namespace MotionController
         // loop forever
         for (;;)
         {
-            DispatcherMessage message(DispatcherTaskId::NoTask, DispatcherTaskId::RaspberryHatComTask, TaskCommand::NoCommand);
+            DispatcherMessage message;
+
+            // get QueueHandles
+            QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
+            if (lineFollowerQueue == nullptr)
+            {
+                while (1)
+                { /*  ERROR  */
+                }
+            }
+            QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
+            if (raspberryHatComQueue == nullptr)
+            {
+                while (1)
+                { /*  ERROR  */
+                }
+            }
+            QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+            if (messageDispatcherQueue == nullptr)
+            {
+                while (1)
+                { /*  ERROR  */
+                }
+            }
 
             // suspend task until something is waiting in Queue
-            if (xQueueReceive(_messageDispatcherQueue, &message, portMAX_DELAY) == pdTRUE)
+            if (xQueueReceive(messageDispatcherQueue, &message, portMAX_DELAY) == pdTRUE)
             {
                 // take messages and put them to other Queues ... (if possible)
                 switch (message.receiverTaskId)
@@ -22,13 +45,13 @@ namespace MotionController
                     // shouldn't happen - error Handling..? send ERRORCODE to RaspberryHat
                     break;
                 case (DispatcherTaskId::LineFollowerTask):
-                    xQueueSend(_lineFollowerQueue, &message, 0);
+                    xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10));
                     break;
                 case (DispatcherTaskId::RaspberryHatComTask):
-                    // xQueueSend(_raspberryHatComQueue, &message, 0);
+                    // xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(10));
                     break;
                 case (DispatcherTaskId::GripControllerComTask):
-                    // xQueueSend(_gripControllerComQueue, &message, 0);
+                    // xQueueSend(_gripControllerComQueue, &message, pdMS_TO_TICKS(10));
                     break;
                 default:
                     break;
@@ -36,7 +59,7 @@ namespace MotionController
             } // end Queue msg handling
 
             // ERROR HANDLING IF FALSE ????
-
+            vTaskDelay(pdMS_TO_TICKS(10));
         } // end loop
 
         /* never reached */

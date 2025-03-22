@@ -1,7 +1,7 @@
 #ifndef MOTIONCONTROLLER_H
 #define MOTIONCONTROLLER_H
 
-#include <bitset>
+#include <cstddef>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -31,7 +31,7 @@ namespace MotionController
         GripControllerComTask
     };
 
-    enum class TaskCommand : uint16_t
+    enum class TaskCommand : uint8_t
     {
         NoCommand,
         Move,
@@ -50,15 +50,34 @@ namespace MotionController
         DecodeMessage
     };
 
+    /// @brief struct containing Messages for intertask communication
+    /// data is split into 2 32bit values due to memory allignment 
+    /// difficulties in the beginnning. Defining one uint64_t for data 
+    /// leads to hardfaults
     struct DispatcherMessage
     {
         DispatcherTaskId senderTaskId;
         DispatcherTaskId receiverTaskId;
         TaskCommand command;
-        uint64_t data;
+        uint32_t data[2];
 
-        DispatcherMessage(DispatcherTaskId sender, DispatcherTaskId receiver, TaskCommand cmd, uint64_t d = 0)
-            : senderTaskId(sender), receiverTaskId(receiver), command(cmd), data(d) {}
+        DispatcherMessage()
+            : senderTaskId(DispatcherTaskId::NoTask),
+              receiverTaskId(DispatcherTaskId::NoTask),
+              command(TaskCommand::NoCommand),
+              data{0, 0}
+        {
+        }
+        DispatcherMessage(DispatcherTaskId sender, DispatcherTaskId receiver, TaskCommand cmd, uint64_t d)
+            : senderTaskId(sender), receiverTaskId(receiver), command(cmd) { setData(d); }
+
+        uint64_t getData() const { return ((uint64_t)data[1] << 32) | data[0]; }
+
+        void setData(uint64_t d)
+        {
+            data[0] = (uint32_t)(d & 0xFFFFFFFF);
+            data[1] = (uint32_t)((d >> 32) & 0xFFFFFFFF);
+        }
     };
 
     /* ==================================
@@ -72,6 +91,7 @@ namespace MotionController
         bool _initQueues();
         void _initUartIsr();
 
+        static xSemaphoreHandle _raspberryHatComQueueMutex, _lineFollowerQueueMutex, _messageDispatcherQueueMutex;
         static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
         TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
 
@@ -116,6 +136,8 @@ namespace MotionController
         void startScheduler();
 
         static QueueHandle_t getRaspberryHatComQueue();
+        static QueueHandle_t getLineFollowerQueue();
+        static QueueHandle_t getMessageDispatcherQueue();
     };
 
 }

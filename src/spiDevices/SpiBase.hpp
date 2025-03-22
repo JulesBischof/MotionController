@@ -29,6 +29,7 @@ protected:
     bool _spiWriteReg(uint8_t reg, uint32_t data);
 
 public:
+    SpiBase(){}
     SpiBase(spi_inst_t *spiInstance, uint8_t csPin);
     ~SpiBase();
 

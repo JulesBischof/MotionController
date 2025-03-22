@@ -1,4 +1,4 @@
-#include "hcsr04.hpp"
+#include "Hcsr04.hpp"
 
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -6,7 +6,7 @@
 /// @brief creates instance of HCSR04 Ultrasonic distance-Sensor
 /// @param triggerPin GPIO conntected to trigger
 /// @param echoPin GPIO connected to echo
-hcsr04::hcsr04(uint8_t triggerPin, uint8_t echoPin)
+Hcsr04::Hcsr04(uint8_t triggerPin, uint8_t echoPin)
     : _triggerPin(triggerPin), _echoPin(echoPin)
 {
     _initGpios();
@@ -24,14 +24,14 @@ hcsr04::hcsr04(uint8_t triggerPin, uint8_t echoPin)
 }
 
 /// @brief deconstructor - not implemented yet
-hcsr04::~hcsr04()
+Hcsr04::~Hcsr04()
 {
     // not implemented yet - maybe disable interrupts or else - instances hardly ever get deleted tho
 }
 
 /// @brief measures current distance to distant object 
 /// @return distance measured by hcsr04, value in mm
-uint16_t hcsr04::getDistance_mm()
+uint16_t Hcsr04::getDistance_mm()
 {
     _trigger();
     EventBits_t bits = xEventGroupWaitBits(_eventGroup, _echoEvent, pdTRUE, pdFALSE, portMAX_DELAY);
@@ -48,7 +48,7 @@ uint16_t hcsr04::getDistance_mm()
 }
 
 /// @brief pulls the trigger pin
-void hcsr04::_trigger()
+void Hcsr04::_trigger()
 {
     // TODO: trigger pin by PIO possible ??? 
     gpio_put(_triggerPin, true);
@@ -59,9 +59,9 @@ void hcsr04::_trigger()
 /// @brief irq callback function for echo-pin interrupt
 /// @param gpio gpio that triggered the interrupt
 /// @param events falling or rising edge
-void hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
+void Hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
 {
-    hcsr04 *inst = hcsr04::_instancesMap[gpio];
+    Hcsr04 *inst = Hcsr04::_instancesMap[gpio];
 
     if (events = GPIO_IRQ_EDGE_FALL)
         inst->_timeStampFalling = get_absolute_time();
@@ -73,7 +73,7 @@ void hcsr04::_hcSr04Irq(uint gpio, uint32_t events)
 }
 
 /// @brief inits gpios
-void hcsr04::_initGpios()
+void Hcsr04::_initGpios()
 {
         gpio_init(_triggerPin);
         gpio_set_dir(_triggerPin, GPIO_OUT);

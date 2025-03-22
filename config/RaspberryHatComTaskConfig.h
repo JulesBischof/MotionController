@@ -7,7 +7,7 @@
 
 ============================================================== */
 #define RASPBERRYHATCOMTASK_NAME ("vRaspberryHatComTask")
-#define RASPBERRYHATCOMTASK_STACKSIZE (1024)
+#define RASPBERRYHATCOMTASK_STACKSIZE (2048)
 #define RASPBERRYHATCOMTASK_PRIORITY (1)
 
 #define RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS (10)

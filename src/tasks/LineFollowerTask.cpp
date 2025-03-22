@@ -7,6 +7,7 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
+#include "task.h"
 
 #include "TMC5240_HW_Abstraction.h"
 
@@ -25,7 +26,7 @@ namespace MotionController
     constexpr uint32_t RUNMODEFLAG_T_UPPER_BITMASK(0xFFFF0000);
     constexpr uint32_t RUNMODEFLAG_T_LOWER_BITMASK(0x0000FFFF);
 
-    enum RunModeFlag_t
+    enum RunModeFlag
     {
         // lower 16 bits statemaschine relevant flags
         MOTOR_RUNNING = 1 << 0,
@@ -43,7 +44,7 @@ namespace MotionController
         LOST_LINE = 1 << 16,
         POSITION_REACHED = 1 << 17,
         SAFETY_BUTTON_PRESSED = 1 << 18
-    } RunModeFlag_t;
+    } RunModeFlag;
 
     constexpr uint32_t STM_LINEFOLLOWER_BITSET = 0 | (MOTOR_RUNNING | LINE_FOLLOWER_MODE);
     constexpr uint32_t STM_MOVE_POSITIONMODE_BITSET = 0 | (MOTOR_RUNNING | MOTOR_POSITIONMODE);
@@ -56,6 +57,22 @@ namespace MotionController
 
     void MotionController::_lineFollowerTask()
     {
+        // get Queues
+        QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
+        if (lineFollowerQueue == nullptr)
+        {
+            while (1)
+            { /*  ERROR  */
+            }
+        }
+        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
+        if (messageDispatcherQueue == nullptr)
+        {
+            while (1)
+            { /*  ERROR  */
+            }
+        }
+
         // Variables
         int32_t X_ACTUAL_startValueDriver0 = _driver0.getXActual();
         int32_t drivenDistanceDriver0 = 0;
@@ -68,10 +85,13 @@ namespace MotionController
         // loop forever
         for (;;)
         {
-            DispatcherMessage message(DispatcherTaskId::NoTask, DispatcherTaskId::NoTask, TaskCommand::NoCommand);
-            if (uxQueueMessagesWaiting(_lineFollowerQueue) > 0)
+
+            DispatcherMessage message;
+            DispatcherMessage response;
+
+            if (uxQueueMessagesWaiting(lineFollowerQueue) > 0)
             {
-                xQueueReceive(_lineFollowerQueue, &message, pdMS_TO_TICKS(10));
+                xQueueReceive(lineFollowerQueue, &message, pdMS_TO_TICKS(10));
 
                 if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask)
                 {
@@ -88,16 +108,16 @@ namespace MotionController
                     X_ACTUAL_startValueDriver1 = _driver1.getXActual();
 
                     // move infinit as Line Follower
-                    if (message.data == 0)
+                    if (message.getData() == 0)
                     {
                         maxDistance = 0; // TODO: 2m in usteps
                         _lineFollowerStatusFlags = STM_LINEFOLLOWER_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                     }
 
                     // move in Position Mode
-                    if (message.data != 0)
+                    if (message.getData() != 0)
                     {
-                        maxDistance = Tmc5240::meterToUStepsConversion(message.data) / 1e2; // 1e2 due to distance gets send in cm to avoid floats in protocoll
+                        maxDistance = Tmc5240::meterToUStepsConversion(message.getData()) / 1e2; // 1e2 due to distance gets send in cm to avoid floats in protocoll
                         _lineFollowerStatusFlags = STM_MOVE_POSITIONMODE_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
                     }
                     break;
@@ -121,15 +141,15 @@ namespace MotionController
                     break;
 
                 case TaskCommand::PollStatusFlags:
-                    DispatcherMessage response(DispatcherTaskId::LineFollowerTask,
-                                               message.senderTaskId,
-                                               TaskCommand::PollStatusFlags,
-                                               _lineFollowerStatusFlags);
-                    xQueueSend(_messageDispatcherQueue, &response, 0);
+                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                 message.senderTaskId,
+                                                 TaskCommand::PollStatusFlags,
+                                                 _lineFollowerStatusFlags);
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 
                 default:
-                    // error! command not found assert() ?
+                    printf("LineFollowerTask - COMMAND UNKNOWN ?");
                     break;
                 }
             } // end of message handling
@@ -171,7 +191,7 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    _movePositionMode(message.data);
+                    _movePositionMode(message.getData());
                 }
 
                 if (_checkForStandstill())
@@ -184,7 +204,7 @@ namespace MotionController
             /// ------- stm turn vehicle -------
             if ((_lineFollowerStatusFlags & STM_TURNROBOT_BITSET) == STM_TURNROBOT_BITSET)
             {
-                _turnRobot(message.data);
+                _turnRobot(message.getData());
 
                 if (_checkForStandstill())
                 {
@@ -202,7 +222,7 @@ namespace MotionController
                                            _lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
 
                 _lineFollowerStatusFlags |= STATUSFLAGS_SEND;
-                xQueueSend(_messageDispatcherQueue, &response, 0);
+                xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
             }
 
             /// ------- stm stop drives -------

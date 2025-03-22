@@ -1,12 +1,12 @@
 #include "FreeRTOS.h"
 #include "task.h"
-#include "queues.h"
 
 #include "pico/stdlib.h"
 #include "AppConfig.h"
 #include "tests.h"
 
 #include "MotionController.hpp"
+
 
 int main()
 {
@@ -18,13 +18,15 @@ int main()
 
 #if APP_MODE == 1
 
-    MotionController motionController = MotionController();
+    MotionController::DispatcherMessage msg;
+
+    MotionController::MotionController motionController = MotionController::MotionController();
     motionController.startScheduler();
 
     // never reached
     while (1)
     {
     };
-    
-#endif
 }
+
+#endif

@@ -7,8 +7,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 
-#include "queues.h"
-
 #include "hardware/i2c.h"
 
 #include "Icm42670pTest.h"
