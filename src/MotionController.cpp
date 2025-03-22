@@ -8,6 +8,7 @@
 
 #include "MotionControllerConfig.h"
 #include "MotionControllerPinning.h"
+#include <string.h>
 
 namespace MotionController
 {
@@ -94,13 +95,6 @@ namespace MotionController
         _startMessageDispatcherTask();
         _startRaspberryHatComTask();
 
-        /*  
-            alle 3 bumm
-            dispatcher und raspicom: okay
-            dispatcher und line follower: bumm
-            raspicom und line follower: bumm
-        */
-
         vTaskStartScheduler();
         for (;;)
         {
@@ -148,6 +142,17 @@ namespace MotionController
         return true;
     }
 
+    void MotionController::_initPeripherals()
+    {
+        _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+        _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
+        _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
+        _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
+        _safetyButton = DigitalInput(DIN_4);
+        _lineFollowerStatusFlags = 0;
+        return;
+    }
+
     bool MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
@@ -164,10 +169,8 @@ namespace MotionController
         return true;
     }
 
-    void MotionController::_initUartIsr()
+    void MotionController::_initUart0Isr()
     {
-        /* -------- UART 0 --------- */
-
         // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
         // uart_set_hw_flow(UART_INSTANCE_RASPBERRYHAT, false, false);
 
@@ -178,8 +181,6 @@ namespace MotionController
         irq_set_exclusive_handler(UART0_IRQ, _uart0RxIrqHandler);
         irq_set_enabled(UART0_IRQ, true);
         uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
-
-        // TODO: enable interrupts for uart 1 (gripctrl)
     }
 
     /* ==================================
@@ -188,14 +189,18 @@ namespace MotionController
 
     void MotionController::sendUartMsg(frame *data, uart_inst_t *uartId)
     {
-        uint64_t rawValue = reinterpret_cast<uint64_t>(data);
+        // cpy value from data pointer
+        char rawValue[8] = {0};
+        memcpy(rawValue, data, sizeof(frame));
+
+        // send bytewise
         for (int i = 0; i < 8; i++)
         { // 64 Bit = 8 Bytes
-            uint8_t byte = (rawValue >> (i * 8)) & 0xFF;
-            uart_putc_raw(UART_INSTANCE_RASPBERRYHAT, byte);
+            uart_putc_raw(uartId, rawValue[i]);
         }
 
-        _uartFlushTxWithTimeout(UART_INSTANCE_RASPBERRYHAT, 10);
+        _uartFlushTxWithTimeout(uartId, 10);
+
         return;
     }
 
@@ -252,13 +257,7 @@ namespace MotionController
     {
         _initHardware();
         _initQueues();
-
-        _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
-        _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
-        _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
-        _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
-        _safetyButton = DigitalInput(DIN_4);
-        _lineFollowerStatusFlags = 0;
+        _initPeripherals();
     }
 
     /* ==================================

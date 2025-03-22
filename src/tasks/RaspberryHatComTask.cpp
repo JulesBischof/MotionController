@@ -24,17 +24,19 @@ namespace MotionController
 
     void MotionController::_raspberryHatComTask()
     {
+        // init Rx interrupts
+        _initUart0Isr();
+
         // loop forever
         for (;;)
         {
-            DispatcherMessage message;
-            DispatcherMessage uartMsg;
-
             // get QueueHandles
             QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
-            if(raspberryHatComQueue == nullptr)
+            if (raspberryHatComQueue == nullptr)
             {
-                while(1){/*  ERROR  */}
+                while (1)
+                { /*  ERROR  */
+                }
             }
             QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
             if (messageDispatcherQueue == nullptr)
@@ -44,6 +46,9 @@ namespace MotionController
                 }
             }
 
+            DispatcherMessage message;
+            DispatcherMessage uartMsg;
+
             // suspend Task until Message is recieved
             if (xQueueReceive(raspberryHatComQueue, &message, portMAX_DELAY) == pdTRUE)
             {
@@ -52,7 +57,9 @@ namespace MotionController
                     printf("RASPBERRYHATCOMTASK - Message contains wrong Task ID \n");
                     continue;
                 }
+                
                 frame txMsg;
+
                 // check incoming commands - messages supposed to go out
                 switch (message.command)
                 {
@@ -76,13 +83,18 @@ namespace MotionController
                     break;
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
-                    xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(10));
+                    if(xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
+                    {
+                        printf("WRITE TO QUEUE raspiComTask cmd decode msg FAILED");
+                    }
+                    uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
                     break;
                 default:
                     break;
                 }
-                sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
+                // sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
             }
+            vTaskDelay(pdMS_TO_TICKS(100));
         }
     }
 
@@ -101,7 +113,7 @@ namespace MotionController
 
         uint64_t rawMessage = 0;
 
-        // IMPLEMENTATION MSB FIRST
+        // MSB FIRST
         // for (int i = 0; uart_is_readable(UART_INSTANCE_RASPBERRYHAT) && i != PROTOCOL_SIZE_IN_BYTES; i++)
         // {
         //     rawMessage |= (uart_getc(UART_INSTANCE_RASPBERRYHAT) << ((PROTOCOL_SIZE_IN_BYTES - 1 - i) * 8));
@@ -113,8 +125,6 @@ namespace MotionController
             rawMessage |= ((uint64_t)uart_getc(UART_INSTANCE_RASPBERRYHAT) << (i * 8));
         }
 
-        printf("raw Message read");
-
         decoder dec = decoder(rawMessage);
 
         DispatcherMessage retVal;
@@ -125,7 +135,7 @@ namespace MotionController
         {
             retVal.receiverTaskId = DispatcherTaskId::GripControllerComTask;
             retVal.command = TaskCommand::HandThroughMessage;
-            // retVal.getData() = rawMessage;
+            retVal.setData(rawMessage);
         } // end msg grpcntrl
 
         // message is meant for Motion Controller

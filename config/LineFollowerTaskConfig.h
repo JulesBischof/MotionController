@@ -10,7 +10,7 @@
 #define LINEFOLLOWERTASK_STACKSIZE (4096)
 #define LINEFOLLOWERTASK_PRIORITY (1)
 
-#define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (10)
+#define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (100)
 
 /* ==============================================================
 

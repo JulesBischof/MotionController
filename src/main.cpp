@@ -10,7 +10,7 @@
 
 int main()
 {
-    stdio_init_all();
+        stdio_init_all();
 
 #if APP_MODE == 0
     testApp();

@@ -1,6 +1,6 @@
 /*
  * FreeRTOS Kernel <DEVELOPMENT BRANCH>
- * Copyright (C) 2021 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ * Copyright (C) 2021 Amazon.com, Inc. or its affiliates. All Rights Reserved.
  *
  * SPDX-License-Identifier: MIT
  *
@@ -67,7 +67,7 @@
 #define secureheapSIZE_MAX              ( ~( ( size_t ) 0 ) )
 
 /* Check if adding a and b will result in overflow. */
-#define secureheapADD_WILL_OVERFLOW( a, b )         ( ( a ) > ( secureheapSIZE_MAX - ( b ) ) )
+#define secureheapADD_WILL_OVERFLOW( a, b )    ( ( a ) > ( secureheapSIZE_MAX - ( b ) ) )
 
 /* MSB of the xBlockSize member of an BlockLink_t structure is used to track
  * the allocation status of a block.  When MSB of the xBlockSize member of
@@ -256,6 +256,7 @@ void * pvPortMalloc( size_t xWantedSize )
     BlockLink_t * pxNewBlockLink;
     void * pvReturn = NULL;
     size_t xAdditionalRequiredSize;
+    size_t xAllocatedBlockSize = 0;
 
     /* If this is the first call to malloc then the heap will require
      * initialisation to setup the list of free blocks. */
@@ -374,6 +375,8 @@ void * pvPortMalloc( size_t xWantedSize )
                     mtCOVERAGE_TEST_MARKER();
                 }
 
+                xAllocatedBlockSize = pxBlock->xBlockSize;
+
                 /* The block is being returned - it is allocated and owned by
                  * the application and has no "next" block. */
                 secureheapALLOCATE_BLOCK( pxBlock );
@@ -394,20 +397,23 @@ void * pvPortMalloc( size_t xWantedSize )
         mtCOVERAGE_TEST_MARKER();
     }
 
-    traceMALLOC( pvReturn, xWantedSize );
+    traceMALLOC( pvReturn, xAllocatedBlockSize );
+
+    /* Prevent compiler warnings when trace macros are not used. */
+    ( void ) xAllocatedBlockSize;
 
     #if ( secureconfigUSE_MALLOC_FAILED_HOOK == 1 )
+    {
+        if( pvReturn == NULL )
         {
-            if( pvReturn == NULL )
-            {
-                extern void vApplicationMallocFailedHook( void );
-                vApplicationMallocFailedHook();
-            }
-            else
-            {
-                mtCOVERAGE_TEST_MARKER();
-            }
+            extern void vApplicationMallocFailedHook( void );
+            vApplicationMallocFailedHook();
         }
+        else
+        {
+            mtCOVERAGE_TEST_MARKER();
+        }
+    }
     #endif /* if ( secureconfigUSE_MALLOC_FAILED_HOOK == 1 ) */
 
     secureportASSERT( ( ( ( size_t ) pvReturn ) & ( size_t ) secureportBYTE_ALIGNMENT_MASK ) == 0 );

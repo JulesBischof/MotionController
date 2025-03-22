@@ -10,8 +10,6 @@ namespace MotionController
         // loop forever
         for (;;)
         {
-            DispatcherMessage message;
-
             // get QueueHandles
             QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
             if (lineFollowerQueue == nullptr)
@@ -34,6 +32,8 @@ namespace MotionController
                 { /*  ERROR  */
                 }
             }
+
+            DispatcherMessage message;
 
             // suspend task until something is waiting in Queue
             if (xQueueReceive(messageDispatcherQueue, &message, portMAX_DELAY) == pdTRUE)

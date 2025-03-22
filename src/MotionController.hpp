@@ -2,6 +2,7 @@
 #define MOTIONCONTROLLER_H
 
 #include <cstddef>
+#include <cstdint>
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -59,7 +60,7 @@ namespace MotionController
         DispatcherTaskId senderTaskId;
         DispatcherTaskId receiverTaskId;
         TaskCommand command;
-        uint32_t data[2];
+        alignas(8) uint32_t data[2];
 
         DispatcherMessage()
             : senderTaskId(DispatcherTaskId::NoTask),
@@ -89,7 +90,8 @@ namespace MotionController
     private:
         bool _initHardware();
         bool _initQueues();
-        void _initUartIsr();
+        void _initUart0Isr();
+        void _initPeripherals();
 
         static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
         TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
