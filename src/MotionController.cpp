@@ -21,10 +21,6 @@ namespace MotionController
     QueueHandle_t MotionController::_lineFollowerQueue = nullptr;
     QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
 
-    xSemaphoreHandle MotionController::_messageDispatcherQueueMutex = nullptr;
-    xSemaphoreHandle MotionController::_lineFollowerQueueMutex = nullptr;
-    xSemaphoreHandle MotionController::_raspberryHatComQueueMutex = nullptr;
-
     /* ==================================
             start Task and Wrapper
        ================================== */
@@ -155,13 +151,8 @@ namespace MotionController
     bool MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
-        _raspberryHatComQueueMutex = xSemaphoreCreateMutex();
-
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
-        _lineFollowerQueueMutex = xSemaphoreCreateMutex();
-
         _messageDispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
-        _messageDispatcherQueueMutex = xSemaphoreCreateMutex();
 
         if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr)
         {
@@ -276,46 +267,16 @@ namespace MotionController
 
     QueueHandle_t MotionController::getRaspberryHatComQueue()
     {
-        if (_raspberryHatComQueueMutex == nullptr)
-        {
-            return nullptr;
-        }
-        QueueHandle_t retVal = nullptr;
-        if (xSemaphoreTake(_raspberryHatComQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            retVal = _raspberryHatComQueue;
-            xSemaphoreGive(_raspberryHatComQueueMutex);
-        }
-        return retVal;
+        return _raspberryHatComQueue;
     }
 
     QueueHandle_t MotionController::getLineFollowerQueue()
     {
-        if (_lineFollowerQueueMutex == nullptr)
-        {
-            return nullptr;
-        }
-        QueueHandle_t retVal = nullptr;
-        if (xSemaphoreTake(_lineFollowerQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            retVal = _lineFollowerQueue;
-            xSemaphoreGive(_lineFollowerQueueMutex);
-        }
-        return retVal;
+        return _lineFollowerQueue;
     }
 
     QueueHandle_t MotionController::getMessageDispatcherQueue()
     {
-        if (_messageDispatcherQueueMutex == nullptr)
-        {
-            return nullptr;
-        }
-        QueueHandle_t retVal = nullptr;
-        if (xSemaphoreTake(_messageDispatcherQueueMutex, pdMS_TO_TICKS(10)) == pdTRUE)
-        {
-            retVal = _messageDispatcherQueue;
-            xSemaphoreGive(_messageDispatcherQueueMutex);
-        }
-        return retVal;
+        return _messageDispatcherQueue;
     }
 }

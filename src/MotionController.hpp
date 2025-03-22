@@ -91,7 +91,6 @@ namespace MotionController
         bool _initQueues();
         void _initUartIsr();
 
-        static xSemaphoreHandle _raspberryHatComQueueMutex, _lineFollowerQueueMutex, _messageDispatcherQueueMutex;
         static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
         TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
 

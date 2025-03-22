@@ -18,8 +18,6 @@ int main()
 
 #if APP_MODE == 1
 
-    MotionController::DispatcherMessage msg;
-
     MotionController::MotionController motionController = MotionController::MotionController();
     motionController.startScheduler();
 
