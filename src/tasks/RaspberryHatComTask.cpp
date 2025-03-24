@@ -96,7 +96,7 @@ namespace MotionController
                 default:
                     break;
                 }
-                // sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
+                sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
             }
             vTaskDelay(pdMS_TO_TICKS(100));
         }
@@ -188,7 +188,7 @@ namespace MotionController
             case (command::TURN):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Turn;
-                retVal.setData(0);
+                retVal.setData(dec.get_params<turn_params>().angle);
                 break;
 
             case (command::PING):

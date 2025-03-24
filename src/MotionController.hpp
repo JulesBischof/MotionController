@@ -92,6 +92,7 @@ namespace MotionController
         bool _initQueues();
         void _initUart0Isr();
         void _initPeripherals();
+        void _checkLineFollowerStatus();
 
         static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
         TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;

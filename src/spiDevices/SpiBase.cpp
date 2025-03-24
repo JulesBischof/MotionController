@@ -2,6 +2,7 @@
 
 #include "pico/stdlib.h"
 #include <stdio.h>
+#include <string.h>
 
 // init static class members
 SemaphoreHandle_t SpiBase::_spiMutex = NULL;
@@ -74,27 +75,29 @@ void SpiBase::_initCsGpio(uint8_t csPin)
 uint32_t SpiBase::_spiReadReg(uint8_t reg)
 {
     uint8_t tx_buffer[5] = {
-        static_cast<uint8_t>(reg & 0x7F),
+        static_cast<uint8_t>(reg & 0x7F), // Read command - MSB = 0
         0,
         0,
         0,
-        0}; // Read command - MSB = 0
+        0};
     uint8_t rx_buffer[5] = {0};
+    uint8_t dummy_Tx[5] = {0};
 
     xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(1000));
 
     // push address - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
-    sleep_us(1);
+    sleep_us(50);        // wait at least 40 clk cycles -> @1MHz ~40us
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
-    sleep_us(10);
+    sleep_us(50);
+    memset(rx_buffer, 0, sizeof(rx_buffer)); // clear rxBuffer
 
     // get actual data - take a look into datasheet, pipeline structure
     gpio_put(_csPin, 0); // pull down CS
-    sleep_us(1);
-    spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
+    sleep_us(50);        // wait at least 40 clk cycles -> @1MHz ~40us
+    spi_write_read_blocking(_spiInstance, dummy_Tx, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
     xSemaphoreGive(_spiMutex);
@@ -137,12 +140,20 @@ bool SpiBase::_spiWriteReg(uint8_t reg, uint32_t data)
         static_cast<uint8_t>(data & 0xFF)};
 
     uint8_t rx_buffer[5] = {0};
+    uint8_t dummy_Tx[5] = {0};
 
     xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
 
     gpio_put(_csPin, 0); // pull down CS
-    sleep_us(1);
+    sleep_us(50);
     spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
+    gpio_put(_csPin, 1); // pull up CS
+
+    sleep_us(50);
+
+    gpio_put(_csPin, 0); // pull down CS
+    sleep_us(50);
+    spi_write_read_blocking(_spiInstance, dummy_Tx, rx_buffer, 5);
     gpio_put(_csPin, 1); // pull up CS
 
     xSemaphoreGive(_spiMutex);

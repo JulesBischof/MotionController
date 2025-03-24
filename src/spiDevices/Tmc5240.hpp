@@ -27,14 +27,16 @@ public:
 
     void moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax);
     void moveAbsolutePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax);
-    void moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax);
+    void moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax, bool dir);
 
     int32_t getXActual();
+    uint32_t getGSTAT();
+    void clearGSTAT();
 
     int32_t getVmax();
 
     void toggleToff(bool val);
-    
+
     static int32_t convertDistanceToMicrosteps(float meter);
     static int32_t convertMicrostepsToCentimeter(uint32_t uSteps);
     static int32_t convertDegreeToMicrosteps(int32_t degrees);

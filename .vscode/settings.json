@@ -83,5 +83,5 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp"
     },
-    "cortex-debug.variableUseNaturalFormat": true
+    "cortex-debug.variableUseNaturalFormat": false
 }

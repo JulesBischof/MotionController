@@ -18,7 +18,6 @@
 
 namespace MotionController
 {
-
     /* ================================= */
     /*           status Flags            */
     /* ================================= */
@@ -40,10 +39,10 @@ namespace MotionController
         STATUSFLAGS_SEND                = 1 << 8,
 
         // upper 16 bits events and infos
-        CROSSPOINT_DETECTED             = 1 << 15,
-        LOST_LINE                       = 1 << 16,
-        POSITION_REACHED                = 1 << 17,
-        SAFETY_BUTTON_PRESSED           = 1 << 18
+        CROSSPOINT_DETECTED             = 1 << 16,
+        LOST_LINE                       = 1 << 17,
+        POSITION_REACHED                = 1 << 18,
+        SAFETY_BUTTON_PRESSED           = 1 << 19
     } RunModeFlag;
 
     constexpr uint32_t STM_LINEFOLLOWER_BITSET = 0 | (MOTOR_RUNNING | LINE_FOLLOWER_MODE);
@@ -83,7 +82,9 @@ namespace MotionController
         int32_t X_ACTUAL_startValueDriver1 = _driver1.getXActual();
         int32_t drivenDistanceDriver1 = 0;
 
-        uint32_t maxDistance = 0;
+        volatile uint32_t maxDistance = 0;
+
+        _lineFollowerStatusFlags = 0;
 
         // loop forever
         for (;;)
@@ -117,25 +118,24 @@ namespace MotionController
                     if (message.getData() == 0)
                     {
                         maxDistance = 0; // TODO: 2m in usteps
-                        _lineFollowerStatusFlags = STM_LINEFOLLOWER_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                        _lineFollowerStatusFlags = STM_LINEFOLLOWER_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     }
 
                     // move in Position Mode
                     if (message.getData() != 0)
                     {
-                        maxDistance = Tmc5240::convertDistanceToMicrosteps(message.getData()) / 1e2; // 1e2 due to distance gets send in cm to avoid floats in protocoll
-                        _lineFollowerStatusFlags = STM_MOVE_POSITIONMODE_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                        _lineFollowerStatusFlags = STM_MOVE_POSITIONMODE_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     }
                     break;
 
                 case TaskCommand::Stop:
-                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     break;
 
                 case TaskCommand::Turn:
                     _lineFollowerStatusFlags &= ~POSITION_REACHED;
                     _lineFollowerStatusFlags &= ~TURNREQUEST_SEND;
-                    _lineFollowerStatusFlags = STM_TURNROBOT_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                    _lineFollowerStatusFlags = STM_TURNROBOT_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     break;
 
                 case TaskCommand::PollDistance:
@@ -178,7 +178,7 @@ namespace MotionController
             if (!_safetyButton.getValue())
             {
                 _lineFollowerStatusFlags &= ~MOTOR_RUNNING;
-                _lineFollowerStatusFlags | SAFETY_BUTTON_PRESSED;
+                _lineFollowerStatusFlags |= SAFETY_BUTTON_PRESSED;
             }
             else
             {
@@ -193,6 +193,8 @@ namespace MotionController
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
             {
                 _followLine();
+                _checkLineFollowerStatus();
+                
                 drivenDistanceDriver0 = _driver0.getXActual() - X_ACTUAL_startValueDriver0;
                 drivenDistanceDriver1 = _driver1.getXActual() - X_ACTUAL_startValueDriver1;
 
@@ -200,7 +202,7 @@ namespace MotionController
                 if ((maxDistance != 0 && drivenDistanceDriver0 > maxDistance) ||
                     (maxDistance != 0 && drivenDistanceDriver1 > maxDistance))
                 {
-                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     _lineFollowerStatusFlags |= POSITION_REACHED;
                 }
             }
@@ -211,12 +213,15 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    _movePositionMode(message.getData());
+                    int32_t data = static_cast<int32_t>(message.getData()); // convert to a signed value! 
+                    float distanceInMeters = static_cast<float>(data) / 1e2; // data contains cm!
+                    int32_t microsteps = Tmc5240::convertDistanceToMicrosteps(distanceInMeters);
+                    _movePositionMode(microsteps);
                 }
 
                 if (_checkForStandstill())
                 {
-                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     _lineFollowerStatusFlags |= POSITION_REACHED;
                 }
             }
@@ -228,7 +233,7 @@ namespace MotionController
 
                 if (_checkForStandstill())
                 {
-                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_LOWER_BITMASK);
+                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     _lineFollowerStatusFlags |= POSITION_REACHED;
                 }
             }
@@ -276,8 +281,9 @@ namespace MotionController
     /// @param distance distance [IN MICROSTEPS]
     void MotionController::_movePositionMode(int32_t distance)
     {
-        _driver0.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-        _driver1.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver0.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
+        _driver1.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+        return;
     }
 
     /// @brief Turn Robort a certain angle. 
@@ -310,8 +316,8 @@ namespace MotionController
         int32_t nStepsDriver = static_cast<int32_t>(std::round(res));
 
         // move drives in different directions
-        _driver0.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-        _driver1.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver0.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
+        _driver1.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
         _lineFollowerStatusFlags |= TURNREQUEST_SEND;
     }
 
@@ -332,6 +338,37 @@ namespace MotionController
     /*           Controller              */
     /* ================================= */
 
+    void MotionController::_checkLineFollowerStatus()
+    {
+        // check for LineSensor events
+        if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
+        {
+            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
+
+            printf("INFO LINEFOLLOWER detected Crosspoint \n");
+
+            uint32_t distToNode = Tmc5240::convertDistanceToMicrosteps(LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_m);
+            _driver0.moveRelativePositionMode(distToNode,
+                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
+                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
+            _driver1.moveRelativePositionMode(distToNode,
+                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
+                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+
+            return;
+        }
+        if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
+        {
+            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+            _lineFollowerStatusFlags |= LOST_LINE;
+
+            printf("INFO LINEFOLLOWER lost Line \n");
+            return;
+        }
+        return;
+    }
+
     /// @brief controller for linefollowing. Config behaviour by settings values in LineFollwoerConfig.h file
     void MotionController::_followLine()
     {
@@ -347,33 +384,6 @@ namespace MotionController
 #else
         uint16_t y = _lineSensor.getLinePositionAnalog();
 #endif
-
-        // check for LineSensor events
-        if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
-        {
-            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
-            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
-
-            printf("INFO LINEFOLLOWER detected Crosspoint \n");
-
-            uint32_t distToNode = Tmc5240::convertDistanceToMicrosteps(LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_m);
-            _driver0.moveRelativePositionMode(distToNode,
-                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
-                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-            _driver1.moveRelativePositionMode(distToNode,
-                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
-                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-
-            return;
-        }
-        if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
-        {
-            _lineFollowerStatusFlags |= LOST_LINE;
-            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
-
-            printf("INFO LINEFOLLOWER lost Line \n");
-            return;
-        }
 
         // TODO: HCSR04 get distance
 

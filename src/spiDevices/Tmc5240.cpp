@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-constexpr float WHEELCIRCUMFENCE = (STEPPERCONFIG_WHEEL_DIAMETER_MM * 1e3) * M_PI;
+constexpr float WHEELCIRCUMFENCE = (STEPPERCONFIG_WHEEL_DIAMETER_MM / 1e3) * M_PI;
 
 /* ==================================
       Constructor / Deconstructor
@@ -35,7 +35,7 @@ Tmc5240::~Tmc5240()
 }
 
 /// @brief default constructor Tmc5240 MotorDrives
-Tmc5240::Tmc5240(){}
+Tmc5240::Tmc5240() {}
 
 /* ==================================
             Init members
@@ -44,6 +44,9 @@ Tmc5240::Tmc5240(){}
 /// @brief initializes device
 void Tmc5240::_initDevice()
 {
+    printf("resetting TMC5240 Device... \n");
+    clearGSTAT();
+
     printf("start init Current settings TMC5240 ... \n");
     _initCurrentSetting();
 
@@ -60,7 +63,10 @@ void Tmc5240::_checkDevice()
     printf("TMC5240 Version %d initialized! \n", version);
 
     bool drvEnn = _spiReadBitField(TMC5240_INP_OUT, TMC5240_DRV_ENN_MASK, TMC5240_DRV_ENN_SHIFT);
-    printf("DRV_ENN State = %d \n", drvEnn);
+    printf("DRV_ENN State = %x \n", drvEnn);
+
+    uint32_t gStat = getGSTAT();
+    printf("GSTAT val = %x", gStat);
 }
 
 /// @brief inits Current settings out of StepperConfig.h File
@@ -121,6 +127,8 @@ void Tmc5240::moveAbsolutePositionMode(int32_t xTargetVal, uint32_t vmax, uint32
     _spiWriteReg(TMC5240_VMAX, vmax);
     _spiWriteReg(TMC5240_AMAX, amax);
     _spiWriteReg(TMC5240_DMAX, amax);
+    _spiWriteReg(TMC5240_VSTART, 0);
+    _spiWriteReg(TMC5240_VSTOP, 101);
 
     // set Target position
     _spiWriteReg(TMC5240_XTARGET, xTargetVal);
@@ -130,18 +138,33 @@ void Tmc5240::moveAbsolutePositionMode(int32_t xTargetVal, uint32_t vmax, uint32
 /// @param xTargetVal RELATIVE position! in steps
 /// @param vmax maximum velocity
 /// @param amax maxmimum acceleration
-void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax)
+void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax, bool dir)
 {
-    // get XACTUAL - Register value
-    int32_t xActualVal = _spiReadReg(TMC5240_XACTUAL);
+    // activate position mode
+    _spiWriteReg(TMC5240_RAMPMODE, TMC5240_MODE_POSITION);
 
-    // set direction
-    if (!_stdDir)
-        targexPos = -targexPos;
+    // set vmax, amax, dmax
+    _spiWriteReg(TMC5240_VMAX, vmax);
+    _spiWriteReg(TMC5240_AMAX, amax);
+    _spiWriteReg(TMC5240_DMAX, amax);
+    _spiWriteReg(TMC5240_VSTART, 0);
+    _spiWriteReg(TMC5240_VSTOP, 101);
+
+    // get XACTUAL - Register value
+    int32_t xActualVal = getXActual();
 
     // set new target position
-    int32_t xTargetVal = xActualVal + targexPos;
-    moveAbsolutePositionMode(xTargetVal, vmax, amax);
+    int32_t xTargetVal = 0;
+    if (dir)
+    {
+        xTargetVal = xActualVal + targexPos;
+    }
+    else
+    {
+        xTargetVal = xActualVal - targexPos;
+    }
+    // Write XTarget Val
+    _spiWriteReg(TMC5240_XTARGET, xTargetVal);
 
     return;
 }
@@ -176,7 +199,7 @@ void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 uint8_t Tmc5240::getCurrentStatusFlag()
 {
     // trigger dummy Register Read
-    _spiReadReg(TMC5240_XACTUAL);
+    getGSTAT();
 
     // get status flags
     return _spiStatus;
@@ -192,7 +215,6 @@ void Tmc5240::setShaftDirection(bool direction)
 
     return;
 }
-
 
 /// @brief reads out xActual register
 /// @return actual steps
@@ -220,6 +242,17 @@ void Tmc5240::toggleToff(bool val)
     // no else - otherwise Toff = 0 -> driver disable!
 
     _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
+}
+
+uint32_t Tmc5240::getGSTAT()
+{
+    uint32_t gstatVal = _spiReadReg(TMC5240_GSTAT);
+    return gstatVal;
+}
+
+void Tmc5240::clearGSTAT()
+{
+    _spiWriteReg(TMC5240_GSTAT, 0x1F);
 }
 
 /* ==================================
@@ -258,7 +291,7 @@ int32_t Tmc5240::convertDegreeToMicrosteps(int32_t degrees)
 }
 
 /// @brief calcs rotatinal angle given by driven distances of 2 wheels on one axis
-/// @param uStepsDifference step difference in Microsteps! 
+/// @param uStepsDifference step difference in Microsteps!
 /// @return angle
 float Tmc5240::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
 {
