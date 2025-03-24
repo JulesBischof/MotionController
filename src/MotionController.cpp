@@ -38,11 +38,6 @@ namespace MotionController
         _initPeripherals();
     }
 
-    MotionController::MotionController()
-    {
-        /* default ctor */
-    }
-
     /* ==================================
              Init Members
    ================================== */

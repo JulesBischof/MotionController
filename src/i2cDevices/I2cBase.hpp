@@ -32,7 +32,7 @@ protected:
     void _setError(uint8_t errorcode);
 
 public:
-    I2cBase(){}
+    I2cBase();
     I2cBase(i2c_inst_t *i2cInstance, uint8_t i2cAddress);
     ~I2cBase();
 

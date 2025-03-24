@@ -23,7 +23,7 @@ using namespace encoder;
 
 namespace MotionController
 {
-
+    /// @brief main loop rapberryHatComTask. either waits on uart0 Rx Interrupts or waits on incoming Tx-commands
     void MotionController::_raspberryHatComTask()
     {
         // init Rx interrupts
@@ -102,6 +102,9 @@ namespace MotionController
         }
     }
 
+    /// @brief reads uart Channel and converts value to internal dispatcher Message
+    /// @param uartId uart, wich is to read
+    /// @return dispatcher message containing command, data and sender/receiver taskid
     DispatcherMessage MotionController::_getCommand(uart_inst_t *uartId)
     {
         if (!uart_is_readable(UART_INSTANCE_RASPBERRYHAT))

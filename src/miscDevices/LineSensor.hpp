@@ -31,7 +31,7 @@ private:
     void _initUvLed();
 
 public:
-    LineSensor(){}
+    LineSensor();
     LineSensor(Tla2528 *adcInstance, uint8_t uvGpio);
     ~LineSensor();
     

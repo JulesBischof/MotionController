@@ -26,8 +26,7 @@ DigitalInput::DigitalInput(uint8_t gpio)
 }
 
 /// @brief default Constructor
-DigitalInput::DigitalInput(){}
-
+DigitalInput::DigitalInput(){};
 
 DigitalInput::~DigitalInput()
 {

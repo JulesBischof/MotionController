@@ -29,21 +29,21 @@ namespace MotionController
     enum RunModeFlag
     {
         // lower 16 bits statemaschine relevant flags
-        MOTOR_RUNNING = 1 << 0,
-        MOTOR_POSITIONMODE = 1 << 1,
+        MOTOR_RUNNING                   = 1 << 0,
+        MOTOR_POSITIONMODE              = 1 << 1,
         MOTOR_POSITIONMODE_REQUEST_SEND = 1 << 2,
-        MOTOR_STOPREQUEST_SEND = 1 << 3,
-        RUNMODE_SLOW = 1 << 4,
-        LINE_FOLLOWER_MODE = 1 << 5,
-        TURN_MODE = 1 << 6,
-        TURNREQUEST_SEND = 1 << 7,
-        STATUSFLAGS_SEND = 1 << 8,
+        MOTOR_STOPREQUEST_SEND          = 1 << 3,
+        RUNMODE_SLOW                    = 1 << 4,
+        LINE_FOLLOWER_MODE              = 1 << 5,
+        TURN_MODE                       = 1 << 6,
+        TURNREQUEST_SEND                = 1 << 7,
+        STATUSFLAGS_SEND                = 1 << 8,
 
         // upper 16 bits events and infos
-        CROSSPOINT_DETECTED = 1 << 15,
-        LOST_LINE = 1 << 16,
-        POSITION_REACHED = 1 << 17,
-        SAFETY_BUTTON_PRESSED = 1 << 18
+        CROSSPOINT_DETECTED             = 1 << 15,
+        LOST_LINE                       = 1 << 16,
+        POSITION_REACHED                = 1 << 17,
+        SAFETY_BUTTON_PRESSED           = 1 << 18
     } RunModeFlag;
 
     constexpr uint32_t STM_LINEFOLLOWER_BITSET = 0 | (MOTOR_RUNNING | LINE_FOLLOWER_MODE);
@@ -55,6 +55,7 @@ namespace MotionController
     /*          Running Task             */
     /* ================================= */
 
+    /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot. 
     void MotionController::_lineFollowerTask()
     {
         // get Queues
@@ -271,12 +272,16 @@ namespace MotionController
     /*           Drive Control           */
     /* ================================= */
 
+    /// @brief moves whole Robot in positionmode. 
+    /// @param distance distance [IN MICROSTEPS]
     void MotionController::_movePositionMode(int32_t distance)
     {
         _driver0.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
         _driver1.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     }
 
+    /// @brief Turn Robort a certain angle. 
+    /// @param angle angle in [DEGREE ° * 10] (ref prain_uart lib)
     void MotionController::_turnRobot(int32_t angle)
     {
         // check if turn signal got send already
@@ -327,6 +332,7 @@ namespace MotionController
     /*           Controller              */
     /* ================================= */
 
+    /// @brief controller for linefollowing. Config behaviour by settings values in LineFollwoerConfig.h file
     void MotionController::_followLine()
     {
         // init vars
@@ -432,6 +438,10 @@ namespace MotionController
         return retVal;
     }
 
+    /// @brief calc mean value of driven distance
+    /// @param drivenDistanceDirver0 driven Distance driver0 [MICROSTEPS]
+    /// @param drivenDistanceDirver1 driven Distance driver1 [MICROSTEPS]
+    /// @return mean Value of driven distance
     int32_t MotionController::_getDrivenDistance(int32_t drivenDistanceDirver0, int32_t drivenDistanceDirver1)
     {
         float d1 = static_cast<float>(drivenDistanceDirver0);

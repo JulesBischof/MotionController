@@ -4,7 +4,7 @@
 
 namespace MotionController
 {
-
+    /// @brief main Loop message dispatcher. Reorders datapackage to receiving task.  
     void MotionController::_messageDispatcherTask()
     {
         // loop forever

@@ -13,7 +13,7 @@ protected:
     void _checkDevice() override;
 
 public:
-    Icm42670p(){}
+    Icm42670p();
     Icm42670p(i2c_inst_t *i2cInstance, uint8_t i2cAddress);
     ~Icm42670p();
 
