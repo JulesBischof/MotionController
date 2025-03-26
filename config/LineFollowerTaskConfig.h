@@ -52,6 +52,6 @@
 
 ============================================================== */
 #define LINEFOLLOWERCONFIG_AXIS_WIDTH_m (30 / 1e2) // TODO: CHECK
-#define LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_m (20 / 1e2) // TODO: CHECK
+#define LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm (20) // TODO: CHECK
 
 #endif // LINEFOLLOWERTASKCONFIG_H

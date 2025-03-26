@@ -28,22 +28,25 @@ namespace MotionController
     enum RunModeFlag
     {
         // lower 16 bits statemaschine relevant flags
-        MOTOR_RUNNING                   = 1 << 0,
-        MOTOR_POSITIONMODE              = 1 << 1,
+        MOTOR_RUNNING = 1 << 0,
+        MOTOR_POSITIONMODE = 1 << 1,
         MOTOR_POSITIONMODE_REQUEST_SEND = 1 << 2,
-        MOTOR_STOPREQUEST_SEND          = 1 << 3,
-        RUNMODE_SLOW                    = 1 << 4,
-        LINE_FOLLOWER_MODE              = 1 << 5,
-        TURN_MODE                       = 1 << 6,
-        TURNREQUEST_SEND                = 1 << 7,
-        STATUSFLAGS_SEND                = 1 << 8,
+        MOTOR_STOPREQUEST_SEND = 1 << 3,
+        RUNMODE_SLOW = 1 << 4,
+        LINE_FOLLOWER_MODE = 1 << 5,
+        TURN_MODE = 1 << 6,
+        TURNREQUEST_SEND = 1 << 7,
+        STATUSFLAGS_SEND = 1 << 8,
 
         // upper 16 bits events and infos
-        CROSSPOINT_DETECTED             = 1 << 16,
-        LOST_LINE                       = 1 << 17,
-        POSITION_REACHED                = 1 << 18,
-        SAFETY_BUTTON_PRESSED           = 1 << 19
+        CROSSPOINT_DETECTED = 1 << 16,
+        LOST_LINE = 1 << 17,
+        POSITION_REACHED = 1 << 18,
+        SAFETY_BUTTON_PRESSED = 1 << 19,
+        LINEFOLLOWER_ERROR = 1 << 20,
     } RunModeFlag;
+
+    /* TODO Flags 4 Errors - upper 16 RunModeFlags get send as Info, not as Error */
 
     constexpr uint32_t STM_LINEFOLLOWER_BITSET = 0 | (MOTOR_RUNNING | LINE_FOLLOWER_MODE);
     constexpr uint32_t STM_MOVE_POSITIONMODE_BITSET = 0 | (MOTOR_RUNNING | MOTOR_POSITIONMODE);
@@ -54,7 +57,7 @@ namespace MotionController
     /*          Running Task             */
     /* ================================= */
 
-    /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot. 
+    /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot.
     void MotionController::_lineFollowerTask()
     {
         // get Queues
@@ -194,7 +197,7 @@ namespace MotionController
             {
                 _followLine();
                 _checkLineFollowerStatus();
-                
+
                 drivenDistanceDriver0 = _driver0.getXActual() - X_ACTUAL_startValueDriver0;
                 drivenDistanceDriver1 = _driver1.getXActual() - X_ACTUAL_startValueDriver1;
 
@@ -213,7 +216,7 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    int32_t data = static_cast<int32_t>(message.getData()); // convert to a signed value! 
+                    int32_t data = static_cast<int32_t>(message.getData());  // convert to a signed value!
                     float distanceInMeters = static_cast<float>(data) / 1e2; // data contains cm!
                     int32_t microsteps = Tmc5240::convertDistanceToMicrosteps(distanceInMeters);
                     _movePositionMode(microsteps);
@@ -277,7 +280,7 @@ namespace MotionController
     /*           Drive Control           */
     /* ================================= */
 
-    /// @brief moves whole Robot in positionmode. 
+    /// @brief moves whole Robot in positionmode.
     /// @param distance distance [IN MICROSTEPS]
     void MotionController::_movePositionMode(int32_t distance)
     {
@@ -286,7 +289,7 @@ namespace MotionController
         return;
     }
 
-    /// @brief Turn Robort a certain angle. 
+    /// @brief Turn Robort a certain angle.
     /// @param angle angle in [DEGREE ° * 10] (ref prain_uart lib)
     void MotionController::_turnRobot(int32_t angle)
     {
@@ -343,20 +346,22 @@ namespace MotionController
         // check for LineSensor events
         if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
         {
-            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
-            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
-
             printf("INFO LINEFOLLOWER detected Crosspoint \n");
 
-            uint32_t distToNode = Tmc5240::convertDistanceToMicrosteps(LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_m);
-            _driver0.moveRelativePositionMode(distToNode,
-                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
-                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
-            _driver1.moveRelativePositionMode(distToNode,
-                                              LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST,
-                                              LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
 
-            return;
+            // send MSG to LineFollowers own - to change Mode into PositionMode and drive until Axis is on top of Crosspoint
+            DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                      DispatcherTaskId::LineFollowerTask,
+                                                      TaskCommand::Move,
+                                                      LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm);
+                                                      
+            if(xQueueSend(_lineFollowerQueue, &msg, pdMS_TO_TICKS(100)) != pdTRUE)
+            {
+                /*   ERROR   stop Drives and send error msg to raspi */
+                _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+                _lineFollowerStatusFlags |= LINEFOLLOWER_ERROR; 
+            }
         }
         if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
         {
@@ -364,7 +369,6 @@ namespace MotionController
             _lineFollowerStatusFlags |= LOST_LINE;
 
             printf("INFO LINEFOLLOWER lost Line \n");
-            return;
         }
         return;
     }

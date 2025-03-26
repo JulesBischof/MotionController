@@ -96,7 +96,6 @@ int8_t LineSensor::getLinePosition()
     if (!lineCounter)
     {
         _status |= LINESENSOR_NO_LINE;
-        return 0;
     }
     else
     {
@@ -105,9 +104,13 @@ int8_t LineSensor::getLinePosition()
 
     // check if there has been a crossway
     if (lineCounter >= LINECOUNTER_CROSS_DETECTED)
+    {
         _status |= LINESENSOR_CROSS_DETECTED;
-    else
+    }
+        else
+    {
         _status &= ~LINESENSOR_CROSS_DETECTED;
+    }
 
     // determine line position
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
