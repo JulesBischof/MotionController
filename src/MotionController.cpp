@@ -190,7 +190,10 @@ namespace MotionController
         // disable uart interrupts
         uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
 
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        if (xHigherPriorityTaskWoken)
+        {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
     }
 
     /* ==================================
