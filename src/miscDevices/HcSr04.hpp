@@ -17,6 +17,7 @@ class HcSr04
     private: 
         void _trigger();
 
+        void _initHcSr04ISR();
         static void _hcSr04Irq(uint gpio, uint32_t events);
 
         volatile absolute_time_t _timeStampRising;
@@ -56,7 +57,8 @@ class HcSr04
         ~HcSr04();
 
         QueueHandle_t getQueueHandle();
-
+        TaskHandle_t getTaskHandle();
+        
         void setCurrentVelocity(double v);
 };
 

@@ -31,10 +31,7 @@
 #define TEST_LINESENSOR_USING_ARDUINO (0)
 #define TEST_LINESENSOR_ANALOGMODE (0)
 
-#define TEST_HCSR04 (0)
-
-#define TEST_ARDUINO_ADC (0)
-
+#define TEST_HCSR04 (1)
 
 // ------------------ Tasks ---------------------
 

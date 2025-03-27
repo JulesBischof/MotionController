@@ -6,7 +6,7 @@
 constexpr double SPEEDOFSOUND = 343.2f;
 constexpr double CONVERSION_FACTOR = 2000.f;
 
-constexpr double INITIAL_DISTANCE = 500; // mm ## = MAXDISTANCE ! 
+constexpr double INITIAL_DISTANCE = 500; // mm ## = MAXDISTANCE !
 constexpr double INITIAL_VELOCITY = 1;   // m/s
 constexpr double INITIAL_DT = 0.1;       // s
 constexpr double FILTER_QD = 10;         // mm²
@@ -56,7 +56,7 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
                                        FILTER_QD,
                                        FILTER_QV,
                                        FILTER_R);
-
+    _initHcSr04ISR();
     _startHcSr04Task();
 }
 
@@ -75,7 +75,7 @@ void HcSr04::_initGpios()
 {
     gpio_init(_triggerPin);
     gpio_set_dir(_triggerPin, GPIO_OUT);
-    gpio_put(_triggerPin, false);
+    gpio_put(_triggerPin, true);
 
     gpio_init(_echoPin);
     gpio_set_dir(_echoPin, GPIO_IN);
@@ -94,6 +94,19 @@ void HcSr04::_initHcSr04Queue()
     xQueueOverwrite(_HcSr04QueueHandle, &initQueueVal);
 
     return;
+}
+
+void HcSr04::_initHcSr04ISR()
+{
+    // Disable existing IRQs to avoid conflicts during init
+    gpio_set_irq_enabled(_echoPin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
+
+    // Register the IRQ for echo pin
+    gpio_set_irq_enabled_with_callback(
+        _echoPin,
+        GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
+        true, // Enable the callback
+        _hcSr04Irq);
 }
 
 /* ==================================
@@ -134,9 +147,9 @@ void HcSr04::_HcSr04Task()
             double _filteredValue = _kalmanFilter.getDistance();
 
             xQueueOverwrite(_HcSr04QueueHandle, &_filteredValue);
-
-            vTaskDelay(pdMS_TO_TICKS(50));
         }
+
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
     /* never reached */
     return;
@@ -168,9 +181,9 @@ double HcSr04::_getRawDistanceMm()
 void HcSr04::_trigger()
 {
     // TODO: trigger pin by PIO possible ???
-    gpio_put(_triggerPin, true);
-    sleep_us(10);
     gpio_put(_triggerPin, false);
+    sleep_us(10);
+    gpio_put(_triggerPin, true);
 }
 
 HcSr04 *HcSr04::_getInstaceFromMap(uint8_t gpio)
@@ -203,6 +216,11 @@ double HcSr04::_getCurrentVelocity()
 QueueHandle_t HcSr04::getQueueHandle()
 {
     return _HcSr04QueueHandle;
+}
+
+TaskHandle_t HcSr04::getTaskHandle()
+{
+    return _taskHandle;
 }
 
 /* ==================================

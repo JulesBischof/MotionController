@@ -31,10 +31,6 @@ void testTask(void *pvParameters)
                 printf("Running HcSr04 Test...\n");
                 HcSr04Test();
 #endif
-#if TEST_ARDUINO_ADC == 1
-                printf("Running ArduinoNanoAdcUartSlave Test...\n");
-                ArduinoAdcSlaveTest();
-#endif
 #if TEST_VLINEFOLLOWERTASK == 1
                 printf("Running vLineFollowerTask Test...\n");
                 LineFollowerTaskTest();
