@@ -85,14 +85,13 @@ namespace MotionController
         int32_t X_ACTUAL_startValueDriver1 = _driver1.getXActual();
         int32_t drivenDistanceDriver1 = 0;
 
-        volatile uint32_t maxDistance = 0;
+        uint32_t maxDistance = 0;
 
         _lineFollowerStatusFlags = 0;
 
         // loop forever
         for (;;)
         {
-
             DispatcherMessage message;
             DispatcherMessage response;
 
@@ -261,20 +260,7 @@ namespace MotionController
 
             vTaskDelay(pdMS_TO_TICKS(100));
         }
-    }
-
-    bool MotionController::_checkForStandstill()
-    {
-        uint8_t status_driver0 = _driver0.getStatus();
-        uint8_t status_driver1 = _driver1.getStatus();
-
-        if ((status_driver0 & TMC5240_SPI_STATUS_POSITION_REACHED_MASK) &&
-            (status_driver1 & TMC5240_SPI_STATUS_POSITION_REACHED_MASK))
-        {
-            return true;
-        }
-        return false;
-    }
+    } // end Task
 
     /* ================================= */
     /*           Drive Control           */
@@ -341,38 +327,6 @@ namespace MotionController
     /*           Controller              */
     /* ================================= */
 
-    void MotionController::_checkLineFollowerStatus()
-    {
-        // check for LineSensor events
-        if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
-        {
-            printf("INFO LINEFOLLOWER detected Crosspoint \n");
-
-            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
-
-            // send MSG to LineFollowers own - to change Mode into PositionMode and drive until Axis is on top of Crosspoint
-            DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                      DispatcherTaskId::LineFollowerTask,
-                                                      TaskCommand::Move,
-                                                      LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm);
-                                                      
-            if(xQueueSend(_lineFollowerQueue, &msg, pdMS_TO_TICKS(100)) != pdTRUE)
-            {
-                /*   ERROR   stop Drives and send error msg to raspi */
-                _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
-                _lineFollowerStatusFlags |= LINEFOLLOWER_ERROR; 
-            }
-        }
-        if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
-        {
-            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
-            _lineFollowerStatusFlags |= LOST_LINE;
-
-            printf("INFO LINEFOLLOWER lost Line \n");
-        }
-        return;
-    }
-
     /// @brief controller for linefollowing. Config behaviour by settings values in LineFollwoerConfig.h file
     void MotionController::_followLine()
     {
@@ -431,6 +385,55 @@ namespace MotionController
         int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
         return retVal;
     } // end Control
+
+    /* ================================= */
+    /*           Helpers                 */
+    /* ================================= */
+
+    void MotionController::_checkLineFollowerStatus()
+    {
+        // check for LineSensor events
+        if (_lineSensor.getStatus() & LINESENSOR_CROSS_DETECTED)
+        {
+            printf("INFO LINEFOLLOWER detected Crosspoint \n");
+
+            _lineFollowerStatusFlags |= CROSSPOINT_DETECTED;
+
+            // send MSG to LineFollowers own - to change Mode into PositionMode and drive until Axis is on top of Crosspoint
+            DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                      DispatcherTaskId::LineFollowerTask,
+                                                      TaskCommand::Move,
+                                                      LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm);
+
+            if (xQueueSend(_lineFollowerQueue, &msg, pdMS_TO_TICKS(100)) != pdTRUE)
+            {
+                /*   ERROR   stop Drives and send error msg to raspi */
+                _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+                _lineFollowerStatusFlags |= LINEFOLLOWER_ERROR;
+            }
+        }
+        if (_lineSensor.getStatus() & LINESENSOR_NO_LINE)
+        {
+            _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+            _lineFollowerStatusFlags |= LOST_LINE;
+
+            printf("INFO LINEFOLLOWER lost Line \n");
+        }
+        return;
+    }
+
+    bool MotionController::_checkForStandstill()
+    {
+        uint8_t status_driver0 = _driver0.getStatus();
+        uint8_t status_driver1 = _driver1.getStatus();
+
+        if ((status_driver0 & TMC5240_SPI_STATUS_POSITION_REACHED_MASK) &&
+            (status_driver1 & TMC5240_SPI_STATUS_POSITION_REACHED_MASK))
+        {
+            return true;
+        }
+        return false;
+    }
 
     /* ================================= */
     /*       getters & Conversion        */
