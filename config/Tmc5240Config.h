@@ -46,9 +46,13 @@ U_rated = 3.4V
     ==================================================================== */
 #define TPOWERDOWN 10 // sets the delay time after stand still (stst) of the motor to motor current power down. Time range is about 0 to 4 seconds
 
-/*
-Set I_ref to 16k (R2 = HIGH, R3 = LOW)
-*/
+/* ====================================================================
+                    tmc5240 EVAL specific settings
+    ==================================================================== */
+// Set I_ref to 16k (R2 = HIGH, R3 = LOW)
+
+#define STATE_EVALBOARD_R2 (1)
+#define STATE_EVALBOARD_R3 (0)
 
 /* ####################################################################
 

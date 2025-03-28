@@ -39,4 +39,7 @@
 
 #define UV_LED_GPIO 27
 
+#define IREF_R2_DRIVER (14)
+#define IREF_R3_DRIVER (15)
+
 #endif

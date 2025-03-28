@@ -8,6 +8,7 @@
 
 #include "MotionControllerConfig.h"
 #include "MotionControllerPinning.h"
+#include "Tmc5240Config.h"
 #include <string.h>
 
 namespace MotionController
@@ -75,6 +76,10 @@ namespace MotionController
         gpio_put(SPI_CS_DRIVER_1, 1); // pull up CS
 
         spi_set_format(TMC5240_SPI_INSTANCE, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+
+        /* --------- DOUT ------------ */
+        _Tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
+        _Tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
         /* ERROR HANDLING ??? */
         return true;

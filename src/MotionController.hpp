@@ -11,6 +11,7 @@
 #include "Tmc5240.hpp"
 #include "LineSensor.hpp"
 #include "DigitalInput.hpp"
+#include "DigitalOutput.hpp"
 #include "Tla2528.hpp"
 
 #include "prain_uart/protocol.hpp"
@@ -101,6 +102,7 @@ namespace MotionController
         LineSensor _lineSensor;
         Tla2528 _adc;
         DigitalInput _safetyButton;
+        DigitalOutput _Tmc5240Eval_R2, _Tmc5240Eval_R3;
 
         uint32_t _lineFollowerStatusFlags;
 
