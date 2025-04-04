@@ -78,8 +78,8 @@ namespace MotionController
         spi_set_format(TMC5240_SPI_INSTANCE, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 
         /* --------- DOUT ------------ */
-        _Tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
-        _Tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
+        _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
+        _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
         /* ERROR HANDLING ??? */
         return true;
@@ -93,7 +93,9 @@ namespace MotionController
         _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
         _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
         _safetyButton = DigitalInput(DIN_4);
-        _lineFollowerStatusFlags = 0;
+        _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
+        _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
+        // _hcSr04 = HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
         return;
     }
 
@@ -218,7 +220,7 @@ namespace MotionController
     {
         if (xTaskCreate(_LineFollerTaskWrapper,
                         LINEFOLLOWERTASK_NAME,
-                        LINEFOLLOWERTASK_STACKSIZE,
+                        LINEFOLLOWERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
                         LINEFOLLOWERTASK_PRIORITY,
                         &_lineFollowerTaskHandle) != pdTRUE)
@@ -240,7 +242,7 @@ namespace MotionController
     {
         if (xTaskCreate(_RaspberryComTaskWrapper,
                         RASPBERRYHATCOMTASK_NAME,
-                        RASPBERRYHATCOMTASK_STACKSIZE,
+                        RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t),
                         this,
                         RASPBERRYHATCOMTASK_PRIORITY,
                         &_raspberryComTaskHandle) != pdTRUE)
@@ -261,7 +263,7 @@ namespace MotionController
     {
         if (xTaskCreate(_MessageDispatcherTaskWrapper,
                         MESSAGEDISPATCHERTASK_NAME,
-                        MESSAGEDISPATCHERTASK_STACKSIZE,
+                        MESSAGEDISPATCHERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
                         MESSAGEDISPATCHERTASK_PRIORITY,
                         &_messageDispatcherTaskHandle) != pdTRUE)

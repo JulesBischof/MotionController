@@ -8,6 +8,7 @@
 #include "task.h"
 #include "semphr.h"
 
+#include "HcSr04.hpp"
 #include "Tmc5240.hpp"
 #include "LineSensor.hpp"
 #include "DigitalInput.hpp"
@@ -102,9 +103,10 @@ namespace MotionController
         LineSensor _lineSensor;
         Tla2528 _adc;
         DigitalInput _safetyButton;
-        DigitalOutput _Tmc5240Eval_R2, _Tmc5240Eval_R3;
-
+        DigitalOutput _tmc5240Eval_R2, _tmc5240Eval_R3;
         uint32_t _lineFollowerStatusFlags;
+
+        // HcSr04 _hcSr04;
 
         void _lineFollowerTask();
         void _raspberryHatComTask();

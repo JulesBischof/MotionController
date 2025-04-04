@@ -60,6 +60,9 @@ namespace MotionController
     /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot.
     void MotionController::_lineFollowerTask()
     {
+        // init vars
+        TickType_t xLastWakeTime = xTaskGetTickCount();
+
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
         if (lineFollowerQueue == nullptr)
@@ -86,8 +89,6 @@ namespace MotionController
         int32_t drivenDistanceDriver1 = 0;
 
         uint32_t maxDistance = 0;
-
-        _lineFollowerStatusFlags = 0;
 
         // loop forever
         for (;;)
@@ -188,8 +189,12 @@ namespace MotionController
             }
 
             // ------- stm check hcsr04 distance -------
-
-            // TODO: check distance
+            // // TODO: check distance
+            // if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
+            // {
+            //     double barrierDistance = _hcSr04.getSensorData();
+            //     _hcSr04.triggerNewMeasurment();
+            // }
 
             // ------- stm line follower -------
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
@@ -258,7 +263,8 @@ namespace MotionController
                 _stopDrives();
             }
 
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
+            //vTaskDelay(pdMS_TO_TICKS(100));
         }
     } // end Task
 
@@ -338,15 +344,13 @@ namespace MotionController
 
         // get Sensor values
 #if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
-        int8_t y = lineSensor.getLinePosition();
+        int8_t y = _lineSensor.getLinePosition();
 #else
-        uint16_t y = _lineSensor.getLinePositionAnalog();
+        int16_t y = _lineSensor.getLinePositionAnalog();
 #endif
 
-        // TODO: HCSR04 get distance
-
         // get error
-        int8_t e = 0;
+        int16_t e = 0;
 
 #if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
         e = LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL - y;

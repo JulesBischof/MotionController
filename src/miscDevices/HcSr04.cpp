@@ -46,9 +46,8 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
     _timeStampRising = get_absolute_time();
     _timeStampFalling = get_absolute_time();
 
-    xSemaphoreTake(_instancesMapSemaphore, pdMS_TO_TICKS(100));
+    // no semaphore protection neccesary - while declaration no scheduler is active
     _instancesMap.insert(std::make_pair(_echoPin, this));
-    xSemaphoreGive(_instancesMapSemaphore);
 
     _kalmanFilter = HcSr04KalmanFilter(INITIAL_DISTANCE,
                                        INITIAL_VELOCITY,
@@ -56,8 +55,9 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
                                        FILTER_QD,
                                        FILTER_QV,
                                        FILTER_R);
+
+    _startSensorTask();
     _initHcSr04ISR();
-    _startHcSr04Task();
 }
 
 /// @brief deconstructor - not implemented yet
@@ -83,15 +83,15 @@ void HcSr04::_initGpios()
 
 void HcSr04::_initHcSr04Queue()
 {
-    _HcSr04QueueHandle = xQueueCreate(1, sizeof(double));
+    _queueHandle = xQueueCreate(1, sizeof(double));
 
-    if (_HcSr04QueueHandle == nullptr)
+    if (_queueHandle == nullptr)
     {
         /* ERROR..? */
     }
 
     double initQueueVal = INITIAL_DISTANCE;
-    xQueueOverwrite(_HcSr04QueueHandle, &initQueueVal);
+    xQueueOverwrite(_queueHandle, &initQueueVal);
 
     return;
 }
@@ -119,11 +119,11 @@ void HcSr04::_HcSr04TaskWrapper(void *pv)
     return;
 }
 
-void HcSr04::_startHcSr04Task()
+void HcSr04::_startSensorTask()
 {
     if (xTaskCreate(_HcSr04TaskWrapper,
                     "HcSr04Task",
-                    1024 / sizeof(StackType_t),
+                    8192 / sizeof(StackType_t), // 8kb
                     this,
                     tskIDLE_PRIORITY + 3,
                     &_taskHandle) != pdTRUE)
@@ -133,10 +133,23 @@ void HcSr04::_startHcSr04Task()
     return;
 }
 
+void HcSr04::_suspendSensorTask()
+{
+    vTaskSuspend(_taskHandle);
+}
+
+void HcSr04::triggerNewMeasurment()
+{
+    vTaskResume(_taskHandle);
+}
+
 void HcSr04::_HcSr04Task()
 {
     while (true)
     {
+        // first of all - suspend task so that task doesn't run initially
+        _suspendSensorTask();
+
         double rawDistance = _getRawDistanceMm();
 
         if (rawDistance < INITIAL_DISTANCE)
@@ -146,10 +159,8 @@ void HcSr04::_HcSr04Task()
             _kalmanFilter.update(rawDistance, dt);
             double _filteredValue = _kalmanFilter.getDistance();
 
-            xQueueOverwrite(_HcSr04QueueHandle, &_filteredValue);
+            xQueueOverwrite(_queueHandle, &_filteredValue);
         }
-
-        vTaskDelay(pdMS_TO_TICKS(50));
     }
     /* never reached */
     return;
@@ -175,6 +186,13 @@ double HcSr04::_getRawDistanceMm()
     }
 
     return retVal;
+}
+
+double HcSr04::getSensorData()
+{
+    double buffer = 500;
+    xQueuePeek(_queueHandle, &buffer, pdMS_TO_TICKS(10));
+    return buffer;
 }
 
 /// @brief pulls the trigger pin
@@ -211,16 +229,6 @@ double HcSr04::_getCurrentVelocity()
     xSemaphoreGive(_currentVelocitySemaphore);
 
     return retVal;
-}
-
-QueueHandle_t HcSr04::getQueueHandle()
-{
-    return _HcSr04QueueHandle;
-}
-
-TaskHandle_t HcSr04::getTaskHandle()
-{
-    return _taskHandle;
 }
 
 /* ==================================

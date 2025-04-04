@@ -33,13 +33,12 @@ class HcSr04
         volatile EventGroupHandle_t _eventGroup;
         volatile EventBits_t _echoEvent;
 
-        QueueHandle_t _HcSr04QueueHandle;
+        QueueHandle_t _queueHandle;
         void _initHcSr04Queue();
 
         TaskHandle_t _taskHandle;
         static void _HcSr04TaskWrapper(void *pv);
         void _HcSr04Task();
-        void _startHcSr04Task();
 
         double _getRawDistanceMm();
 
@@ -51,14 +50,17 @@ class HcSr04
         static SemaphoreHandle_t _instancesMapSemaphore;
         static HcSr04 *_getInstaceFromMap(uint8_t gpio);
 
+        void _startSensorTask();
+        void _suspendSensorTask();
+
     public : 
         HcSr04(){}
         HcSr04(uint8_t triggerPin, uint8_t echoPin);
         ~HcSr04();
 
-        QueueHandle_t getQueueHandle();
-        TaskHandle_t getTaskHandle();
-        
+        void triggerNewMeasurment();
+        double getSensorData();
+
         void setCurrentVelocity(double v);
 };
 

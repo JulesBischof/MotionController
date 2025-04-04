@@ -1,6 +1,8 @@
 #ifndef DIGITALOUTPUT_HPP
 #define DIGITALOUTPUT_HPP
 
+#include "pico/stdlib.h"
+
 class DigitalOutput
 {
     private:
