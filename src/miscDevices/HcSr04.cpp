@@ -30,7 +30,10 @@ SemaphoreHandle_t HcSr04::_instancesMapSemaphore = xSemaphoreCreateMutex();
 HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
     : _triggerPin(triggerPin), _echoPin(echoPin)
 {
+    _statusFlags = 0;
     _initGpios();
+    _initHcSr04Queue();
+
     // no semaphore protection neccesary - while declaration no scheduler is active
     _instancesMap.insert(std::make_pair(_echoPin, this));
 
@@ -40,6 +43,14 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
                                        FILTER_QD,
                                        FILTER_QV,
                                        FILTER_R);
+
+    _currentVelocitySemaphore = xSemaphoreCreateMutex();
+    setCurrentVelocity(0);
+}
+
+HcSr04::HcSr04()
+{
+    /* default ctor */
 }
 
 /// @brief deconstructor - not implemented yet
@@ -57,7 +68,7 @@ void HcSr04::_initGpios()
 {
     gpio_init(_triggerPin);
     gpio_set_dir(_triggerPin, GPIO_OUT);
-    gpio_put(_triggerPin, true);
+    gpio_put(_triggerPin, true); // pin is negative active
 
     gpio_init(_echoPin);
     gpio_set_dir(_echoPin, GPIO_IN);
@@ -66,19 +77,18 @@ void HcSr04::_initGpios()
 void HcSr04::_initHcSr04Queue()
 {
     _queueHandle = xQueueCreate(1, sizeof(float));
-
     if (_queueHandle == nullptr)
     {
-        /* ERROR..? */
+        /* ERROR HANDLING ??? */
     }
-
-    float initQueueVal = INITIAL_DISTANCE;
-    xQueueOverwrite(_queueHandle, &initQueueVal);
-
-    return;
+    else
+    {
+        float initValue = INITIAL_DISTANCE;
+        xQueueOverwrite(_queueHandle, &initValue);
+    }
 }
 
-void HcSr04::_initHcSr04ISR()
+void HcSr04::_initHcSr04Isr()
 {
     // Disable existing IRQs to avoid conflicts during init
     gpio_set_irq_enabled(_echoPin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
@@ -88,25 +98,7 @@ void HcSr04::_initHcSr04ISR()
         _echoPin,
         GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
         true, // enable callback
-        _hcSr04Irq);
-}
-
-void HcSr04::init()
-{
-    _initHcSr04Queue();
-
-    _eventGroup = xEventGroupCreate();
-    _echoEvent = (1 << 0);
-    xEventGroupClearBits(_eventGroup, _echoEvent);
-
-    _currentVelocitySemaphore = xSemaphoreCreateMutex();
-
-    _timeStampRising = get_absolute_time();
-    _timeStampFalling = get_absolute_time();
-
-    _initHcSr04ISR();
-    _startSensorTask();
-
+        _hcSr04GlobalIrq);
 }
 
 /* ==================================
@@ -119,8 +111,10 @@ void HcSr04::_HcSr04TaskWrapper(void *pv)
     return;
 }
 
-void HcSr04::_startSensorTask()
+void HcSr04::startSensorTask()
 {
+    _initHcSr04Isr();
+    
     if (xTaskCreate(_HcSr04TaskWrapper,
                     "HcSr04Task",
                     10 * 1024 / sizeof(StackType_t), // 10kb
@@ -144,18 +138,31 @@ void HcSr04::_HcSr04Task()
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        float rawDistance = _getRawDistanceMm();
+        _trigger();
 
-        if (rawDistance < INITIAL_DISTANCE)
+        uint32_t rawTimeDiff = 0;
+        float distance = INITIAL_DISTANCE;
+
+        if (xTaskNotifyWait(0x00, 0xFFFFFFFF, &rawTimeDiff, pdMS_TO_TICKS(50)) == pdTRUE)
+        {
+            distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
+        }
+        else
+        {
+            /* TIMEOUT ERROR ??? */
+        }
+
+        if (distance < INITIAL_DISTANCE)
         {
             _kalmanFilter.setVelocity(_getCurrentVelocity());
-            float dt = _lastDt / 1e6; // unit conversion us -> s
-            _kalmanFilter.update(rawDistance, dt);
+            float dt = rawTimeDiff / 1e6; // unit conversion us -> s
+            _kalmanFilter.update(distance, dt);
             float _filteredValue = _kalmanFilter.getDistance();
 
             xQueueOverwrite(_queueHandle, &_filteredValue);
         }
     }
+
     /* never reached */
     return;
 }
@@ -164,27 +171,16 @@ void HcSr04::_HcSr04Task()
             getters & setters
    ================================== */
 
-/// @brief measures current distance to distant object
-/// @return distance measured by hcsr04, value in mm
-float HcSr04::_getRawDistanceMm()
-{
-    _trigger();
-    EventBits_t bits = xEventGroupWaitBits(_eventGroup, _echoEvent, pdTRUE, pdFALSE, pdMS_TO_TICKS(100));
-
-    float retVal = INITIAL_DISTANCE;
-
-    if (bits & _echoEvent)
-    {
-        _lastDt = absolute_time_diff_us(_timeStampRising, _timeStampFalling);
-        retVal = (_lastDt * SPEEDOFSOUND) / CONVERSION_FACTOR;
-    }
-
-    return retVal;
-}
-
 float HcSr04::getSensorData()
 {
     float buffer = 500;
+
+    if (_queueHandle == nullptr)
+    {
+        return buffer;
+        /* ERROR ??? */
+    }
+
     xQueuePeek(_queueHandle, &buffer, pdMS_TO_TICKS(10));
     return buffer;
 }
@@ -195,27 +191,7 @@ void HcSr04::_trigger()
     // TODO: trigger pin by PIO possible ???
     gpio_put(_triggerPin, false);
     sleep_us(10);
-    gpio_put(_triggerPin, true);
-}
-
-HcSr04 *HcSr04::_getInstaceFromMap(uint8_t gpio)
-{
-    HcSr04 *inst;
-    xSemaphoreTake(_instancesMapSemaphore, pdMS_TO_TICKS(100));
-    inst = HcSr04::_instancesMap[gpio];
-    xSemaphoreGive(_instancesMapSemaphore);
-
-    return inst;
-}
-
-HcSr04 *HcSr04::_getInstaceFromMapFromISR(uint8_t gpio)
-{
-    HcSr04 *inst;
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreTakeFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
-    inst = HcSr04::_instancesMap[gpio];
-    xSemaphoreGiveFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
-    return inst;
+    gpio_put(_triggerPin, true); // pin is negative active
 }
 
 void HcSr04::setCurrentVelocity(float v)
@@ -239,26 +215,51 @@ float HcSr04::_getCurrentVelocity()
             IRQ-Handler
    ================================== */
 
-/// @brief irq callback function for echo-pin interrupt
+/// @brief irq callback function for echo-pin interrupt.
 /// @param gpio gpio that triggered the interrupt
 /// @param events falling or rising edge
-void HcSr04::_hcSr04Irq(uint gpio, uint32_t events)
+void HcSr04::_hcSr04GlobalIrq(uint gpio, uint32_t events)
 {
-    HcSr04 *inst = HcSr04::_getInstaceFromMapFromISR(gpio);
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    // rising edge: measurment started
-    if (events == GPIO_IRQ_EDGE_RISE)
+    // get concerning instance
+    xSemaphoreTakeFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
+    HcSr04 *instance = _instancesMap[gpio];
+    xSemaphoreGiveFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
+
+    // run "personal" instance irq handler
+    if (instance != nullptr)
     {
-        inst->_timeStampRising = get_absolute_time();
+        instance->_hcSr04InstanceIrq(gpio, events);
+    }
+}
+
+/// @brief instances personal irq handler. Gets triggered by global isr handler
+/// @param gpio gpio that triggered the event
+/// @param events event such as gpio rising or falling edge
+void HcSr04::_hcSr04InstanceIrq(uint gpio, uint32_t events)
+{
+    static absolute_time_t risingEdge = 0;
+    static absolute_time_t fallingEdge = 0;
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    uint32_t timeDiff = 0;
+
+    if (events & GPIO_IRQ_EDGE_RISE)
+    {
+        risingEdge = get_absolute_time();
+    }
+    else if (events & GPIO_IRQ_EDGE_FALL)
+    {
+        fallingEdge = get_absolute_time();
+        timeDiff = static_cast<uint32_t>(absolute_time_diff_us(risingEdge, fallingEdge));
+
+        xTaskNotifyFromISR(_taskHandle, timeDiff, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
     }
 
-    // Falling edge: measurment ready
-    if (events == GPIO_IRQ_EDGE_FALL)
+    if (xHigherPriorityTaskWoken == pdTRUE)
     {
-        inst->_timeStampFalling = get_absolute_time();
-        xEventGroupSetBitsFromISR(inst->_eventGroup, inst->_echoEvent, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
-
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }

@@ -26,3 +26,13 @@ int main()
     };
 #endif
 }
+
+// -------- Hooks
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    // Handle Stack Overflow hier
+    printf("Stack Overflow in Task: %s\n", pcTaskName);
+    // Optional: Hier kannst du das System stoppen, neu starten oder debuggen.
+    for (;;)
+        ; // Endlosschleife, falls erforderlich
+}

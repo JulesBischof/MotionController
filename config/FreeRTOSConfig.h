@@ -45,8 +45,8 @@
 #define configUSE_TICKLESS_IDLE                 0 // DeepSleep?
 #define configUSE_IDLE_HOOK                     0
 #define configUSE_TICK_HOOK                     0
-#define configTICK_RATE_HZ                      ((TickType_t)1000)
-#define configMAX_PRIORITIES                    32
+#define configTICK_RATE_HZ                      ((TickType_t)100)
+#define configMAX_PRIORITIES                    5
 #define configMINIMAL_STACK_SIZE                (configSTACK_DEPTH_TYPE)256
 #define configUSE_16_BIT_TICKS                  0
 
@@ -76,7 +76,7 @@
 #define configAPPLICATION_ALLOCATED_HEAP        0
 
 /* Hook function related definitions. */
-#define configCHECK_FOR_STACK_OVERFLOW          0
+#define configCHECK_FOR_STACK_OVERFLOW          1 // 1 check on task level 2 check on Task and isr level
 #define configUSE_MALLOC_FAILED_HOOK            0
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 

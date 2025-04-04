@@ -60,10 +60,11 @@ namespace MotionController
     /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot.
     void MotionController::_lineFollowerTask()
     {
-        // init vars
+        // init vars'nmembers
         _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET;
         TickType_t xLastWakeTime = xTaskGetTickCount();
-        _hcSr04.init();
+
+        _hcSr04.startSensorTask();
 
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
@@ -194,7 +195,7 @@ namespace MotionController
             // TODO: check distance
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
             {
-                double barrierDistance = _hcSr04.getSensorData();
+                float barrierDistance = _hcSr04.getSensorData();
                 _hcSr04.triggerNewMeasurment();
             }
 
@@ -266,7 +267,6 @@ namespace MotionController
             }
 
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
-            //vTaskDelay(pdMS_TO_TICKS(100));
         }
     } // end Task
 
