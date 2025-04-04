@@ -95,7 +95,7 @@ namespace MotionController
         _safetyButton = DigitalInput(DIN_4);
         _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
-        // _hcSr04 = HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+        _hcSr04 = HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
         return;
     }
 
@@ -222,7 +222,7 @@ namespace MotionController
                         LINEFOLLOWERTASK_NAME,
                         LINEFOLLOWERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
-                        LINEFOLLOWERTASK_PRIORITY,
+                        tskIDLE_PRIORITY + LINEFOLLOWERTASK_PRIORITY,
                         &_lineFollowerTaskHandle) != pdTRUE)
         {
             /* ERROR HANDLING ??? */
@@ -244,7 +244,7 @@ namespace MotionController
                         RASPBERRYHATCOMTASK_NAME,
                         RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t),
                         this,
-                        RASPBERRYHATCOMTASK_PRIORITY,
+                        tskIDLE_PRIORITY + RASPBERRYHATCOMTASK_PRIORITY,
                         &_raspberryComTaskHandle) != pdTRUE)
         {
             /* ERROR HANDLING ??? */
@@ -265,7 +265,7 @@ namespace MotionController
                         MESSAGEDISPATCHERTASK_NAME,
                         MESSAGEDISPATCHERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
-                        MESSAGEDISPATCHERTASK_PRIORITY,
+                        tskIDLE_PRIORITY + MESSAGEDISPATCHERTASK_PRIORITY,
                         &_messageDispatcherTaskHandle) != pdTRUE)
         {
             /* ERROR HANDLING ??? */

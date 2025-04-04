@@ -106,7 +106,7 @@ namespace MotionController
         DigitalOutput _tmc5240Eval_R2, _tmc5240Eval_R3;
         uint32_t _lineFollowerStatusFlags;
 
-        // HcSr04 _hcSr04;
+        HcSr04 _hcSr04;
 
         void _lineFollowerTask();
         void _raspberryHatComTask();

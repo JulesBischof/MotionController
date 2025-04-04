@@ -6,22 +6,22 @@
 class HcSr04KalmanFilter
 {
 private:
-    double _distance, _velocity, _dt;
+    float _distance, _velocity, _dt;
 
-    double F[2][2], H[2], Q[2][2], R, P[2][2], K[2];
+    float F[2][2], H[2], Q[2][2], R, P[2][2], K[2];
 
     void _predictionPhase();
-    void _correctionPhase(double z);
+    void _correctionPhase(float z);
 
 public:
     HcSr04KalmanFilter();
-    HcSr04KalmanFilter(double init_d, double init_v, double init_dt, double q_d, double q_v, double r);
+    HcSr04KalmanFilter(float init_d, float init_v, float init_dt, float q_d, float q_v, float r);
     ~HcSr04KalmanFilter();
 
-    void setVelocity(double speedMps);
-    void setDt(double dt);
+    void setVelocity(float speedMps);
+    void setDt(float dt);
 
-    void update(double z, double dt);
+    void update(float z, float dt);
     float getDistance();
 };
 

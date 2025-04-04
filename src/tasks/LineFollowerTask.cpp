@@ -61,7 +61,9 @@ namespace MotionController
     void MotionController::_lineFollowerTask()
     {
         // init vars
+        _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET;
         TickType_t xLastWakeTime = xTaskGetTickCount();
+        _hcSr04.init();
 
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
@@ -189,12 +191,12 @@ namespace MotionController
             }
 
             // ------- stm check hcsr04 distance -------
-            // // TODO: check distance
-            // if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
-            // {
-            //     double barrierDistance = _hcSr04.getSensorData();
-            //     _hcSr04.triggerNewMeasurment();
-            // }
+            // TODO: check distance
+            if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
+            {
+                double barrierDistance = _hcSr04.getSensorData();
+                _hcSr04.triggerNewMeasurment();
+            }
 
             // ------- stm line follower -------
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
@@ -311,8 +313,8 @@ namespace MotionController
         int32_t nStepsDriver = static_cast<int32_t>(std::round(res));
 
         // move drives in different directions
-        _driver0.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
-        _driver1.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
+        _driver0.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+        _driver1.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
         _lineFollowerStatusFlags |= TURNREQUEST_SEND;
     }
 

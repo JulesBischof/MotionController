@@ -18,10 +18,10 @@ class HcSr04
         void _trigger();
 
         void _initHcSr04ISR();
+
         static void _hcSr04Irq(uint gpio, uint32_t events);
 
-        volatile absolute_time_t _timeStampRising;
-        volatile absolute_time_t _timeStampFalling;
+        volatile absolute_time_t _timeStampRising, _timeStampFalling;
         absolute_time_t _lastDt;
 
         uint8_t _triggerPin;
@@ -40,18 +40,19 @@ class HcSr04
         static void _HcSr04TaskWrapper(void *pv);
         void _HcSr04Task();
 
-        double _getRawDistanceMm();
+        float _getRawDistanceMm();
 
         SemaphoreHandle_t _currentVelocitySemaphore;
-        double _currentVelocity;
-        double _getCurrentVelocity();
+        float _currentVelocity;
+        float _getCurrentVelocity();
 
         static std::map<uint, HcSr04 *> _instancesMap;
         static SemaphoreHandle_t _instancesMapSemaphore;
+
         static HcSr04 *_getInstaceFromMap(uint8_t gpio);
+        static HcSr04 *_getInstaceFromMapFromISR(uint8_t gpio);
 
         void _startSensorTask();
-        void _suspendSensorTask();
 
     public : 
         HcSr04(){}
@@ -59,9 +60,11 @@ class HcSr04
         ~HcSr04();
 
         void triggerNewMeasurment();
-        double getSensorData();
+        float getSensorData();
 
-        void setCurrentVelocity(double v);
+        void init();
+
+        void setCurrentVelocity(float v);
 };
 
 #endif

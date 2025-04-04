@@ -7,7 +7,7 @@
 
 ============================================================== */
 #define MESSAGEDISPATCHERTASK_NAME ("vMessageDispatcherTask")
-#define MESSAGEDISPATCHERTASK_STACKSIZE (8192) // 8kb
+#define MESSAGEDISPATCHERTASK_STACKSIZE (8 * 1024) // 10kb
 #define MESSAGEDISPATCHERTASK_PRIORITY (1)
 
 #define MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS (100)
