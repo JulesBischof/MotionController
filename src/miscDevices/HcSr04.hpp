@@ -20,6 +20,7 @@ class HcSr04
         void _trigger();
 
         void _initHcSr04Isr();
+        void _deInitHcSr04Isr();
 
         static void _hcSr04GlobalIrq(uint gpio, uint32_t events);
         void _hcSr04InstanceIrq(uint gpio, uint32_t events);
@@ -49,7 +50,7 @@ class HcSr04
         HcSr04(uint8_t triggerPin, uint8_t echoPin);
         ~HcSr04();
 
-        void startSensorTask();
+        void initMeasurmentTask();
 
         void triggerNewMeasurment();
         float getSensorData();

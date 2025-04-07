@@ -60,11 +60,11 @@ namespace MotionController
     /// @brief main loop lineFollowerTask. Statemaschine controlled by Statusflags to control Robot.
     void MotionController::_lineFollowerTask()
     {
-        // init vars'nmembers
+        // init vars
         _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET;
         TickType_t xLastWakeTime = xTaskGetTickCount();
 
-        _hcSr04.startSensorTask();
+        _hcSr04.initMeasurmentTask();
 
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
@@ -223,9 +223,8 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    int32_t data = static_cast<int32_t>(message.getData());  // convert to a signed value!
-                    float distanceInMeters = static_cast<float>(data) / 1e2; // data contains cm!
-                    int32_t microsteps = Tmc5240::convertDistanceToMicrosteps(distanceInMeters);
+                    float data = static_cast<float>(message.getData());  // convert to a signed value!
+                    int32_t microsteps = 10 * Tmc5240::convertDistanceMmToMicrosteps(data); // 10 due to unit conversion
                     _movePositionMode(microsteps);
                 }
 
@@ -300,17 +299,17 @@ namespace MotionController
             => distance one wheel has to move more than the other to rotate the vehicle a certain amount of degree
         */
 
-        float fphi = static_cast<float>(angle);
-        float num = fphi * LINEFOLLOWERCONFIG_AXIS_WIDTH_m * M_PI;
-        float const dnum = 180.f;
+        float num = static_cast<float>(angle * LINEFOLLOWERCONFIG_AXIS_WIDTH_mm * M_PI);
 
-        // divide by 2 due to one wheel is supposed to move forward, one backward
-        float ds = num / (2 * dnum);
+        // 10 due to angle gets send in [°] * 10; 180° -> data = 1800
+        // divide by 2 due to one wheel has to drive forward, one backward;
+        float const dnum = 2 * 180.f * 10; 
 
-        // unit conversion meters -> uSteps
-        float res = Tmc5240::convertDistanceToMicrosteps(ds);
+        // distance per wheel in mm
+        float ds = num / dnum;
 
-        int32_t nStepsDriver = static_cast<int32_t>(std::round(res));
+        // unit conversion mm -> uSteps
+        int32_t nStepsDriver = Tmc5240::convertDistanceMmToMicrosteps(ds);
 
         // move drives in different directions
         _driver0.moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
@@ -409,7 +408,7 @@ namespace MotionController
             DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                       DispatcherTaskId::LineFollowerTask,
                                                       TaskCommand::Move,
-                                                      LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm);
+                                                      LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm / 10); // convert to cm
 
             if (xQueueSend(_lineFollowerQueue, &msg, pdMS_TO_TICKS(100)) != pdTRUE)
             {

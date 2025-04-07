@@ -37,7 +37,7 @@ public:
 
     void toggleToff(bool val);
 
-    static int32_t convertDistanceToMicrosteps(float meter);
+    static int32_t convertDistanceMmToMicrosteps(float meter);
     static int32_t convertMicrostepsToCentimeter(uint32_t uSteps);
     static int32_t convertDegreeToMicrosteps(int32_t degrees);
     static float convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference);

@@ -54,7 +54,7 @@
                     Physical dimensions
 
 ============================================================== */
-#define LINEFOLLOWERCONFIG_AXIS_WIDTH_m (272 / 1e3) // TODO: CHECK
-#define LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_cm (11) // TODO: CHECK
+#define LINEFOLLOWERCONFIG_AXIS_WIDTH_mm (272) // TODO: CHECK
+#define LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm (111) // TODO: CHECK
 
 #endif // LINEFOLLOWERTASKCONFIG_H

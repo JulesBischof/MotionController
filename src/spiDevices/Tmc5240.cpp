@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-constexpr float WHEELCIRCUMFENCE = (STEPPERCONFIG_WHEEL_DIAMETER_MM / 1e3) * M_PI;
+constexpr float WHEELCIRCUMFENCE_MM = STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI;
 
 /* ==================================
       Constructor / Deconstructor
@@ -259,12 +259,12 @@ void Tmc5240::clearGSTAT()
          some static helpers
    ================================== */
 
-/// @brief convert m/s or m/s^2 to ustep/s or ustep/s^2
-/// @param mps meter mer second value
+/// @brief convert mm to usteps
+/// @param distance distance in [mm]
 /// @return microsteps
-int32_t Tmc5240::convertDistanceToMicrosteps(float meters)
+int32_t Tmc5240::convertDistanceMmToMicrosteps(float distance)
 {
-    float res = (meters / WHEELCIRCUMFENCE) * MICROSTEPSPERREVOLUTION;
+    float res = (distance / WHEELCIRCUMFENCE_MM) * MICROSTEPSPERREVOLUTION;
 
     int32_t retVal = static_cast<int32_t>(std::round(res));
     return retVal;
@@ -275,7 +275,7 @@ int32_t Tmc5240::convertDistanceToMicrosteps(float meters)
 /// @return Distance in Centimeter
 int32_t Tmc5240::convertMicrostepsToCentimeter(uint32_t uSteps)
 {
-    float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE;
+    float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE_MM;
 
     int32_t retVal = static_cast<int32_t>(std::round(res));
     return retVal;
@@ -297,7 +297,7 @@ float Tmc5240::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
 {
     float dsMeters = convertMicrostepsToCentimeter(uStepsDifference) * 1e2;
 
-    float res = (dsMeters * 180.0f) / (WHEELCIRCUMFENCE);
+    float res = (dsMeters * 180.0f) / (WHEELCIRCUMFENCE_MM);
 
     return res;
 }

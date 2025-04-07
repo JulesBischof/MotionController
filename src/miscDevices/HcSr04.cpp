@@ -7,9 +7,9 @@ constexpr float SPEEDOFSOUND = 343.2f;
 constexpr float CONVERSION_FACTOR = 2000.f;
 
 constexpr float INITIAL_DISTANCE = 500; // mm ## = MAXDISTANCE !
-constexpr float INITIAL_VELOCITY = 1;   // m/s
+constexpr float INITIAL_VELOCITY = 0;   // m/s
 constexpr float INITIAL_DT = 0.1;       // s
-constexpr float FILTER_QD = 10;         // mm²
+constexpr float FILTER_QD = 1e-3;       // mm²
 constexpr float FILTER_QV = 1e-3;       // (m/s)²
 constexpr float FILTER_R = 100;         // mm²
 
@@ -30,6 +30,9 @@ SemaphoreHandle_t HcSr04::_instancesMapSemaphore = xSemaphoreCreateMutex();
 HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
     : _triggerPin(triggerPin), _echoPin(echoPin)
 {
+    // Disable existing IRQs to avoid conflicts during init
+    _deInitHcSr04Isr();
+
     _statusFlags = 0;
     _initGpios();
     _initHcSr04Queue();
@@ -45,7 +48,7 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
                                        FILTER_R);
 
     _currentVelocitySemaphore = xSemaphoreCreateMutex();
-    setCurrentVelocity(0);
+    _currentVelocity = 0; // ctor runs in advance to scheduler - no need to protect
 }
 
 HcSr04::HcSr04()
@@ -90,15 +93,19 @@ void HcSr04::_initHcSr04Queue()
 
 void HcSr04::_initHcSr04Isr()
 {
-    // Disable existing IRQs to avoid conflicts during init
-    gpio_set_irq_enabled(_echoPin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
-
     // Register the IRQ for echo pin
     gpio_set_irq_enabled_with_callback(
         _echoPin,
         GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL,
         true, // enable callback
         _hcSr04GlobalIrq);
+    return;
+}
+
+void HcSr04::_deInitHcSr04Isr()
+{
+    gpio_set_irq_enabled(_echoPin, GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL, false);
+    return;
 }
 
 /* ==================================
@@ -111,10 +118,8 @@ void HcSr04::_HcSr04TaskWrapper(void *pv)
     return;
 }
 
-void HcSr04::startSensorTask()
+void HcSr04::initMeasurmentTask()
 {
-    _initHcSr04Isr();
-    
     if (xTaskCreate(_HcSr04TaskWrapper,
                     "HcSr04Task",
                     10 * 1024 / sizeof(StackType_t), // 10kb
@@ -124,12 +129,21 @@ void HcSr04::startSensorTask()
     {
         /* ERROR HANDLING ? */
     }
+
+    _initHcSr04Isr();
     return;
 }
 
 void HcSr04::triggerNewMeasurment()
 {
+    if (_taskHandle == nullptr)
+    {
+        return;
+        /* ERROR ??? */
+    }
+
     xTaskNotifyGive(_taskHandle);
+    return;
 }
 
 void HcSr04::_HcSr04Task()
@@ -196,6 +210,12 @@ void HcSr04::_trigger()
 
 void HcSr04::setCurrentVelocity(float v)
 {
+    if (_currentVelocitySemaphore == nullptr)
+    {
+        return;
+        /* ERROR ??? */
+    }
+
     xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
     _currentVelocity = v;
     xSemaphoreGive(_currentVelocitySemaphore);
@@ -203,6 +223,12 @@ void HcSr04::setCurrentVelocity(float v)
 
 float HcSr04::_getCurrentVelocity()
 {
+    if (_currentVelocitySemaphore == nullptr)
+    {
+        return 0;
+        /* ERROR ??? */
+    }
+
     float retVal;
     xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
     retVal = _currentVelocity;
@@ -222,15 +248,18 @@ void HcSr04::_hcSr04GlobalIrq(uint gpio, uint32_t events)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    // get concerning instance
-    xSemaphoreTakeFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
-    HcSr04 *instance = _instancesMap[gpio];
-    xSemaphoreGiveFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
-
-    // run "personal" instance irq handler
-    if (instance != nullptr)
+    if (_instancesMapSemaphore != nullptr)
     {
-        instance->_hcSr04InstanceIrq(gpio, events);
+        // get concerning instance
+        xSemaphoreTakeFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
+        HcSr04 *instance = _instancesMap[gpio];
+        xSemaphoreGiveFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
+
+        // run "personal" instance irq handler
+        if (instance != nullptr)
+        {
+            instance->_hcSr04InstanceIrq(gpio, events);
+        }
     }
 }
 
