@@ -6,12 +6,13 @@
 constexpr float SPEEDOFSOUND = 343.2f;
 constexpr float CONVERSION_FACTOR = 2000.f;
 
-constexpr float INITIAL_DISTANCE = 500; // mm ## = MAXDISTANCE !
-constexpr float INITIAL_VELOCITY = 0;   // m/s
-constexpr float INITIAL_DT = 0.1;       // s
-constexpr float FILTER_QD = 1e-3;       // mm²
-constexpr float FILTER_QV = 1e-3;       // (m/s)²
-constexpr float FILTER_R = 100;         // mm²
+constexpr float INITIAL_DISTANCE = 500;
+constexpr float INITIAL_VELOCITY = 0;
+constexpr float INITIAL_DT = 0.1;
+
+constexpr float FILTER_QD = 5.0;  // position 
+constexpr float FILTER_QV = 1e-5; // velocity - stepper motors are very percise
+constexpr float FILTER_R = 9;   // measurment noise HC-SR04 - Excel calculations
 
 /* ==================================
             static Members
@@ -49,6 +50,9 @@ HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
 
     _currentVelocitySemaphore = xSemaphoreCreateMutex();
     _currentVelocity = 0; // ctor runs in advance to scheduler - no need to protect
+
+    _rawtimediffSemaphore = xSemaphoreCreateMutex();
+    _rawtimediff = 0; // ctor runs in advance to scheduler - no need to protect
 }
 
 HcSr04::HcSr04()
@@ -87,7 +91,7 @@ void HcSr04::_initHcSr04Queue()
     else
     {
         float initValue = INITIAL_DISTANCE;
-        xQueueOverwrite(_queueHandle, &initValue);
+        xQueueSendToFront(_queueHandle, &initValue, pdMS_TO_TICKS(0)); // add initial value
     }
 }
 
@@ -124,7 +128,7 @@ void HcSr04::initMeasurmentTask()
                     "HcSr04Task",
                     10 * 1024 / sizeof(StackType_t), // 10kb
                     this,
-                    tskIDLE_PRIORITY + 2,
+                    tskIDLE_PRIORITY + 4,
                     &_taskHandle) != pdTRUE)
     {
         /* ERROR HANDLING ? */
@@ -157,8 +161,9 @@ void HcSr04::_HcSr04Task()
         uint32_t rawTimeDiff = 0;
         float distance = INITIAL_DISTANCE;
 
-        if (xTaskNotifyWait(0x00, 0xFFFFFFFF, &rawTimeDiff, pdMS_TO_TICKS(50)) == pdTRUE)
+        if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(100)) == pdTRUE)
         {
+            rawTimeDiff = _getHcSr04RawTimeDiff();
             distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
         }
         else
@@ -166,15 +171,14 @@ void HcSr04::_HcSr04Task()
             /* TIMEOUT ERROR ??? */
         }
 
-        if (distance < INITIAL_DISTANCE)
-        {
-            _kalmanFilter.setVelocity(_getCurrentVelocity());
-            float dt = rawTimeDiff / 1e6; // unit conversion us -> s
-            _kalmanFilter.update(distance, dt);
-            float _filteredValue = _kalmanFilter.getDistance();
+        // printf("%f\n", distance); -- debug - get raw values
 
-            xQueueOverwrite(_queueHandle, &_filteredValue);
-        }
+        _kalmanFilter.setVelocity(_getCurrentVelocity());
+        float dt = rawTimeDiff / 1e6; // unit conversion us -> s
+        _kalmanFilter.update(distance, dt);
+        float _filteredValue = _kalmanFilter.getDistance();
+
+        xQueueOverwrite(_queueHandle, &_filteredValue);
     }
 
     /* never reached */
@@ -237,6 +241,15 @@ float HcSr04::_getCurrentVelocity()
     return retVal;
 }
 
+uint32_t HcSr04::_getHcSr04RawTimeDiff()
+{
+    uint32_t retVal = 0;
+
+    retVal = _rawtimediff; // acces is atomic - no protection neccesseary
+
+    return retVal;
+}
+
 /* ==================================
             IRQ-Handler
    ================================== */
@@ -284,7 +297,9 @@ void HcSr04::_hcSr04InstanceIrq(uint gpio, uint32_t events)
         fallingEdge = get_absolute_time();
         timeDiff = static_cast<uint32_t>(absolute_time_diff_us(risingEdge, fallingEdge));
 
-        xTaskNotifyFromISR(_taskHandle, timeDiff, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+        _rawtimediff = timeDiff; // access is atomic - no protection neccesary
+
+        xTaskNotifyFromISR(_taskHandle, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
     }
 
     if (xHigherPriorityTaskWoken == pdTRUE)

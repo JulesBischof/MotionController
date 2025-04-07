@@ -95,7 +95,7 @@ namespace MotionController
         _safetyButton = DigitalInput(DIN_4);
         _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
-        _hcSr04 = HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+        _hcSr04 = new HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
         return;
     }
 

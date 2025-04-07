@@ -19,6 +19,13 @@
 namespace MotionController
 {
     /* ================================= */
+    /*            consts                 */
+    /* ================================= */
+    constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION; // mm per second
+    constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
+    constexpr float BRAKEDISTANCE_BARRIER_IN_MM = 200.f;
+    
+    /* ================================= */
     /*           status Flags            */
     /* ================================= */
 
@@ -44,6 +51,7 @@ namespace MotionController
         POSITION_REACHED = 1 << 18,
         SAFETY_BUTTON_PRESSED = 1 << 19,
         LINEFOLLOWER_ERROR = 1 << 20,
+        LINEFOLLOWER_BARRIER_DETECTED = 1 << 21,
     } RunModeFlag;
 
     /* TODO Flags 4 Errors - upper 16 RunModeFlags get send as Info, not as Error */
@@ -64,7 +72,7 @@ namespace MotionController
         _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET;
         TickType_t xLastWakeTime = xTaskGetTickCount();
 
-        _hcSr04.initMeasurmentTask();
+        _hcSr04->initMeasurmentTask();
 
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
@@ -193,10 +201,17 @@ namespace MotionController
 
             // ------- stm check hcsr04 distance -------
             // TODO: check distance
-            if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
+            // if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
+            if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
             {
-                float barrierDistance = _hcSr04.getSensorData();
-                _hcSr04.triggerNewMeasurment();
+                float buffer = _hcSr04->getSensorData();
+                _hcSr04->triggerNewMeasurment();
+
+                if (buffer < BRAKEDISTANCE_BARRIER_IN_MM)
+                {
+                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+                    _lineFollowerStatusFlags |= LINEFOLLOWER_BARRIER_DETECTED;
+                }
             }
 
             // ------- stm line follower -------
@@ -223,8 +238,9 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    float data = static_cast<float>(message.getData());  // convert to a signed value!
-                    int32_t microsteps = 10 * Tmc5240::convertDistanceMmToMicrosteps(data); // 10 due to unit conversion
+                    int32_t signedData = static_cast<int32_t>(message.getData()); // convert to signed value
+                    float distance = static_cast<float>(signedData);                            // convert to a signed value!
+                    int32_t microsteps = 10 * Tmc5240::convertDistanceMmToMicrosteps(distance); // 10 due to unit conversion
                     _movePositionMode(microsteps);
                 }
 
@@ -303,7 +319,7 @@ namespace MotionController
 
         // 10 due to angle gets send in [°] * 10; 180° -> data = 1800
         // divide by 2 due to one wheel has to drive forward, one backward;
-        float const dnum = 2 * 180.f * 10; 
+        float const dnum = 2 * 180.f * 10;
 
         // distance per wheel in mm
         float ds = num / dnum;

@@ -7,12 +7,12 @@
 
 ============================================================== */
 #define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
-#define LINEFOLLOWERTASK_STACKSIZE (10 * 1024)  // 10kB
+#define LINEFOLLOWERTASK_STACKSIZE (10 * 1024) // 10kB
 #define LINEFOLLOWERTASK_PRIORITY (2)
 
 #define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (10)
 
-#define LINEFOLLOWERCONFIG_POLLING_RATE_MS (50)
+#define LINEFOLLOWERCONFIG_POLLING_RATE_MS (40)
 
 /* ==============================================================
 
@@ -46,7 +46,7 @@
 
 #define LINEFOLLOWERCONFIG_MAXDISTANCE (200)
 
-#define LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED (5000)
+#define LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED (4000)
 
 
 /* ==============================================================

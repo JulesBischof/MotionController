@@ -31,6 +31,9 @@ class HcSr04
 
         HcSr04KalmanFilter _kalmanFilter;
 
+        volatile uint32_t _rawtimediff;
+        SemaphoreHandle_t _rawtimediffSemaphore;
+
         QueueHandle_t _queueHandle;
         void _initHcSr04Queue();
 
@@ -41,6 +44,8 @@ class HcSr04
         SemaphoreHandle_t _currentVelocitySemaphore;
         float _currentVelocity;
         float _getCurrentVelocity();
+
+        uint32_t _getHcSr04RawTimeDiff();
 
         static std::map<uint, HcSr04 *> _instancesMap;
         static SemaphoreHandle_t _instancesMapSemaphore;
