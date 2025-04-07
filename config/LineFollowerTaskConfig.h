@@ -8,11 +8,11 @@
 ============================================================== */
 #define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
 #define LINEFOLLOWERTASK_STACKSIZE (10 * 1024) // 10kB
-#define LINEFOLLOWERTASK_PRIORITY (2)
+#define LINEFOLLOWERTASK_PRIORITY (4)
 
 #define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (10)
 
-#define LINEFOLLOWERCONFIG_POLLING_RATE_MS (40)
+#define LINEFOLLOWERCONFIG_POLLING_RATE_MS (30)
 
 /* ==============================================================
 

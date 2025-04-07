@@ -128,7 +128,7 @@ void HcSr04::initMeasurmentTask()
                     "HcSr04Task",
                     10 * 1024 / sizeof(StackType_t), // 10kb
                     this,
-                    tskIDLE_PRIORITY + 4,
+                    tskIDLE_PRIORITY + 2,
                     &_taskHandle) != pdTRUE)
     {
         /* ERROR HANDLING ? */
