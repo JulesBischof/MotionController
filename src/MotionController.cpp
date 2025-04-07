@@ -95,7 +95,25 @@ namespace MotionController
         _safetyButton = DigitalInput(DIN_4);
         _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
-        _hcSr04 = new HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+
+        // The HcSr04 object requires dynamic allocation due to the need for the ISR
+        // (Interrupt Service Routine) to access the object's pointer directly.
+        // With static allocation, the object's values are copied to the _hcSr04 instance inside 
+        // the MotionController object, but the object's memory address does not remain the same, 
+        // which can lead to issues.
+        // memory allocation is done using pvPortMalloc, which is a FreeRTOS function
+        _hcSr04 = static_cast<HcSr04 *>(pvPortMalloc(sizeof(HcSr04)));
+        if (_hcSr04 != nullptr)
+        {
+            new (_hcSr04) HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+        }
+        else
+        {
+            for (;;)
+            { /* ERROR ??? */
+            }
+        }
+
         return;
     }
 
@@ -207,8 +225,8 @@ namespace MotionController
           start Task and Methodwrapper
        ================================== */
 
-    /// @brief represents a wrapper for the LineFollowerTask due to FreeRTOS only takes static methods 
-    /// @param pvParameters void ptr contains MotionController Instance 
+    /// @brief represents a wrapper for the LineFollowerTask due to FreeRTOS only takes static methods
+    /// @param pvParameters void ptr contains MotionController Instance
     void MotionController::_LineFollerTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
@@ -291,7 +309,7 @@ namespace MotionController
        ================================== */
 
     /// @brief get QueueHandle of RaspberryHatComTask
-    /// @return QueueHandle 
+    /// @return QueueHandle
     QueueHandle_t MotionController::getRaspberryHatComQueue()
     {
         return _raspberryHatComQueue;
