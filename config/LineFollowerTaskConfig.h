@@ -45,7 +45,7 @@
 
 /* ==============================================================
 
-                set VMAX / AMAX / MaxDistance
+                set VMAX / AMAX / MaxDistance / PowerManagement
 
 ============================================================== */
 
@@ -56,6 +56,10 @@
 
 #define LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED (4000)
 
+#define LINEFOLLOWERCONFIG_MOTORCURRENT_LINEFOLLOWER_PERCENTAGE (20)
+#define LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE (50)
+#define LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE (100)
+#define LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE (100)
 
 /* ==============================================================
 

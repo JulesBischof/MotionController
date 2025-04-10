@@ -21,10 +21,10 @@ namespace MotionController
     /* ================================= */
     /*            consts                 */
     /* ================================= */
-    constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION; // mm per second
+    constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION;    // mm per second
     constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
     constexpr float BRAKEDISTANCE_BARRIER_IN_MM = 118.f;
-    
+
     /* ================================= */
     /*           status Flags            */
     /* ================================= */
@@ -137,6 +137,9 @@ namespace MotionController
                     // move infinit as Line Follower
                     if (message.getData() == 0)
                     {
+                        _driver0.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_LINEFOLLOWER_PERCENTAGE);
+                        _driver1.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_LINEFOLLOWER_PERCENTAGE);
+
                         maxDistance = 0; // TODO: 2m in usteps
                         _lineFollowerStatusFlags = STM_LINEFOLLOWER_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     }
@@ -144,6 +147,9 @@ namespace MotionController
                     // move in Position Mode
                     if (message.getData() != 0)
                     {
+                        _driver0.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
+                        _driver1.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
+
                         _lineFollowerStatusFlags = STM_MOVE_POSITIONMODE_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
                     }
                     break;
@@ -208,7 +214,7 @@ namespace MotionController
             // ------- stm check hcsr04 distance -------
             // TODO: check distance
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
-            //if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
+            // if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
             {
                 float buffer = _hcSr04->getSensorData();
                 // _hcSr04->triggerNewMeasurment();
@@ -244,7 +250,7 @@ namespace MotionController
                 if (!(_lineFollowerStatusFlags & MOTOR_POSITIONMODE_REQUEST_SEND))
                 {
                     _lineFollowerStatusFlags |= MOTOR_POSITIONMODE_REQUEST_SEND;
-                    int32_t signedData = static_cast<int32_t>(message.getData()); // convert to signed value
+                    int32_t signedData = static_cast<int32_t>(message.getData());               // convert to signed value
                     float distance = static_cast<float>(signedData);                            // convert to a signed value!
                     int32_t microsteps = 10 * Tmc5240::convertDistanceMmToMicrosteps(distance); // 10 due to unit conversion
                     _movePositionMode(microsteps);
@@ -325,6 +331,9 @@ namespace MotionController
             return;
         }
 
+        _driver0.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
+        _driver1.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
+
         /*
             do some math...
 
@@ -356,6 +365,9 @@ namespace MotionController
         {
             return;
         }
+        _driver0.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
+        _driver1.setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
+
         _driver0.moveVelocityMode(1, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
         _driver1.moveVelocityMode(0, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
         _lineFollowerStatusFlags |= MOTOR_STOPREQUEST_SEND;
@@ -412,8 +424,6 @@ namespace MotionController
         _driver0.moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
         _driver1.moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     } // end followLine
-
-
 
     int32_t MotionController::_controllerC(int8_t e)
     {

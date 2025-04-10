@@ -10,6 +10,7 @@ private:
 
     void _initCurrentSetting();
     void _initSpreadCycle();
+    void _setIRun(uint32_t ihold);
 
 protected:
     void _initDevice() override;
@@ -34,6 +35,8 @@ public:
     void clearGSTAT();
 
     int32_t getVmax();
+
+    void setRunCurrent(uint8_t percentage);
 
     void toggleToff(bool val);
 

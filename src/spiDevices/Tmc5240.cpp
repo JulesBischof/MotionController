@@ -110,6 +110,18 @@ void Tmc5240::_initSpreadCycle()
     return;
 }
 
+/// @brief writes iRun value to IHOLD_RUN Bitfield
+/// @param iRun Value from 0 ... 31. 31 = Fullscale current
+void Tmc5240::_setIRun(uint32_t iRun)
+{
+    uint32_t IHOLD_IRUN_val = _spiReadReg(TMC5240_IHOLD_IRUN);
+    IHOLD_IRUN_val &= ~TMC5240_IHOLD_MASK;
+    IHOLD_IRUN_val |= iRun << TMC5240_IRUN_SHIFT;
+    _spiWriteReg(TMC5240_IHOLD_IRUN, IHOLD_IRUN_val);
+
+    return;
+}
+
 /* ==================================
          control targetdevice
    ================================== */
@@ -227,6 +239,23 @@ int32_t Tmc5240::getXActual()
 int32_t Tmc5240::getVmax()
 {
     return _spiReadReg(TMC5240_VMAX);
+}
+
+/// @brief sets IRUN based on a percentage value
+/// @param percent percantage value from 0 ... 100
+void Tmc5240::setRunCurrent(uint8_t percent)
+{
+    if (percent > 100)
+    {
+        percent = 100;
+    }
+
+    uint8_t value = (percent * 31 + 50) / 100; // round to nearest integer
+    if(value > 31)
+    {
+        value = 31;
+    }
+    _setIRun(value);
 }
 
 /// @brief disables Driver

@@ -23,13 +23,13 @@ U_rated = 3.4V
 /* ====================================================================
     SET GLOBALSCALER AS REQUIRED TO REACH MAXIMUM MOTOR CURRENT AT I_RUN = 31; percantage, finetune motor current
    ==================================================================== */
-#define GLOBSCALER 150 // max = 255! __ IMAX = 2.25A_rms. For 1.7A_rms set to 197
+#define GLOBSCALER (192) // max = 255! __ IMAX = 2.25A_rms. For 1.7A_rms set to 192 ___________________ 150
 
 /* ====================================================================
     SET IRUN AS DESIRED UP TO 31, IHOLD 70% OF IRUN OR LOWER
     ==================================================================== */
 #define IRUN 31 // 31 = 1.6A_rms; 19 = 1A_rms  // percentage of full scale current while motor in run -> (IRUN / 32)%
-#define IHOLD 1 // standstill current
+#define IHOLD 0 // standstill current
 
 /* ====================================================================
     SET IRUNDELAY TO 1 TO 15 FOR REDUCED CURRENT PEAK AT MOTOR START UP
