@@ -18,18 +18,18 @@ U_rated = 3.4V
 /* ====================================================================
     SET CURRENTRANGE IN DRV_CONF (AND IREF) TO FIT MAXIMUM MOTOR CURRENT
    ==================================================================== */
-#define CURRENT_RANGE 2 // 3 A peak, not rms! (1.7 A * 1.41 = 2.4A)
+#define CURRENT_RANGE (0x3) // 3 A peak, not rms! (1.7 A * 1.41 = 2.4A)
 
 /* ====================================================================
     SET GLOBALSCALER AS REQUIRED TO REACH MAXIMUM MOTOR CURRENT AT I_RUN = 31; percantage, finetune motor current
    ==================================================================== */
-#define GLOBSCALER 255 // max = 255!
+#define GLOBSCALER 150 // max = 255! __ IMAX = 2.25A_rms. For 1.7A_rms set to 197
 
 /* ====================================================================
     SET IRUN AS DESIRED UP TO 31, IHOLD 70% OF IRUN OR LOWER
     ==================================================================== */
 #define IRUN 31 // 31 = 1.6A_rms; 19 = 1A_rms  // percentage of full scale current while motor in run -> (IRUN / 32)%
-#define IHOLD 3 // standstill current
+#define IHOLD 1 // standstill current
 
 /* ====================================================================
     SET IRUNDELAY TO 1 TO 15 FOR REDUCED CURRENT PEAK AT MOTOR START UP
@@ -39,12 +39,12 @@ U_rated = 3.4V
 /* ====================================================================
     SET IHOLDDELAY TO 1 TO 15 FOR SMOOTH STANDSTILL CURRENT DECAY
     ==================================================================== */
-#define IHOLDDELAY 7 // Delay per current reduction step in multiple of 2^18 clocks
+#define IHOLDDELAY 5 // Delay per current reduction step in multiple of 2^18 clocks
 
 /* ====================================================================
     SET TPOWERDOWN UP TO 255 FOR DELAYED STANDSTILL CURRENT REDUCTION
     ==================================================================== */
-#define TPOWERDOWN 10 // sets the delay time after stand still (stst) of the motor to motor current power down. Time range is about 0 to 4 seconds
+#define TPOWERDOWN 3 // sets the delay time after stand still (stst) of the motor to motor current power down. Time range is about 0 to 4 seconds
 
 /* ====================================================================
                     tmc5240 EVAL specific settings

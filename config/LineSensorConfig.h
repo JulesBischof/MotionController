@@ -13,6 +13,8 @@
 
 #define LINECOUNTER_CROSS_DETECTED (4)
 
+#define LINECOUNTER_MAX_VALUE (3)
+
 /* ==============================================================
 
                     Analog Mode Settings

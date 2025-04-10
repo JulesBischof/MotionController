@@ -74,9 +74,10 @@ int8_t LineSensor::getLinePosition()
     }
 
     // convert ADC-values to digital values
-    volatile uint8_t digArray[NUMBER_OF_CELLS] = {0};
-    volatile int8_t linePosition = 0;
+    uint8_t digArray[NUMBER_OF_CELLS] = {0};
+    int8_t linePosition = 0;
     int8_t lineCounter = 0;
+    static uint8_t noLineCounter = 0;
 
     // convert ADC-values to digital values
     for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
@@ -92,8 +93,18 @@ int8_t LineSensor::getLinePosition()
         }
     }
 
-    // check if there is a Line
+    // if there is no line - count until LINECOUNTER_MAX_VALUE
     if (!lineCounter)
+    {
+        noLineCounter++;
+    }
+    else
+    {
+        noLineCounter = 0;
+    }
+
+    // if there is still no line - set status to no line detected
+    if (!lineCounter && noLineCounter >= LINECOUNTER_MAX_VALUE)
     {
         _status |= LINESENSOR_NO_LINE;
     }

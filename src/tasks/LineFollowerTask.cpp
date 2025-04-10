@@ -23,7 +23,7 @@ namespace MotionController
     /* ================================= */
     constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION; // mm per second
     constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
-    constexpr float BRAKEDISTANCE_BARRIER_IN_MM = 200.f;
+    constexpr float BRAKEDISTANCE_BARRIER_IN_MM = 118.f;
     
     /* ================================= */
     /*           status Flags            */
@@ -44,6 +44,9 @@ namespace MotionController
         TURN_MODE = 1 << 6,
         TURNREQUEST_SEND = 1 << 7,
         STATUSFLAGS_SEND = 1 << 8,
+        LINEFOLLOWER_BARRIER_DETECTED = 1 << 9,
+        LINEFOLLOWER_BARRIER_DETECTED_REQUEST_SEND = 1 << 10,
+        LINEFOLLOWER_FIND_LINE = 1 << 11,
 
         // upper 16 bits events and infos
         CROSSPOINT_DETECTED = 1 << 16,
@@ -51,7 +54,7 @@ namespace MotionController
         POSITION_REACHED = 1 << 18,
         SAFETY_BUTTON_PRESSED = 1 << 19,
         LINEFOLLOWER_ERROR = 1 << 20,
-        LINEFOLLOWER_BARRIER_DETECTED = 1 << 21,
+        LINEFOLLOWER_HANDLE_BARRIER = 1 << 21,
     } RunModeFlag;
 
     /* TODO Flags 4 Errors - upper 16 RunModeFlags get send as Info, not as Error */
@@ -60,6 +63,7 @@ namespace MotionController
     constexpr uint32_t STM_MOVE_POSITIONMODE_BITSET = 0 | (MOTOR_RUNNING | MOTOR_POSITIONMODE);
     constexpr uint32_t STM_STOPMOTOR_BITSET = 0;
     constexpr uint32_t STM_TURNROBOT_BITSET = 0 | (TURN_MODE | MOTOR_RUNNING);
+    constexpr uint32_t STM_FIND_LINE_BITSET = 0 | (LINEFOLLOWER_FIND_LINE | MOTOR_RUNNING);
 
     /* ================================= */
     /*          Running Task             */
@@ -109,7 +113,7 @@ namespace MotionController
 
             if (uxQueueMessagesWaiting(lineFollowerQueue) > 0)
             {
-                xQueueReceive(lineFollowerQueue, &message, pdMS_TO_TICKS(10));
+                xQueueReceive(lineFollowerQueue, &message, 0);
 
                 if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask)
                 {
@@ -127,6 +131,8 @@ namespace MotionController
 
                     X_ACTUAL_startValueDriver0 = _driver0.getXActual();
                     X_ACTUAL_startValueDriver1 = _driver1.getXActual();
+
+                    _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
 
                     // move infinit as Line Follower
                     if (message.getData() == 0)
@@ -201,11 +207,11 @@ namespace MotionController
 
             // ------- stm check hcsr04 distance -------
             // TODO: check distance
-            // if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
-            if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
+            if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
+            //if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
             {
                 float buffer = _hcSr04->getSensorData();
-                _hcSr04->triggerNewMeasurment();
+                // _hcSr04->triggerNewMeasurment();
 
                 if (buffer < BRAKEDISTANCE_BARRIER_IN_MM)
                 {
@@ -251,6 +257,16 @@ namespace MotionController
                 }
             }
 
+            // ------- stm find line (center robot on Line) -------
+            if ((_lineFollowerStatusFlags & STM_FIND_LINE_BITSET) == STM_FIND_LINE_BITSET)
+            {
+                // get Line position
+                uint8_t linePos = _lineSensor.getLinePosition();
+
+                float angle = (linePos * 1.254f / LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm) * 180 / M_PI;
+                // send to Queue TODO
+            }
+
             /// ------- stm turn vehicle -------
             if ((_lineFollowerStatusFlags & STM_TURNROBOT_BITSET) == STM_TURNROBOT_BITSET)
             {
@@ -278,9 +294,10 @@ namespace MotionController
             /// ------- stm stop drives -------
             if (!(_lineFollowerStatusFlags & MOTOR_RUNNING))
             {
+                _hcSr04->setCurrentVelocity(0);
                 _stopDrives();
             }
-
+            _hcSr04->triggerNewMeasurment();
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
         }
     } // end Task
@@ -339,8 +356,8 @@ namespace MotionController
         {
             return;
         }
-        _driver0.moveVelocityMode(1, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-        _driver1.moveVelocityMode(0, 0, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver0.moveVelocityMode(1, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+        _driver1.moveVelocityMode(0, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
         _lineFollowerStatusFlags |= MOTOR_STOPREQUEST_SEND;
 
         return;
@@ -396,13 +413,28 @@ namespace MotionController
         _driver1.moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     } // end followLine
 
+
+
     int32_t MotionController::_controllerC(int8_t e)
     {
-#if LINEFOLLERCONFIG_USE_P_CONTROLLER == 1
+        static int32_t last_e = 0;
+
+#if LINEFOLLERCONFIG_USE_P_CONTROLLER == (1) && LINEFOLLERCONFIG_USE_PD_CONTROLLER == (0)
         // P-Type Controller
         int32_t u = 0; // default 0
         u = e * LINEFOLLERCONFIG_CONTROLLERVALUE_KP;
 #endif
+
+#if LINEFOLLERCONFIG_USE_P_CONTROLLER == (0) && LINEFOLLERCONFIG_USE_PD_CONTROLLER == (1)
+        // D-Controller with low Pass Filter
+        int32_t u = 0; // default 0
+
+        int32_t deltaE = (e - last_e) / LINEFOLLOWERCONFIG_POLLING_RATE_MS;
+        last_e = e;
+
+        u = LINEFOLLERCONFIG_CONTROLLERVALUE_KP * e + LINEFOLLERCONFIG_CONTROLLERVALUE_KD * deltaE;
+#endif
+
         int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
         return retVal;
     } // end Control
