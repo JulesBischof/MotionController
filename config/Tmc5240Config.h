@@ -34,7 +34,7 @@ U_rated = 3.4V
 /* ====================================================================
     SET IRUNDELAY TO 1 TO 15 FOR REDUCED CURRENT PEAK AT MOTOR START UP
     ==================================================================== */
-#define IRUNDELAY 0 // Delay in IRUNDELAY * 512 clocks
+#define IRUNDELAY 5 // Delay in IRUNDELAY * 512 clocks
 
 /* ====================================================================
     SET IHOLDDELAY TO 1 TO 15 FOR SMOOTH STANDSTILL CURRENT DECAY

@@ -23,7 +23,6 @@ namespace MotionController
     /* ================================= */
     constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION;    // mm per second
     constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
-    constexpr float BRAKEDISTANCE_BARRIER_IN_MM = 118.f;
 
     /* ================================= */
     /*           status Flags            */
@@ -44,8 +43,6 @@ namespace MotionController
         TURN_MODE = 1 << 6,
         TURNREQUEST_SEND = 1 << 7,
         STATUSFLAGS_SEND = 1 << 8,
-        LINEFOLLOWER_BARRIER_DETECTED = 1 << 9,
-        LINEFOLLOWER_BARRIER_DETECTED_REQUEST_SEND = 1 << 10,
         LINEFOLLOWER_FIND_LINE = 1 << 11,
 
         // upper 16 bits events and infos
@@ -54,7 +51,11 @@ namespace MotionController
         POSITION_REACHED = 1 << 18,
         SAFETY_BUTTON_PRESSED = 1 << 19,
         LINEFOLLOWER_ERROR = 1 << 20,
-        LINEFOLLOWER_HANDLE_BARRIER = 1 << 21,
+        LINEFOLLOWER_BARRIER_DETECTED = 1 << 21,
+
+        MOTION_STOPPED = 1 << 31, // TODO set
+        LINEFOLLOWER_COMMAND_ACK = 1 << 32, // TODO set
+
     } RunModeFlag;
 
     /* TODO Flags 4 Errors - upper 16 RunModeFlags get send as Info, not as Error */
@@ -359,6 +360,8 @@ namespace MotionController
         _lineFollowerStatusFlags |= TURNREQUEST_SEND;
     }
 
+    /// @brief stops the drives
+    /// @details stops the drives in velocity mode. In position mode, the drives are stopped by the driver itself.
     void MotionController::_stopDrives()
     {
         if (_lineFollowerStatusFlags & MOTOR_STOPREQUEST_SEND)
@@ -425,6 +428,9 @@ namespace MotionController
         _driver1.moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
     } // end followLine
 
+    /// @brief Controller Method for LineFollowing
+    /// @param e error as input
+    /// @return returns controller parameter u as output
     int32_t MotionController::_controllerC(int8_t e)
     {
         static int32_t last_e = 0;
