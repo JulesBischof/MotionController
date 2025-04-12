@@ -273,6 +273,17 @@ void Tmc5240::toggleToff(bool val)
     _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
 }
 
+/// @brief checks StatusFlgs if standstill status flags are set
+/// @return true if driver is in standstill 
+bool Tmc5240::checkForStandstill()
+{
+    if (getStatus() & TMC5240_SPI_STATUS_POSITION_REACHED_MASK)
+    {
+        return true;
+    }
+    return false;
+}   
+
 uint32_t Tmc5240::getGSTAT()
 {
     uint32_t gstatVal = _spiReadReg(TMC5240_GSTAT);

@@ -129,6 +129,7 @@ namespace MotionController
         void _stopDrives();
         int32_t _getRotationRelativeToStart();
         int32_t _getDrivenDistance(int32_t drivenDistanceDirver0, int32_t drivenDistanceDirver1);
+        void _handleBarrier(float distance);
 
         // raspberryHatCom relevant members
         DispatcherMessage _getCommand(uart_inst_t *uartId);

@@ -58,7 +58,7 @@ void LineSensor::_initDefaultCalibration()
             getters & setters
    ================================== */
    
-int8_t LineSensor::getLinePosition()
+int8_t LineSensor::getLinePositionDigital()
 {
     // get ADC-value
     uint16_t adcValues[NUMBER_OF_CELLS] = {0};

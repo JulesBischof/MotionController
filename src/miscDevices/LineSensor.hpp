@@ -30,12 +30,14 @@ private:
     void _initDefaultCalibration();
     void _initUvLed();
 
+
 public:
     LineSensor();
+
     LineSensor(Tla2528 *adcInstance, uint8_t uvGpio);
     ~LineSensor();
     
-    int8_t getLinePosition();
+    int8_t getLinePositionDigital();
     uint32_t getLinePositionAnalog();
     uint8_t getStatus() { return _status; };
 };

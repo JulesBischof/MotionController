@@ -14,57 +14,11 @@
 #include "LineFollowerTaskConfig.h"
 #include "Tmc5240Config.h"
 
-#include <cmath>
+#include "LineFollowerTaskStatusFlags.hpp"
 
 namespace MotionController
 {
-    /* ================================= */
-    /*            consts                 */
-    /* ================================= */
-    constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST) / MICROSTEPS_PER_REVOLUTION;    // mm per second
-    constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
 
-    /* ================================= */
-    /*           status Flags            */
-    /* ================================= */
-
-    constexpr uint32_t RUNMODEFLAG_T_UPPER_BITMASK(0xFFFF0000);
-    constexpr uint32_t RUNMODEFLAG_T_LOWER_BITMASK(0x0000FFFF);
-
-    enum RunModeFlag
-    {
-        // lower 16 bits statemaschine relevant flags
-        MOTOR_RUNNING = 1 << 0,
-        MOTOR_POSITIONMODE = 1 << 1,
-        MOTOR_POSITIONMODE_REQUEST_SEND = 1 << 2,
-        MOTOR_STOPREQUEST_SEND = 1 << 3,
-        RUNMODE_SLOW = 1 << 4,
-        LINE_FOLLOWER_MODE = 1 << 5,
-        TURN_MODE = 1 << 6,
-        TURNREQUEST_SEND = 1 << 7,
-        STATUSFLAGS_SEND = 1 << 8,
-        LINEFOLLOWER_FIND_LINE = 1 << 11,
-
-        // upper 16 bits events and infos
-        CROSSPOINT_DETECTED = 1 << 16,
-        LOST_LINE = 1 << 17,
-        POSITION_REACHED = 1 << 18,
-        SAFETY_BUTTON_PRESSED = 1 << 19,
-        LINEFOLLOWER_ERROR = 1 << 20,
-        LINEFOLLOWER_BARRIER_DETECTED = 1 << 21,
-
-        MOTION_STOPPED = 1 << 31, // TODO set
-        LINEFOLLOWER_COMMAND_ACK = 1 << 32, // TODO set
-
-    } RunModeFlag;
-
-    /* TODO Flags 4 Errors - upper 16 RunModeFlags get send as Info, not as Error */
-
-    constexpr uint32_t STM_LINEFOLLOWER_BITSET = 0 | (MOTOR_RUNNING | LINE_FOLLOWER_MODE);
-    constexpr uint32_t STM_MOVE_POSITIONMODE_BITSET = 0 | (MOTOR_RUNNING | MOTOR_POSITIONMODE);
-    constexpr uint32_t STM_STOPMOTOR_BITSET = 0;
-    constexpr uint32_t STM_TURNROBOT_BITSET = 0 | (TURN_MODE | MOTOR_RUNNING);
-    constexpr uint32_t STM_FIND_LINE_BITSET = 0 | (LINEFOLLOWER_FIND_LINE | MOTOR_RUNNING);
 
     /* ================================= */
     /*          Running Task             */
@@ -215,17 +169,20 @@ namespace MotionController
             // ------- stm check hcsr04 distance -------
             // TODO: check distance
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
-            // if ((_lineFollowerStatusFlags & STM_MOVE_POSITIONMODE_BITSET) == STM_MOVE_POSITIONMODE_BITSET)
             {
-                float buffer = _hcSr04->getSensorData();
+                float distance = _hcSr04->getSensorData();
                 // _hcSr04->triggerNewMeasurment();
 
-                if (buffer < BRAKEDISTANCE_BARRIER_IN_MM)
+                if (distance < BRAKEDISTANCE_BARRIER_IN_MM)
                 {
-                    _lineFollowerStatusFlags = STM_STOPMOTOR_BITSET | (_lineFollowerStatusFlags & RUNMODEFLAG_T_UPPER_BITMASK);
+                    // stop drives and start Barrier Detected state maschine
                     _lineFollowerStatusFlags |= LINEFOLLOWER_BARRIER_DETECTED;
                 }
             }
+            // if ((_lineFollowerStatusFlags & LINEFOLLOWER_BARRIER_DETECTED) == LINEFOLLOWER_BARRIER_DETECTED)
+            // {
+            //     _handleBarrier(distance);
+            // }
 
             // ------- stm line follower -------
             if ((_lineFollowerStatusFlags & STM_LINEFOLLOWER_BITSET) == STM_LINEFOLLOWER_BITSET)
@@ -268,7 +225,7 @@ namespace MotionController
             if ((_lineFollowerStatusFlags & STM_FIND_LINE_BITSET) == STM_FIND_LINE_BITSET)
             {
                 // get Line position
-                uint8_t linePos = _lineSensor.getLinePosition();
+                uint8_t linePos = _lineSensor.getLinePositionDigital();
 
                 float angle = (linePos * 1.254f / LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm) * 180 / M_PI;
                 // send to Queue TODO
@@ -313,9 +270,125 @@ namespace MotionController
     /*           Drive Control           */
     /* ================================= */
 
+    void MotionController::_handleBarrier(float distance)
+    {
+        // _handle barrier as a state machine
+        enum stm
+        {
+            IDLE,
+            WAIT_FOR_STOP_0,          // wait for robot to stop
+            MIDDLE_ON_LINE,           // send driver command: middle on line
+            WAIT_FOR_STOP_1,          // wait for robot to stop
+            POSITION_DISTANCE,        // send driver command: correct barrierdistance
+            WAIT_FOR_STOP_2,          // wait for robot to stop
+            SEND_GRIP_COMMAND,        // send GC-command: grip barrier
+            WAIT_FOR_GC_ACK_0,        // wait for GC-ACK
+            TURN_ROBOT_1,             // send driver command: turn robot
+            WAIT_FOR_STOP_3,          // wait for robot to stop
+            SET_BACK_ROBOT,           // send driver command: move back
+            WAIT_FOR_STOP_4,          // wait for robot to stop
+            SEND_RELEASE_COMMAND,     // send GC-command: release barrier
+            WAIT_FOR_GC_ACK_1,        // wait for GC-ACK
+            TURN_ROBOT_2,             // send driver command: turn robot
+            WAIT_FOR_STOP_5,          // wait for robot to stop
+            BACK_TO_LINEFOLLOWERMODE, // send driver command: move robot
+        };
+
+        static uint8_t state = stm::IDLE;
+
+        switch (state)
+        {
+        case IDLE:
+            _lineFollowerStatusFlags &= ~MOTOR_RUNNING;
+            state++;
+            break;
+
+        case WAIT_FOR_STOP_0:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case MIDDLE_ON_LINE:
+            break;
+
+        case WAIT_FOR_STOP_1:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case POSITION_DISTANCE:
+            break;
+
+        case WAIT_FOR_STOP_2:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case SEND_GRIP_COMMAND:
+            break;
+
+        case WAIT_FOR_GC_ACK_0:
+            break;
+
+        case TURN_ROBOT_1:
+            _turnRobot(1800); // 180° in [° * 10]
+            state++;
+            break;
+
+        case WAIT_FOR_STOP_3:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case SET_BACK_ROBOT:
+            break;
+
+        case WAIT_FOR_STOP_4:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case SEND_RELEASE_COMMAND:
+            break;
+
+        case WAIT_FOR_GC_ACK_1:
+            break;
+
+        case TURN_ROBOT_2:
+            _turnRobot(-1800); // 180° in [° * 10]
+            state++;
+            break;
+
+        case WAIT_FOR_STOP_5:
+            if (_checkForStandstill())
+            {
+                state++;
+            }
+            break;
+
+        case BACK_TO_LINEFOLLOWERMODE:
+        
+            break;
+
+        default:
+            break;
+        }
+    }
+
     /// @brief moves whole Robot in positionmode.
     /// @param distance distance [IN MICROSTEPS]
-    void MotionController::_movePositionMode(int32_t distance)
+    void
+    MotionController::_movePositionMode(int32_t distance)
     {
         _driver0.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
         _driver1.moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
@@ -393,7 +466,7 @@ namespace MotionController
 
         // get Sensor values
 #if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
-        int8_t y = _lineSensor.getLinePosition();
+        int16_t y = _lineSensor.getLinePositionDigital();
 #else
         int16_t y = _lineSensor.getLinePositionAnalog();
 #endif

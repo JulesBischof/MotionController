@@ -40,6 +40,8 @@ public:
 
     void toggleToff(bool val);
 
+    bool checkForStandstill();
+
     static int32_t convertDistanceMmToMicrosteps(float meter);
     static int32_t convertMicrostepsToCentimeter(uint32_t uSteps);
     static int32_t convertDegreeToMicrosteps(int32_t degrees);

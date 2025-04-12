@@ -62,7 +62,7 @@ namespace MotionController
                     printf("ERROR #_raspberryHatComTask# - Message contains wrong Task ID \n");
                     continue;
                 }
-                
+
                 frame txMsg;
 
                 // check incoming commands - messages supposed to go out
@@ -83,12 +83,19 @@ namespace MotionController
                 case (TaskCommand::PollDegree):
                     txMsg = encode_response(address::RASPBERRY_HAT, poll_id::DEGREE, message.getData());
                     break;
+                case (TaskCommand::Pong):
+                    txMsg = encode_pong(address::RASPBERRY_HAT, message.getData());
+                    break;
+                case (TaskCommand::Ping):
+                    txMsg = encode_pong(address::RASPBERRY_HAT, message.getData());
+                    break;
                 case (TaskCommand::PollStatusFlags):
                     // TODO: prain_uart poll_id
                     break;
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
-                    if(xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
+                    
+                    if (xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
                     {
                         printf("ERROR #_raspberryHatComTask# WRITE TO QUEUE cmd decode msg FAILED\n");
                     }
@@ -96,9 +103,12 @@ namespace MotionController
                 default:
                     break;
                 }
-                sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
+                // send msg to RaspberryPi
+                if (txMsg.raw() != 0)
+                {
+                    sendUartMsg(&txMsg, UART_INSTANCE_RASPBERRYHAT);
+                }
             }
-            vTaskDelay(pdMS_TO_TICKS(100));
         }
     }
 
@@ -160,7 +170,7 @@ namespace MotionController
             {
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Error;
-                retVal.setData(static_cast<uint64_t>(error_code::INVALID_CRC) );
+                retVal.setData(static_cast<uint64_t>(error_code::INVALID_CRC));
                 return retVal;
             }
 
@@ -234,6 +244,6 @@ namespace MotionController
         // enable uart interrupts again
         uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
 
-        return retVal; 
+        return retVal;
     } // end _getCommand
 }

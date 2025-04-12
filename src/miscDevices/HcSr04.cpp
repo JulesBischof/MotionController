@@ -10,9 +10,9 @@ constexpr float INITIAL_DISTANCE = 500;
 constexpr float INITIAL_VELOCITY = 0;
 constexpr float INITIAL_DT = 0.1;
 
-constexpr float FILTER_QD = 5.0;  // position 
+constexpr float FILTER_QD = 5.0;  // position
 constexpr float FILTER_QV = 1e-5; // velocity - stepper motors are very percise
-constexpr float FILTER_R = 9;   // measurment noise HC-SR04 - Excel calculations
+constexpr float FILTER_R = 9;     // measurment noise HC-SR04 - Excel calculations
 
 /* ==================================
             static Members
@@ -152,8 +152,15 @@ void HcSr04::triggerNewMeasurment()
 
 void HcSr04::_HcSr04Task()
 {
+    absolute_time_t lastTriggerTime = get_absolute_time();
+    
     while (true)
     {
+        // get time increment
+        absolute_time_t timeDiff = absolute_time_diff_us(lastTriggerTime, get_absolute_time());
+        lastTriggerTime = get_absolute_time();
+        float dt = static_cast<float>(timeDiff) / 1e6; // us -> s
+
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
         _trigger();
@@ -174,7 +181,6 @@ void HcSr04::_HcSr04Task()
         // printf("%f\n", distance); -- debug - get raw values
 
         _kalmanFilter.setVelocity(_getCurrentVelocity());
-        float dt = rawTimeDiff / 1e6; // unit conversion us -> s
         _kalmanFilter.update(distance, dt);
         float _filteredValue = _kalmanFilter.getDistance();
 
