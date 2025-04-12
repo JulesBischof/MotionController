@@ -8,22 +8,22 @@
 
 #include "DigitalInput.hpp"
 
-namespace MotionController
+namespace nMotionController
 {
-    class CheckSafetyButtonStm : public StmBase<CheckSafetyButtonStm::State>
+    enum class CheckSafetyButtonStmState
+    {
+        WAIT_FOR_BUTTON,
+        BUTTON_PRESSED,
+    };
+
+    class CheckSafetyButtonStm : public StmBase<CheckSafetyButtonStmState>
     {
     private:
         DigitalInput *_safetyButton;
         QueueHandle_t _lineFollowerTaskQueue;
-
-        enum class State
-        {
-            WAIT_FOR_BUTTON,
-            BUTTON_PRESSED,
-        };
-
     public:
         CheckSafetyButtonStm(uint32_t *_statusFlags, DigitalInput *safetyButton, QueueHandle_t lineFollowerTaskQueue);
+        CheckSafetyButtonStm();
         ~CheckSafetyButtonStm() override;
 
         void init() override;
@@ -31,6 +31,6 @@ namespace MotionController
         void reset() override;
         void update(uint32_t msgData) override;
 
-        State getState() override { return _state; };
+        CheckSafetyButtonStmState getState() override { return _state; };
     };
 }

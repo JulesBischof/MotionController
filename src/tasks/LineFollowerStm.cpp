@@ -3,12 +3,16 @@
 #include "LineFollowerTaskConfig.h"
 #include "LineFollowerTaskStatusFlags.hpp"
 
-#include "MotionController.hpp"
+#include "DispatcherMessage.hpp"
 
-namespace MotionController
+namespace nMotionController
 {
     LineFollowerStm::LineFollowerStm(uint32_t *_statusFlags, LineSensor *lineSensor, Tmc5240 *driver0, Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue)
         : StmBase(_statusFlags), _lineSensor(lineSensor), _driver0(driver0), _driver1(driver1), _lineFollowerTaskQueue(LineFollowerTaskQueue)
+    {
+    }
+
+    LineFollowerStm::LineFollowerStm()
     {
     }
 
@@ -19,60 +23,62 @@ namespace MotionController
     void LineFollowerStm::init()
     {
         lastMsgData = 0;
-        _state = State::IDLE;
+        _state = LineFollowerStmState::IDLE;
     }
 
     bool LineFollowerStm::run()
     {
         bool retVal = false;
 
+        DispatcherMessage msg;
+
         switch(_state)
         {
-            case State::IDLE:
+            case LineFollowerStmState::IDLE:
                 retVal = true;
                 break;
 
-            case State::FOLLOW_LINE:
+            case LineFollowerStmState::FOLLOW_LINE:
                 _followLine();
 
                 if (_lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
                 {
-                    _state = State::CROSSPOINT_DETECTED;
+                    _state = LineFollowerStmState::CROSSPOINT_DETECTED;
                 }
                 if (_lineSensor->getStatus() & LINESENSOR_NO_LINE)
                 {
-                    _state = State::LOST_LINE;
+                    _state = LineFollowerStmState::LOST_LINE;
                 }
 
                 break;
 
-            case State::LOST_LINE:
+            case LineFollowerStmState::LOST_LINE:
                 // stop motors
-                DispatcherMessage msg(
+                msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Stop, 
                     0);
                 if(xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 {/* ERROR!!?? */}
-                *_statusFlags |= LOST_LINE;
+                *_statusFlags |= (uint32_t)RunModeFlag::LOST_LINE;
 
-                _state = State::IDLE;
+                _state = LineFollowerStmState::IDLE;
                 break;
 
-            case State::CROSSPOINT_DETECTED:
+            case LineFollowerStmState::CROSSPOINT_DETECTED:
                 // move in positionmode on top of node
-                DispatcherMessage msg(
+                msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
-                    LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm / 10); // convert to cm
+                    LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm);
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }
-                *_statusFlags |= CROSSPOINT_DETECTED;
+                *_statusFlags |= (uint32_t)RunModeFlag::CROSSPOINT_DETECTED;
 
-                _state = State::IDLE;
+                _state = LineFollowerStmState::IDLE;
                 break;
 
             default:
@@ -85,14 +91,14 @@ namespace MotionController
 
     void LineFollowerStm::reset()
     {
-        _state = State::IDLE;
+        _state = LineFollowerStmState::IDLE;
     }
 
     void LineFollowerStm::update(uint32_t msgData)
     {
         if(msgData == 0)
         {
-            _state = State::FOLLOW_LINE;
+            _state = LineFollowerStmState::FOLLOW_LINE;
         }
     }
 
@@ -101,7 +107,7 @@ namespace MotionController
     {
         // init vars
         uint32_t statusFlags = *_statusFlags;
-        bool speedMode = (statusFlags & RUNMODE_SLOW) ? true : false;
+        bool speedMode = (statusFlags & (uint32_t)RunModeFlag::RUNMODE_SLOW) ? true : false;
 
         int32_t v1 = 0;
         int32_t v2 = 0;

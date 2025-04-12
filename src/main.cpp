@@ -17,7 +17,7 @@ int main()
 
 #if APP_MODE == 1
 
-    MotionController::MotionController motionController = MotionController::MotionController();
+    nMotionController::MotionController motionController = nMotionController::MotionController();
     motionController.startScheduler();
 
     // never reached

@@ -5,9 +5,21 @@
 
 #include "Tmc5240.hpp"
 
-namespace MotionController
+#include "DispatcherMessage.hpp"
+
+namespace nMotionController
 {
-    class MovePositionModeStm : public StmBase<MovePositionModeStm::State>
+    enum class MovePositionModeStmState : uint8_t
+    {
+        IDLE,
+        POSITION_MODE,
+        TURN_MODE,
+        STOP_MODE,
+        WAIT_FOR_STOP,
+        STOPPED,
+    };
+
+    class MovePositionModeStm : public StmBase<MovePositionModeStmState>
     {
     private:
         Tmc5240 *_driver0;
@@ -19,25 +31,17 @@ namespace MotionController
         void _turnRobot(int32_t angle);
         void _stopDrives();
 
-        enum class State
-        {
-            IDLE,
-            POSITION_MODE,
-            TURN_MODE,
-            STOP_MODE,
-            WAIT_FOR_STOP,
-            STOPPED,
-        };
-
     public:
         MovePositionModeStm(uint32_t *_statusFlags, Tmc5240 *driver0, Tmc5240 *driver1);
+        MovePositionModeStm();
         ~MovePositionModeStm() override;
 
         void init() override;
         bool run() override;
         void reset() override;
         void update(uint32_t msgData) override;
+        void update(uint32_t msgData, TaskCommand cmd);
 
-        State getState() override { return _state; };
+        MovePositionModeStmState getState() override { return _state; };
     };
 }

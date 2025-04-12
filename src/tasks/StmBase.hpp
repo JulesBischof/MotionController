@@ -1,8 +1,10 @@
 #pragma once
 
+#include "LineFollowerTaskStatusFlags.hpp"
+
 #include "pico/stdlib.h"
 
-namespace MotionController
+namespace nMotionController
 {
     template <typename StateType>
     class StmBase
@@ -12,7 +14,8 @@ namespace MotionController
         StateType _state;
 
     public:
-        StmBase(uint32_t *_statusFlags);
+        StmBase() : _statusFlags(nullptr), _state() {}
+        StmBase(uint32_t *_statusFlags) : _statusFlags(_statusFlags), _state() {}
         virtual ~StmBase() = default;
 
         virtual void init() = 0;
@@ -22,9 +25,4 @@ namespace MotionController
         virtual StateType getState() = 0;
         
     };
-
-    template <typename StateType>
-    inline StmBase<StateType>::StmBase(uint32_t *_statusFlags)
-    {
-    }
 }

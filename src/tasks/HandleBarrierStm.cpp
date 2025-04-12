@@ -3,9 +3,9 @@
 #include "LineFollowerTaskConfig.h"
 #include "LineFollowerTaskStatusFlags.hpp"
 
-#include "MotionController.hpp"
+#include "DispatcherMessage.hpp"
 
-namespace MotionController
+namespace nMotionController
 {
     HandleBarrierStm::HandleBarrierStm(uint32_t *statusFlags, HcSr04 *hcSr04, Tmc5240 *driver0, Tmc5240 *driver1, QueueHandle_t lineFollowerTaskQueue)
         : StmBase(statusFlags),
@@ -17,32 +17,36 @@ namespace MotionController
         init();
     }
 
+    HandleBarrierStm::HandleBarrierStm() {}
+
     HandleBarrierStm::~HandleBarrierStm()
     {
     }
 
     void HandleBarrierStm::init()
     {
-        _state = State::IDLE;
+        _state = HandleBarrierStmState::IDLE;
     }
 
     bool HandleBarrierStm::run()
     {
         bool retVal = false;
 
+        DispatcherMessage msg;
+
         float distance = _hcSr04->getSensorData();
 
         switch (_state)
         {
-        case State::IDLE:
+        case HandleBarrierStmState::IDLE:
             return true;
             break;
 
-        case State::CHECK_DISTANCE:
+        case HandleBarrierStmState::CHECK_DISTANCE:
             if (distance < BRAKEDISTANCE_BARRIER_IN_MM)
             {
                 // stop drives and start Barrier Detected state maschine
-                DispatcherMessage msg(
+                msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Stop,
@@ -51,73 +55,71 @@ namespace MotionController
                 { /* ERROR!!?? */
                 }
 
-                *_statusFlags |= LINEFOLLOWER_BARRIER_DETECTED;
+                *_statusFlags |= (uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED;
 
-                _state++;
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
             }
             break;
 
-        case State::WAIT_FOR_STOP_0:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_0:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::MIDDLE_ON_LINE;
             }
             break;
 
-        case State::MIDDLE_ON_LINE:
+        case HandleBarrierStmState::MIDDLE_ON_LINE:
             break;
 
-        case State::WAIT_FOR_STOP_1:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_1:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::POSITION_DISTANCE;
             }
             break;
 
-            // LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_cm
-
-        case State::POSITION_DISTANCE:
+        case HandleBarrierStmState::POSITION_DISTANCE:
             // barrier is out of tolerance?
             if ((distance < LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm ||
                  distance > LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm + LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm))
             {
                 int32_t corrPos = (LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - distance);
                 // correct postion
-                DispatcherMessage msg(
+                msg = DispatcherMessage (
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
-                    corrPos / 10); // convert to cm
+                    corrPos);
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }
             }
 
-            _state++;
+            _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
 
             break;
 
-        case State::WAIT_FOR_STOP_2:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_2:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::SEND_GRIP_COMMAND;
             }
             break;
 
-        case State::SEND_GRIP_COMMAND:
+        case HandleBarrierStmState::SEND_GRIP_COMMAND:
             // TODO
 
-            _state++;
+            _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_0;
             break;
 
-        case State::WAIT_FOR_GC_ACK_0:
+        case HandleBarrierStmState::WAIT_FOR_GC_ACK_0:
             // TODO
 
-            _state++;
+            _state = HandleBarrierStmState::TURN_ROBOT_1;
             break;
 
-        case State::TURN_ROBOT_1:
-            DispatcherMessage msg(
+        case HandleBarrierStmState::TURN_ROBOT_1:
+            msg = DispatcherMessage (
                 DispatcherTaskId::LineFollowerTask,
                 DispatcherTaskId::LineFollowerTask,
                 TaskCommand::Turn,
@@ -125,38 +127,41 @@ namespace MotionController
             if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
             { /* ERROR!!?? */
             }
-            _state++;
+            _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
             break;
 
-        case State::WAIT_FOR_STOP_3:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_3:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::SET_BACK_ROBOT;
             }
             break;
 
-        case State::SET_BACK_ROBOT:
+        case HandleBarrierStmState::SET_BACK_ROBOT:
+
+            // TODO
+            _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
             break;
 
-        case State::WAIT_FOR_STOP_4:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_4:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::SEND_RELEASE_COMMAND;
             }
             break;
 
-        case State::SEND_RELEASE_COMMAND:
+        case HandleBarrierStmState::SEND_RELEASE_COMMAND:
             // TODO
-            _state++;
+            _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_1;
             break;
 
-        case State::WAIT_FOR_GC_ACK_1:
+        case HandleBarrierStmState::WAIT_FOR_GC_ACK_1:
             // TODO
-            _state++;
+            _state = HandleBarrierStmState::TURN_ROBOT_2;
             break;
 
-        case State::TURN_ROBOT_2:
-            DispatcherMessage msg(
+        case HandleBarrierStmState::TURN_ROBOT_2:
+            msg = DispatcherMessage(
                 DispatcherTaskId::LineFollowerTask,
                 DispatcherTaskId::LineFollowerTask,
                 TaskCommand::Turn,
@@ -164,18 +169,18 @@ namespace MotionController
             if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
             { /* ERROR!!?? */
             }
-            _state++;
+            _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
             break;
 
-        case State::WAIT_FOR_STOP_5:
-            if (*_statusFlags & MOTORS_AT_STANDSTILL)
+        case HandleBarrierStmState::WAIT_FOR_STOP_5:
+            if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
             {
-                _state++;
+                _state = HandleBarrierStmState::BACK_TO_LINEFOLLOWERMODE;
             }
             break;
 
-        case State::BACK_TO_LINEFOLLOWERMODE:
-            DispatcherMessage msg(
+        case HandleBarrierStmState::BACK_TO_LINEFOLLOWERMODE:
+            msg = DispatcherMessage(
                 DispatcherTaskId::LineFollowerTask,
                 DispatcherTaskId::LineFollowerTask,
                 TaskCommand::Move,
@@ -192,7 +197,7 @@ namespace MotionController
 
     void HandleBarrierStm::reset()
     {
-        _state = State::IDLE;
+        _state = HandleBarrierStmState::IDLE;
     }
 
     void HandleBarrierStm::update(uint32_t msgData)
@@ -202,7 +207,7 @@ namespace MotionController
         // gets called from Move command. 0 = move LineFollowerMode
         if (msgData == 0)
         {
-            _state == State::CHECK_DISTANCE;
+            _state == HandleBarrierStmState::CHECK_DISTANCE;
         }
     }
 }

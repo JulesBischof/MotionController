@@ -21,7 +21,7 @@
 using namespace prain_uart;
 using namespace encoder;
 
-namespace MotionController
+namespace nMotionController
 {
     /// @brief main loop rapberryHatComTask. either waits on uart0 Rx Interrupts or waits on incoming Tx-commands
     void MotionController::_raspberryHatComTask()

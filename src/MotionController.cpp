@@ -11,7 +11,7 @@
 #include "Tmc5240Config.h"
 #include <string.h>
 
-namespace MotionController
+namespace nMotionController
 {
 
     /* ==================================

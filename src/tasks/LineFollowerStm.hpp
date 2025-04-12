@@ -9,9 +9,17 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 
-namespace MotionController
+namespace nMotionController
 {
-    class LineFollowerStm : public StmBase<LineFollowerStm::State>
+    enum class LineFollowerStmState : uint8_t
+    {
+        IDLE,
+        FOLLOW_LINE,
+        LOST_LINE,
+        CROSSPOINT_DETECTED,
+    };
+
+    class LineFollowerStm : public StmBase<LineFollowerStmState>
     {
     private:
         Tmc5240*_driver0;
@@ -26,16 +34,9 @@ namespace MotionController
 
         uint32_t lastMsgData;
 
-        enum class State
-        {
-            IDLE,
-            FOLLOW_LINE,
-            LOST_LINE,
-            CROSSPOINT_DETECTED,
-        };
-
     public:
         LineFollowerStm(uint32_t *_statusFlags, LineSensor *lineSensor, Tmc5240 *driver0, Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue);
+        LineFollowerStm();
         ~LineFollowerStm() override;
 
         void init() override;
@@ -43,6 +44,6 @@ namespace MotionController
         void reset() override;
         void update(uint32_t msgData) override;
 
-        State getState() override { return _state; };
+        LineFollowerStmState getState() override { return _state; };
     };
 }

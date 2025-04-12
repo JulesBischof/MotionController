@@ -3,8 +3,10 @@
 #include "LineFollowerTaskConfig.h"
 #include "LineFollowerTaskStatusFlags.hpp"
 
-namespace MotionController
+namespace nMotionController
 {
+    MovePositionModeStm::MovePositionModeStm() {}
+
     MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags, Tmc5240 *driver0, Tmc5240 *driver1)
         : StmBase(_statusFlags)
     {
@@ -13,7 +15,7 @@ namespace MotionController
 
         lastMsgData = 0;
 
-        _state = State::IDLE;
+        _state = MovePositionModeStmState::IDLE;
     }
 
     MovePositionModeStm::~MovePositionModeStm()
@@ -27,21 +29,16 @@ namespace MotionController
     bool MovePositionModeStm::run()
     {
         uint32_t statusFlags = *_statusFlags;
-        // chek if a stop request was send (statusFlag is set)
-        if (statusFlags & ~MOTOR_RUNNING)
-        {
-            _state = State::STOP_MODE;
-        }
 
         bool retVal = false;
 
         switch (_state)
         {
-        case State::IDLE:
+        case MovePositionModeStmState::IDLE:
             retVal = true;
             break;
 
-        case State::POSITION_MODE:
+        case MovePositionModeStmState::POSITION_MODE:
 
             // set motorcurrent
             _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
@@ -49,42 +46,39 @@ namespace MotionController
             // now send position request to drives
             _movePositionMode(lastMsgData);
             // now wait for standstill
-            _state = State::WAIT_FOR_STOP;
+            _state = MovePositionModeStmState::WAIT_FOR_STOP;
             break;
 
-        case State::TURN_MODE:
+        case MovePositionModeStmState::TURN_MODE:
             // set motorcurrent
             _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
             _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
             // send position request to drives
             _turnRobot(lastMsgData);
             // now wait for standstill
-            _state = State::WAIT_FOR_STOP;
+            _state = MovePositionModeStmState::WAIT_FOR_STOP;
             break;
 
-        case State::STOP_MODE:
+        case MovePositionModeStmState::STOP_MODE:
             // set motorcurrent
             _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
             _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
             // send position request to drives
             _stopDrives();
             // now wait for standstill
-            _state = State::WAIT_FOR_STOP;
+            _state = MovePositionModeStmState::WAIT_FOR_STOP;
 
             break;
-        case State::WAIT_FOR_STOP:
-            bool val0 = _driver0->checkForStandstill();
-            bool val1 = _driver1->checkForStandstill();
-
-            if (val0 && val1)
+        case MovePositionModeStmState::WAIT_FOR_STOP:
+            if (_driver0->checkForStandstill() && _driver1->checkForStandstill())
             {
-                _state = State::STOPPED;
+                _state = MovePositionModeStmState::STOPPED;
             }
 
             break;
-        case State::STOPPED:
-            *_statusFlags |= MOTORS_AT_STANDSTILL;
-            _state = State::IDLE;
+        case MovePositionModeStmState::STOPPED:
+            *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
+            _state = MovePositionModeStmState::IDLE;
             break;
         default:
             /* ERROR..? */
@@ -96,17 +90,35 @@ namespace MotionController
 
     void MovePositionModeStm::reset()
     {
-        _state = State::IDLE;
+        _state = MovePositionModeStmState::IDLE;
         lastMsgData = 0;
     }
 
     void MovePositionModeStm::update(uint32_t msgData)
     {
-        // move in Position Mode
-        if (msgData != 0)
+        /* ERROR shouldnt be reached */
+    }
+
+    void MovePositionModeStm::update(uint32_t msgData, TaskCommand cmd)
+    {
+        switch (cmd)
         {
+        case TaskCommand::Move:
             lastMsgData = msgData;
-            _state = State::POSITION_MODE;
+            _state = MovePositionModeStmState::POSITION_MODE;
+            break;
+
+        case TaskCommand::Turn:
+            lastMsgData = msgData;
+            _state = MovePositionModeStmState::TURN_MODE;
+            break;
+
+        case TaskCommand::Stop:
+            _state = MovePositionModeStmState::STOP_MODE;
+            break;
+        default:
+            /* ERROR shouldnt be reached */
+            break;
         }
     }
 
