@@ -9,16 +9,20 @@ namespace nMotionController
     {
         init();
     }
+    
     SendStatusFlagsStm::SendStatusFlagsStm()
     {
     }
+
     SendStatusFlagsStm::~SendStatusFlagsStm()
     {
     }
+
     void SendStatusFlagsStm::init()
     {
         _state = SendStatusFlagsStmState::WAIT_FOR_FLAGS;
     }
+
     bool SendStatusFlagsStm::run()
     {
         bool retVal = false;

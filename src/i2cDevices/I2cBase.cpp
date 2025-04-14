@@ -27,7 +27,7 @@ I2cBase::I2cBase(i2c_inst_t *i2cInstance, uint8_t i2cAddress)
 }
 
 /// @brief default constructor
-I2cBase::I2cBase(){}
+I2cBase::I2cBase() {}
 
 /// @brief deconstructor - not implemented yet
 I2cBase::~I2cBase()
@@ -73,7 +73,9 @@ bool I2cBase::i2cReadFrame(uint8_t *buffer, uint8_t num)
     if (err != num)
     {
         this->_setError(err);
+#if ENABLE_PRINTF_DEBUG_INFO
         printf("I2C_Error! ReadFrame \n");
+#endif
         return false;
     }
     return true;
@@ -99,7 +101,9 @@ bool I2cBase::i2cReadReg(uint8_t reg, uint8_t *buffer, uint8_t num)
     if (err != 1)
     {
         this->_setError(err);
+#if ENABLE_PRINTF_DEBUG_INFO
         printf("I2C_Error! ReadReg \n");
+#endif
         return false;
     }
     return true;
@@ -124,7 +128,9 @@ bool I2cBase::i2cWriteReg(uint8_t reg, uint8_t data)
     if (err != 2) // 2 due to 2Bytes data were send
     {
         this->_setError(err);
+#if ENABLE_PRINTF_DEBUG_INFO
         printf("I2C_Error! WriteReg \n");
+#endif
         return false;
     }
     return true;
@@ -138,11 +144,15 @@ void I2cBase::_setError(uint8_t err)
     {
     case -PICO_ERROR_GENERIC:
         this->_i2cStatus = I2C_NO_ACK;
+        #if ENABLE_PRINTF_DEBUG_INFO
         printf("# I2C_NO_ACK # \n");
+        #endif
         break;
     case -PICO_ERROR_TIMEOUT:
         this->_i2cStatus = I2C_TIMEOUT;
+        #if ENABLE_PRINTF_DEBUG_INFO
         printf("# I2C_TIMEOUT # \n");
+        #endif
         break;
     default:
         break;

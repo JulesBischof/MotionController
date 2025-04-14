@@ -98,8 +98,8 @@ namespace nMotionController
 
         // The HcSr04 object requires dynamic allocation due to the need for the ISR
         // (Interrupt Service Routine) to access the object's pointer directly.
-        // With static allocation, the object's values are copied to the _hcSr04 instance inside 
-        // the MotionController object, but the object's memory address does not remain the same, 
+        // With static allocation, the object's values are copied to the _hcSr04 instance inside
+        // the MotionController object, but the object's memory address does not remain the same,
         // which can lead to issues.
         // memory allocation is done using pvPortMalloc, which is a FreeRTOS function
         _hcSr04 = static_cast<HcSr04 *>(pvPortMalloc(sizeof(HcSr04)));
@@ -186,7 +186,9 @@ namespace nMotionController
             vTaskDelay(pdMS_TO_TICKS(1));
             if (msTicks > timeout_ms)
             {
+#if ENABLE_PRINTF_DEBUG_INFO
                 printf("UART TX ERROR - TIMEOUT");
+#endif
                 return;
             }
         }

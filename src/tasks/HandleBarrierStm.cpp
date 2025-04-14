@@ -39,7 +39,7 @@ namespace nMotionController
         switch (_state)
         {
         case HandleBarrierStmState::IDLE:
-            return true;
+            retVal = true;
             break;
 
         case HandleBarrierStmState::CHECK_DISTANCE:
@@ -54,9 +54,7 @@ namespace nMotionController
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }
-
                 *_statusFlags |= (uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED;
-
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
             }
             break;

@@ -50,8 +50,9 @@ void LineSensor::_initDefaultCalibration()
         this->_calibValuesLow[i] = defValuesLow[i];
         this->_calibValuesHigh[i] = defValuesHigh[i];
     }
-
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("LINESENSOR - default calibration set \n");
+    #endif
 }
 
 /* ==================================

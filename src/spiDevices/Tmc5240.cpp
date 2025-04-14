@@ -21,8 +21,9 @@ constexpr float WHEELCIRCUMFENCE_MM = STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI;
 Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin, bool stdDir) : SpiBase(spiInstance, csPin)
 {
     _stdDir = stdDir;
-
+#if ENABLE_PRINTF_DEBUG_INFO
     printf("Startup TMC5240 CS_GPIO #%d ... \n", csPin);
+#endif
     _initDevice();
     _checkDevice();
 
@@ -44,29 +45,43 @@ Tmc5240::Tmc5240() {}
 /// @brief initializes device
 void Tmc5240::_initDevice()
 {
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("resetting TMC5240 Device... \n");
+    #endif
     clearGSTAT();
 
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("start init Current settings TMC5240 ... \n");
+    #endif
     _initCurrentSetting();
 
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("init SpreadCycle Mode ... \n");
+    #endif
     _initSpreadCycle();
 
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("initialisation TMC5240 DONE! \n");
+    #endif
 }
 
 /// @brief checks, if the device is still reachable
 void Tmc5240::_checkDevice()
 {
     uint8_t version = _spiReadBitField(TMC5240_INP_OUT, TMC5240_VERSION_MASK, TMC5240_VERSION_SHIFT);
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("TMC5240 Version %d initialized! \n", version);
+    #endif
 
     bool drvEnn = _spiReadBitField(TMC5240_INP_OUT, TMC5240_DRV_ENN_MASK, TMC5240_DRV_ENN_SHIFT);
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("DRV_ENN State = %x \n", drvEnn);
+    #endif
 
     uint32_t gStat = getGSTAT();
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("GSTAT val = %x", gStat);
+    #endif
 }
 
 /// @brief inits Current settings out of StepperConfig.h File
@@ -91,7 +106,9 @@ void Tmc5240::_initCurrentSetting()
     uint32_t globscalerval = _spiReadReg(TMC5240_GLOBAL_SCALER);
     uint32_t ihold_irun_val = _spiReadReg(TMC5240_IHOLD_IRUN);
 
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("Current Settings Register Values \n --- GLOBSCALER ... 0x%x \n --- DRV_CONF ... 0x%x \n --- IHOLD_IRUN ... %x \n", globscalerval, drv_conf_val, ihold_irun_val);
+    #endif
 }
 
 /// @brief initializes stepper drive in SpreadCycle Mode - ref Datasheet
@@ -198,7 +215,6 @@ void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
 
     uint32_t vmax_val = _spiReadReg(TMC5240_VMAX);
     uint32_t amax_val = _spiReadReg(TMC5240_AMAX);
-    printf("vmax set to: %d ; amax set to: %d \n", vmax_val, amax_val);
 
     return;
 }

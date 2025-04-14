@@ -5,6 +5,9 @@
 
 #include "DispatcherMessage.hpp"
 
+#include "pico/stdlib.h"
+#include <stdio.h>
+
 namespace nMotionController
 {
     LineFollowerStm::LineFollowerStm(uint32_t *_statusFlags, LineSensor *lineSensor, Tmc5240 *driver0, Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue)
@@ -44,10 +47,12 @@ namespace nMotionController
                 if (_lineSensor->getStatus() & LINESENSOR_CROSS_DETECTED)
                 {
                     _state = LineFollowerStmState::CROSSPOINT_DETECTED;
+                    *_statusFlags |= (uint32_t)RunModeFlag::CROSSPOINT_DETECTED;
                 }
                 if (_lineSensor->getStatus() & LINESENSOR_NO_LINE)
                 {
                     _state = LineFollowerStmState::LOST_LINE;
+                    *_statusFlags |= (uint32_t)RunModeFlag::LOST_LINE;
                 }
 
                 break;
@@ -57,11 +62,10 @@ namespace nMotionController
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
-                    TaskCommand::Stop, 
+                    TaskCommand::Stop,
                     0);
                 if(xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 {/* ERROR!!?? */}
-                *_statusFlags |= (uint32_t)RunModeFlag::LOST_LINE;
 
                 _state = LineFollowerStmState::IDLE;
                 break;
@@ -76,9 +80,8 @@ namespace nMotionController
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }
-                *_statusFlags |= (uint32_t)RunModeFlag::CROSSPOINT_DETECTED;
 
-                _state = LineFollowerStmState::IDLE;
+                reset();
                 break;
 
             default:
@@ -117,6 +120,10 @@ namespace nMotionController
         int16_t y = _lineSensor->getLinePositionDigital();
 #else
         int16_t y = _lineSensor->getLinePositionAnalog();
+#endif
+
+#if ENABLE_DATA_OUTPUT_LINEPOS == (1)
+        printf("%d\n", y);
 #endif
 
         // get error

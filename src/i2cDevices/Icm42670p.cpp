@@ -36,27 +36,36 @@ void Icm42670p::_initDevice()
     uint8_t address = 0;
 
     address = (uint8_t)(PWR_MGMT0 & 0xFF);
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("init PWR_MGMT0 register (addr %Xh) value: (%Xh)\n", address, PWR_MGMT0_INITVALUE);
+    #endif
     if (!i2cWriteReg(address, PWR_MGMT0_INITVALUE))
         printf("Failed to write PWR_MGMT0 register\n");
 
     address = (uint8_t)(GYRO_CONFIG0 & 0xFF);
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("init GYRO_CONFIG0 register (addr %Xh) value: (%Xh)\n", address, CONFIG0_INITVALUE);
+    #endif
     if (!i2cWriteReg(address, CONFIG0_INITVALUE))
         printf("Failed to write GYRO_CONFIG0 register\n");
 
     address = (uint8_t)(GYRO_CONFIG1 & 0xFF);
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("init GYRO_CONFIG1 register (addr %Xh) value: (%Xh)\n", address, CONFIG1_INITVALUE);
+    #endif
     if (!i2cWriteReg(address, CONFIG1_INITVALUE))
         printf("Failed to write GYRO_CONFIG1 register\n");
-
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("Icm4670p init done! \n");
+    #endif
 }
 
 /// @brief sends example message to device
 void Icm42670p::_checkDevice()
 {
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("check Device ... Read out initialization values ... \n");
+    #endif
     uint8_t address = 0;
     uint8_t buffer[3] = {0};
 
@@ -68,10 +77,10 @@ void Icm42670p::_checkDevice()
 
     address = (uint8_t)(GYRO_CONFIG1);
     i2cReadReg(address, &buffer[2], 1);
-
+    #if ENABLE_PRINTF_DEBUG_INFO
     printf("Initialization Register values: \n - PWR_MGMT0: %Xh \n - GYRO_CONFIG0: %Xh \n - GYRO_CONFIG1: %Xh \n", buffer[0], buffer[1], buffer[2]);
     printf("Icm4670p check done! \n");
-
+    #endif
     return;
 }
 

@@ -9,5 +9,7 @@
 
 #define APP_MODE (1) 
 
+#define ENABLE_PRINTF_DEBUG_INFO (0)
+
 
 #endif // APPCONFIG_H

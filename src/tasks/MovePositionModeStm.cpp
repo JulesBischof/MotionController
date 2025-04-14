@@ -3,6 +3,8 @@
 #include "LineFollowerTaskConfig.h"
 #include "LineFollowerTaskStatusFlags.hpp"
 
+#include "Tmc5240.hpp"
+
 namespace nMotionController
 {
     MovePositionModeStm::MovePositionModeStm() {}
@@ -44,7 +46,7 @@ namespace nMotionController
             _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
             _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
             // now send position request to drives
-            _movePositionMode(lastMsgData);
+            _movePositionMode(Tmc5240::convertDistanceMmToMicrosteps(lastMsgData));
             // now wait for standstill
             _state = MovePositionModeStmState::WAIT_FOR_STOP;
             break;

@@ -34,7 +34,7 @@ namespace nMotionController
         switch (_state)
         {
         case CheckSafetyButtonStmState::WAIT_FOR_BUTTON:
-            if (_safetyButton->getValue())
+            if (!_safetyButton->getValue())
             {
                 _state = CheckSafetyButtonStmState::BUTTON_PRESSED;
                 retVal = true;
@@ -43,6 +43,7 @@ namespace nMotionController
 
         case CheckSafetyButtonStmState::BUTTON_PRESSED:
             // stop drives
+            *_statusFlags |= (uint32_t)RunModeFlag::SAFETY_BUTTON_PRESSED;
             DispatcherMessage msg(
                 DispatcherTaskId::LineFollowerTask,
                 DispatcherTaskId::LineFollowerTask,
@@ -51,7 +52,6 @@ namespace nMotionController
             if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
             { /* ERROR!!?? */
             }
-            *_statusFlags |= (uint32_t)RunModeFlag::SAFETY_BUTTON_PRESSED;
             break;
         }
         return retVal;

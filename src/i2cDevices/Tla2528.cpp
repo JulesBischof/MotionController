@@ -53,11 +53,12 @@ void Tla2528::_checkDevice()
     uint8_t buffer = 0;
     i2cReadReg(SYSTEM_STATUS_ADDRESS, &buffer, 1);
     bool retVal = buffer >> 7;
-
+    #if ENABLE_PRINTF_DEBUG_INFO
     if (retVal)
         printf("ADC initialized");
     else
         printf("ADC NO ANSWER");
+    #endif
     return;
 }
 

@@ -84,7 +84,7 @@ namespace nMotionController
 
                 if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask)
                 {
-                    printf("LINEFOLLOWERTASK - Message contains wrong Task ID \n");
+                    printf("ERROR LINEFOLLOWERTASK - Message contains wrong Task ID \n");
                     continue;
                 }
 
@@ -102,7 +102,7 @@ namespace nMotionController
                     _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
 
                     _lineFollowerStm.update(message.getData());
-                    _movePositionModeStm.update(message.getData(), TaskCommand::Move);
+                    _movePositionModeStm.update(message.getData(), TaskCommand::Move); // 10 due to data gets send in cm but motion controller works with mm
 
                     break;
 
@@ -147,7 +147,7 @@ namespace nMotionController
                     break;
 
                 default:
-                    printf("LineFollowerTask - COMMAND UNKNOWN ?");
+                    printf("ERROR LineFollowerTask - COMMAND UNKNOWN ?");
                     break;
                 }
             } // end of message handling
