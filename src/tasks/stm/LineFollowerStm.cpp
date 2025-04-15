@@ -113,8 +113,6 @@ namespace MtnCtrl
         {
             // init vars
             uint32_t statusFlags = *_statusFlags;
-            bool speedMode = (statusFlags & (uint32_t)RunModeFlag::RUNMODE_SLOW) ? true : false;
-
             int32_t v1 = 0;
             int32_t v2 = 0;
 
@@ -142,16 +140,9 @@ namespace MtnCtrl
             u = _controllerC(e);
 
             // set Motor values (Process P)
-            if (!speedMode)
-            {
-                v1 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST + u;
-                v2 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST - u;
-            }
-            else
-            {
-                v1 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW + u;
-                v2 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC_SLOW - u;
-            }
+            v1 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC + u;
+            v2 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC - u;
+            
 
             // set Motor values
             _driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);

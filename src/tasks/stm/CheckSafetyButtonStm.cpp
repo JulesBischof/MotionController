@@ -36,22 +36,24 @@ namespace MtnCtrl
             case CheckSafetyButtonStmState::WAIT_FOR_BUTTON:
                 if (!_safetyButton->getValue())
                 {
+                    // stop drives
+                    *_statusFlags |= (uint32_t)RunModeFlag::SAFETY_BUTTON_PRESSED;
+                    DispatcherMessage msg(
+                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::LineFollowerTask,
+                        TaskCommand::Stop,
+                        0);
+                    if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                    { /* ERROR!!?? */
+                    }
+
                     _state = CheckSafetyButtonStmState::BUTTON_PRESSED;
                     retVal = true;
                 }
                 break;
 
             case CheckSafetyButtonStmState::BUTTON_PRESSED:
-                // stop drives
-                *_statusFlags |= (uint32_t)RunModeFlag::SAFETY_BUTTON_PRESSED;
-                DispatcherMessage msg(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::LineFollowerTask,
-                    TaskCommand::Stop,
-                    0);
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
-                { /* ERROR!!?? */
-                }
+
                 break;
             }
             return retVal;

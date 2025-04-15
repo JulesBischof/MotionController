@@ -35,6 +35,10 @@ namespace MtnCtrl
             case SendStatusFlagsStmState::WAIT_FOR_FLAGS:
                 // wait for flags
                 retVal = true;
+                if ( (*_statusFlags & RUNMODEFLAG_T_UPPER_BITMASK) != 0)
+                {
+                    _state = SendStatusFlagsStmState::SEND_FLAGS;
+                }
                 break;
             case SendStatusFlagsStmState::SEND_FLAGS:
                 // send flags
@@ -46,7 +50,7 @@ namespace MtnCtrl
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }
-                *_statusFlags = 0;
+                *_statusFlags = *_statusFlags & RUNMODEFLAG_T_LOWER_BITMASK; // clear upper bits
                 _state = SendStatusFlagsStmState::WAIT_FOR_FLAGS;
                 break;
             default:

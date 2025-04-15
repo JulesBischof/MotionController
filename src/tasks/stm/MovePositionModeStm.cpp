@@ -43,7 +43,8 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::POSITION_MODE:
-
+                // clear flag
+                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
@@ -54,6 +55,8 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::TURN_MODE:
+                // clear flag
+                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
@@ -64,6 +67,8 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::STOP_MODE:
+                // clear flag
+                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
@@ -81,6 +86,7 @@ namespace MtnCtrl
 
                 break;
             case MovePositionModeStmState::STOPPED:
+                // set flag
                 *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 _state = MovePositionModeStmState::IDLE;
                 break;
@@ -109,7 +115,10 @@ namespace MtnCtrl
             {
             case TaskCommand::Move:
                 lastMsgData = msgData;
-                _state = MovePositionModeStmState::POSITION_MODE;
+                if (msgData != 0)
+                {
+                    _state = MovePositionModeStmState::POSITION_MODE;
+                }
                 break;
 
             case TaskCommand::Turn:
@@ -130,8 +139,8 @@ namespace MtnCtrl
         /// @param distance distance [IN MICROSTEPS]
         void MovePositionModeStm::_movePositionMode(int32_t distance)
         {
-            _driver0->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
-            _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _driver0->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
+            _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
             return;
         }
 
@@ -159,8 +168,8 @@ namespace MtnCtrl
             int32_t nStepsDriver = spiDevices::Tmc5240::convertDistanceMmToMicrosteps(ds);
 
             // move drives in different directions
-            _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
-            _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC_FAST * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
         }
 
         /// @brief stops the drives
