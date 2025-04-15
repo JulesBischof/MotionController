@@ -6,7 +6,7 @@
 #include "LineFollowerTaskConfig.h"
 #include <cmath>
 
-namespace nMotionController
+namespace MtnCtrl
 {
     /* ================================= */
     /*            consts                 */

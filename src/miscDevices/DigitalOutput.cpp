@@ -2,46 +2,51 @@
 
 #include "pico/stdlib.h"
 
-/// @brief 
-DigitalOutput::DigitalOutput()
+namespace miscDevices
 {
-    /* default ctor */
-}
 
-DigitalOutput::DigitalOutput(uint8_t gpio, bool initState)
-{
-    _gpio = gpio;
-    _state = initState;
+    /// @brief
+    DigitalOutput::DigitalOutput()
+    {
+        /* default ctor */
+    }
 
-    _initGpio();
-    setState(initState);
-}
+    DigitalOutput::DigitalOutput(uint8_t gpio, bool initState)
+    {
+        _gpio = gpio;
+        _state = initState;
 
-DigitalOutput::~DigitalOutput()
-{
-    /* decontructor - not implemented yet */
-}
+        _initGpio();
+        setState(initState);
+    }
 
-void DigitalOutput::_initGpio()
-{
-    gpio_set_dir(_gpio, GPIO_OUT);
-    return;
-}
+    DigitalOutput::~DigitalOutput()
+    {
+        /* decontructor - not implemented yet */
+    }
 
-void DigitalOutput::toggle()
-{
-    _state = !_state;
-    gpio_put(_gpio, _state);
-    return;
-}
+    void DigitalOutput::_initGpio()
+    {
+        gpio_set_dir(_gpio, GPIO_OUT);
+        return;
+    }
 
-bool DigitalOutput::getState()
-{
-    return _state;
-}
+    void DigitalOutput::toggle()
+    {
+        _state = !_state;
+        gpio_put(_gpio, _state);
+        return;
+    }
 
-void DigitalOutput::setState(bool state)
-{
-    _state = state;
-    gpio_put(_gpio, _state);
+    bool DigitalOutput::getState()
+    {
+        return _state;
+    }
+
+    void DigitalOutput::setState(bool state)
+    {
+        _state = state;
+        gpio_put(_gpio, _state);
+    }
+
 }

@@ -3,26 +3,30 @@
 
 #include "pico/stdlib.h"
 
-class HcSr04KalmanFilter
+namespace miscDevices
 {
-private:
-    float _distance, _velocity, _dt;
 
-    float F[2][2], H[2], Q[2][2], R, P[2][2], K[2];
+    class HcSr04KalmanFilter
+    {
+    private:
+        float _distance, _velocity, _dt;
 
-    void _predictionPhase();
-    void _correctionPhase(float z);
+        float F[2][2], H[2], Q[2][2], R, P[2][2], K[2];
 
-public:
-    HcSr04KalmanFilter();
-    HcSr04KalmanFilter(float init_d, float init_v, float init_dt, float q_d, float q_v, float r);
-    ~HcSr04KalmanFilter();
+        void _predictionPhase();
+        void _correctionPhase(float z);
 
-    void setVelocity(float speedMps);
-    void setDt(float dt);
+    public:
+        HcSr04KalmanFilter();
+        HcSr04KalmanFilter(float init_d, float init_v, float init_dt, float q_d, float q_v, float r);
+        ~HcSr04KalmanFilter();
 
-    void update(float z, float dt);
-    float getDistance();
-};
+        void setVelocity(float speedMps);
+        void setDt(float dt);
 
+        void update(float z, float dt);
+        float getDistance();
+    };
+
+}
 #endif // HCSR04KALMANFILTER

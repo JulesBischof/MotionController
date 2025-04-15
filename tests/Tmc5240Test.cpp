@@ -8,9 +8,9 @@
 
 void Tmc5240Test(void)
 {
-    Tmc5240 Driver_0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, false);
+    spiDevices::Tmc5240 Driver_0 = spiDevices::Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, false);
 
-    Tmc5240 Driver_1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, true);
+    spiDevices::Tmc5240 Driver_1 = spiDevices::Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, true);
 
 #if TEST_TMC5260_VELOCITY_MODE == 1
     Driver_0.moveVelocityMode(0, 200000, 5000);

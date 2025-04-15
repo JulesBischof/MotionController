@@ -26,7 +26,7 @@
 #include "prain_uart/protocol.hpp"
     using namespace prain_uart;
 
-namespace nMotionController
+namespace MtnCtrl
 {
     class MotionController
     {
@@ -40,13 +40,13 @@ namespace nMotionController
         static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
         TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
 
-        Tmc5240 _driver0, _driver1;
-        LineSensor _lineSensor;
-        Tla2528 _adc;
-        DigitalInput _safetyButton;
-        DigitalOutput _tmc5240Eval_R2, _tmc5240Eval_R3;
+        spiDevices::Tmc5240 _driver0, _driver1;
+        miscDevices::LineSensor _lineSensor;
+        i2cDevices::Tla2528 _adc;
+        miscDevices::DigitalInput _safetyButton;
+        miscDevices::DigitalOutput _tmc5240Eval_R2, _tmc5240Eval_R3;
 
-        HcSr04 *_hcSr04;
+        miscDevices::HcSr04 *_hcSr04;
 
         void _lineFollowerTask();
         void _raspberryHatComTask();
@@ -60,14 +60,14 @@ namespace nMotionController
         static void _RaspberryComTaskWrapper(void *pvParameters);
         static void _MessageDispatcherTaskWrapper(void *pvParameters);
 
-        // lineFollower relevant members
+        // lineFollower members
         int32_t _getRotationRelativeToStart();
         int32_t _getDrivenDistance(int32_t drivenDistanceDirver0, int32_t drivenDistanceDirver1);
-        HandleBarrierStm _handleBarrierStm;
-        CheckSafetyButtonStm _checkSafetyButtonStm;
-        LineFollowerStm _lineFollowerStm;
-        MovePositionModeStm _movePositionModeStm;
-        SendStatusFlagsStm _sendStatusFlagsStm;
+        stm::HandleBarrierStm _handleBarrierStm;
+        stm::CheckSafetyButtonStm _checkSafetyButtonStm;
+        stm::LineFollowerStm _lineFollowerStm;
+        stm::MovePositionModeStm _movePositionModeStm;
+        stm::SendStatusFlagsStm _sendStatusFlagsStm;
 
         // raspberryHatCom relevant members
         DispatcherMessage

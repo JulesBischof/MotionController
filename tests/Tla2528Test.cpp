@@ -11,7 +11,7 @@
 
 void Tla2528Test(void)
 {
-    Tla2528 adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
+    i2cDevices::Tla2528 adc = i2cDevices::Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
 
     for (;;)
     {

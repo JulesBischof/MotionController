@@ -11,7 +11,7 @@
 #include "Tmc5240Config.h"
 #include <string.h>
 
-namespace nMotionController
+namespace MtnCtrl
 {
 
     /* ==================================
@@ -78,8 +78,8 @@ namespace nMotionController
         spi_set_format(TMC5240_SPI_INSTANCE, 8, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
 
         /* --------- DOUT ------------ */
-        _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
-        _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
+        _tmc5240Eval_R2 = miscDevices::DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
+        _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
         /* ERROR HANDLING ??? */
         return true;
@@ -88,13 +88,13 @@ namespace nMotionController
     /// @brief initializes all Classmembers such as sensors and drivers
     void MotionController::_initPeripherals()
     {
-        _driver0 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
-        _driver1 = Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
-        _adc = Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
-        _lineSensor = LineSensor(&_adc, UV_LED_GPIO);
-        _safetyButton = DigitalInput(DIN_4);
-        _tmc5240Eval_R2 = DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
-        _tmc5240Eval_R3 = DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
+        _driver0 = spiDevices::Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
+        _driver1 = spiDevices::Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_1, 1);
+        _adc = i2cDevices::Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
+        _lineSensor = miscDevices::LineSensor(&_adc, UV_LED_GPIO);
+        _safetyButton = miscDevices::DigitalInput(DIN_4);
+        _tmc5240Eval_R2 = miscDevices::DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
+        _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
         // The HcSr04 object requires dynamic allocation due to the need for the ISR
         // (Interrupt Service Routine) to access the object's pointer directly.
@@ -102,10 +102,10 @@ namespace nMotionController
         // the MotionController object, but the object's memory address does not remain the same,
         // which can lead to issues.
         // memory allocation is done using pvPortMalloc, which is a FreeRTOS function
-        _hcSr04 = static_cast<HcSr04 *>(pvPortMalloc(sizeof(HcSr04)));
+        _hcSr04 = static_cast<miscDevices::HcSr04 *>(pvPortMalloc(sizeof(miscDevices::HcSr04)));
         if (_hcSr04 != nullptr)
         {
-            new (_hcSr04) HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+            new (_hcSr04) miscDevices::HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
         }
         else
         {

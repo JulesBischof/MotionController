@@ -11,7 +11,7 @@
 
 void HcSr04Test(void)
 {
-    HcSr04 hcSr04 = HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
+    miscDevices::HcSr04 hcSr04 = miscDevices::HcSr04(HCSR04_TRIGGER, HCSR04_ECHO);
     hcSr04.initMeasurmentTask();
 
     while (1)

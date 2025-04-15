@@ -2,7 +2,7 @@
 
 #include "MessageDispatcherTaskConfig.h"
 
-namespace nMotionController
+namespace MtnCtrl
 {
     /// @brief main Loop message dispatcher. Reorders datapackage to receiving task.  
     void MotionController::_messageDispatcherTask()

@@ -16,9 +16,8 @@
 
 #include "LineFollowerTaskStatusFlags.hpp"
 
-namespace nMotionController
+namespace MtnCtrl
 {
-
 
     /* ================================= */
     /*          Running Task             */
@@ -29,17 +28,17 @@ namespace nMotionController
     {
         // init stms
         uint32_t _lineFollowerStatusFlags = 0;
-        CheckSafetyButtonStm _checkSafetyButtonStm(&_lineFollowerStatusFlags, &_safetyButton, getLineFollowerQueue());
+        stm::CheckSafetyButtonStm _checkSafetyButtonStm(&_lineFollowerStatusFlags, &_safetyButton, getLineFollowerQueue());
         _checkSafetyButtonStm.init();
-        LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, getLineFollowerQueue());
+        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, getLineFollowerQueue());
         _lineFollowerStm.init();
-        MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1);
+        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1);
         _movePositionModeStm.init();
-        HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_driver0, &_driver1, getLineFollowerQueue());
+        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_driver0, &_driver1, getLineFollowerQueue());
         _handleBarrierStm.init();
-        SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, getMessageDispatcherQueue());
+        stm::SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, getMessageDispatcherQueue());
         _sendStatusFlagsStm.init();
-        
+
         _hcSr04->initMeasurmentTask();
 
         // get Queues
@@ -70,7 +69,6 @@ namespace nMotionController
         uint32_t maxDistance = 0;
 
         TickType_t xLastWakeTime = xTaskGetTickCount();
-
 
         // loop forever
         for (;;)
@@ -163,7 +161,6 @@ namespace nMotionController
         }
     } // end Task
 
-
     /* ================================= */
     /*       getters & Conversion        */
     /* ================================= */
@@ -177,7 +174,7 @@ namespace nMotionController
 
         int32_t ds = xActualDriver0 - xActualDriver1;
 
-        float degree = Tmc5240::convertDeltaDrivenDistanceToDegree(ds);
+        float degree = spiDevices::Tmc5240::convertDeltaDrivenDistanceToDegree(ds);
 
         // times 10 due to prain_uart protocoll! ( e.g. 180° => send 1800 in protocoll )
         int32_t retVal = static_cast<int32_t>(std::round(degree * 10));
@@ -194,7 +191,7 @@ namespace nMotionController
         float d2 = static_cast<float>(drivenDistanceDirver1);
         int32_t res = static_cast<int32_t>(std::round((d1 + d2) / 2)); // get mean value
 
-        int32_t distance = Tmc5240::convertMicrostepsToCentimeter(res);
+        int32_t distance = spiDevices::Tmc5240::convertMicrostepsToCentimeter(res);
         return distance;
     }
 }

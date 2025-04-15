@@ -3,8 +3,11 @@
 
 #include "pico/stdlib.h"
 
-class DigitalOutput
+namespace miscDevices
 {
+
+    class DigitalOutput
+    {
     private:
         uint8_t _gpio;
         bool _state;
@@ -20,6 +23,6 @@ class DigitalOutput
 
         bool getState();
         void setState(bool state);
-};
-
+    };
+}
 #endif

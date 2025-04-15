@@ -12,10 +12,10 @@
 #define UART1_BAUDRATE (115200)
 
 /* -------------------- SPI ---------------------- */
-#define SPI_BAUDRATE_KHZ (1000)
+#define SPI_BAUDRATE_KHZ (10000)
 
 /* -------------------- I2C ----------------------- */
-#define I2C_BAUDRATE_KHZ (100)
+#define I2C_BAUDRATE_KHZ (400)
 
 #define I2C_DEVICE_TLA2528_ADDRESS (0x14)
 #define I2C_DEVICE_ICM42670P_ADDRESS (0x68)

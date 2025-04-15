@@ -12,8 +12,11 @@
 
 #include "HcSr04KalmanFilter.hpp"
 
-class HcSr04
+namespace miscDevices
 {
+
+    class HcSr04
+    {
     private:
         uint8_t _statusFlags;
 
@@ -50,7 +53,7 @@ class HcSr04
         static std::map<uint, HcSr04 *> _instancesMap;
         static SemaphoreHandle_t _instancesMapSemaphore;
 
-    public :
+    public:
         HcSr04();
         HcSr04(uint8_t triggerPin, uint8_t echoPin);
         ~HcSr04();
@@ -65,6 +68,6 @@ class HcSr04
         void init();
 
         void setCurrentVelocity(float v);
-};
-
+    };
+}
 #endif

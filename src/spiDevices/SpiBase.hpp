@@ -9,34 +9,37 @@
 #define STATUSOK 0;
 #define TIMEOUT 1;
 
-class SpiBase
+namespace spiDevices
 {
-private:
-    static SemaphoreHandle_t _spiMutex;
-    static bool _spiMutexInititalized;
 
-protected:
-    spi_inst_t *_spiInstance;
-    uint8_t _csPin;
-    uint8_t _spiStatus;
+    class SpiBase
+    {
+    private:
+        static SemaphoreHandle_t _spiMutex;
+        static bool _spiMutexInititalized;
 
-    virtual void _initDevice() = 0;
-    virtual void _checkDevice() = 0;
-    void _initCsGpio(uint8_t csPin);
+    protected:
+        spi_inst_t *_spiInstance;
+        uint8_t _csPin;
+        uint8_t _spiStatus;
 
-    uint32_t _spiReadReg(uint8_t reg);
-    uint32_t _spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift);
-    bool _spiWriteReg(uint8_t reg, uint32_t data);
+        virtual void _initDevice() = 0;
+        virtual void _checkDevice() = 0;
+        void _initCsGpio(uint8_t csPin);
 
-public:
-    SpiBase();
-    SpiBase(spi_inst_t *spiInstance, uint8_t csPin);
-    ~SpiBase();
+        uint32_t _spiReadReg(uint8_t reg);
+        uint32_t _spiReadBitField(uint8_t reg, uint32_t mask, uint8_t shift);
+        bool _spiWriteReg(uint8_t reg, uint32_t data);
 
-    static void spiInit(uint8_t sdiPin, uint8_t sdoPin, uint8_t sclkPin, uint16_t baudrateKhz, spi_inst_t *spiInstance);
+    public:
+        SpiBase();
+        SpiBase(spi_inst_t *spiInstance, uint8_t csPin);
+        ~SpiBase();
 
-    uint8_t getStatus() { return this->_spiStatus; };
+        static void spiInit(uint8_t sdiPin, uint8_t sdoPin, uint8_t sclkPin, uint16_t baudrateKhz, spi_inst_t *spiInstance);
 
-};
+        uint8_t getStatus() { return this->_spiStatus; };
+    };
 
+}
 #endif

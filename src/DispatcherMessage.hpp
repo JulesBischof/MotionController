@@ -1,6 +1,6 @@
 #pragma once
 
-namespace nMotionController
+namespace MtnCtrl
 {
     enum class DispatcherTaskId : uint8_t
     {

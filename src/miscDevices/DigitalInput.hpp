@@ -5,18 +5,21 @@
 #include "semphr.h"
 #include <map>
 
-class DigitalInput
+namespace miscDevices
 {
-private:
-    uint8_t _gpio;
-    static std::map<uint8_t, SemaphoreHandle_t> _semaphoresMap;
+    class DigitalInput
+    {
+    private:
+        uint8_t _gpio;
+        static std::map<uint8_t, SemaphoreHandle_t> _semaphoresMap;
 
-public:
-    DigitalInput();
-    DigitalInput(uint8_t gpio);
-    ~DigitalInput();
+    public:
+        DigitalInput();
+        DigitalInput(uint8_t gpio);
+        ~DigitalInput();
 
-    bool getValue();
-};
+        bool getValue();
+    };
 
+}
 #endif // DIGITALINPUT_H

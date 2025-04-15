@@ -6,7 +6,7 @@
 void Icm42670Test(void)
 {
     // init device
-    Icm42670p gyro = Icm42670p(I2C_INSTANCE_DEVICES, I2C_DEVICE_ICM42670P_ADDRESS);
+    i2cDevices::Icm42670p gyro = i2cDevices::Icm42670p(I2C_INSTANCE_DEVICES, I2C_DEVICE_ICM42670P_ADDRESS);
 
     float z_angle = 0.0f;
     uint16_t ticks = 0;

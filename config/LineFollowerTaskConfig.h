@@ -25,7 +25,7 @@
 
 #define LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR (0) // 0 = analog, 1 = digital
 
-#define ENABLE_DATA_OUTPUT_LINEPOS (1) 
+#define ENABLE_DATA_OUTPUT_LINEPOS (0) 
 
 /* ==============================================================
 
@@ -37,10 +37,10 @@
 #define LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG (3500)
 
 // P
-#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (35) // ~30 - 35 analog //~ 13 digital
+#define LINEFOLLERCONFIG_CONTROLLERVALUE_KP (30) // ~30 - 35 analog //~ 13 digital
 
 // D
-#define LINEFOLLERCONFIG_CONTROLLERVALUE_KD (0.7.f) // ~0.7 analog //~ 0.7 digital
+#define LINEFOLLERCONFIG_CONTROLLERVALUE_KD (0.7f) // ~0.7 analog //~ 0.7 digital
 
 /* ==============================================================
 
