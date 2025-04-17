@@ -1,7 +1,5 @@
 #include "Tmc5240.hpp"
 
-#include <cmath>
-
 #include "TMC5240_HW_Abstraction.h"
 #include "Tmc5240Config.h"
 
@@ -10,17 +8,10 @@
 
 namespace spiDevices
 {
-
-    constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
-    constexpr float WHEELCIRCUMFENCE_MM = STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI;
-
-    /* ==================================
+   /* ==================================
           Constructor / Deconstructor
        ================================== */
 
-    /// @brief creates instance of Trinamics TMC5240 stepper driver
-    /// @param spiInstance spi instance - refer pico c/c++ sdk
-    /// @param csPin chip select pin
     Tmc5240::Tmc5240(spi_inst_t *spiInstance, uint8_t csPin, bool stdDir) : SpiBase(spiInstance, csPin)
     {
         _stdDir = stdDir;
@@ -35,17 +26,15 @@ namespace spiDevices
 
     Tmc5240::~Tmc5240()
     {
-        // DECONSTRUCTOR not implemented yet
+        // deconstructor not impemented yet
     }
 
-    /// @brief default constructor Tmc5240 MotorDrives
     Tmc5240::Tmc5240() {}
 
     /* ==================================
                 Init members
        ================================== */
 
-    /// @brief initializes device
     void Tmc5240::_initDevice()
     {
 #if ENABLE_PRINTF_DEBUG_INFO
@@ -68,7 +57,6 @@ namespace spiDevices
 #endif
     }
 
-    /// @brief checks, if the device is still reachable
     void Tmc5240::_checkDevice()
     {
         uint8_t version = _spiReadBitField(TMC5240_INP_OUT, TMC5240_VERSION_MASK, TMC5240_VERSION_SHIFT);
@@ -87,7 +75,6 @@ namespace spiDevices
 #endif
     }
 
-    /// @brief inits Current settings out of StepperConfig.h File
     void Tmc5240::_initCurrentSetting()
     {
         uint32_t DRV_CONF_val = _spiReadReg(TMC5240_DRV_CONF);
@@ -114,7 +101,6 @@ namespace spiDevices
 #endif
     }
 
-    /// @brief initializes stepper drive in SpreadCycle Mode - ref Datasheet
     void Tmc5240::_initSpreadCycle()
     {
         uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
@@ -130,8 +116,6 @@ namespace spiDevices
         return;
     }
 
-    /// @brief writes iRun value to IHOLD_RUN Bitfield
-    /// @param iRun Value from 0 ... 31. 31 = Fullscale current
     void Tmc5240::_setIRun(uint32_t iRun)
     {
         uint32_t IHOLD_IRUN_val = _spiReadReg(TMC5240_IHOLD_IRUN);
@@ -146,10 +130,6 @@ namespace spiDevices
              control targetdevice
        ================================== */
 
-    /// @brief moves Motor to specific location using position mode
-    /// @param xTargetVal ABSOLUTE position! in steps
-    /// @param vmax maximum velocity
-    /// @param amax maxmimum acceleration
     void Tmc5240::moveAbsolutePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
     {
         // activate position mode
@@ -166,10 +146,6 @@ namespace spiDevices
         _spiWriteReg(TMC5240_XTARGET, xTargetVal);
     }
 
-    /// @brief moves Motor to specific location using position mode
-    /// @param xTargetVal RELATIVE position! in steps
-    /// @param vmax maximum velocity
-    /// @param amax maxmimum acceleration
     void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax, bool dir)
     {
         // activate position mode
@@ -201,10 +177,6 @@ namespace spiDevices
         return;
     }
 
-    /// @brief moves motor in velocity mode
-    /// @param direction direction the motor has to turn
-    /// @param vmax maximum velocity TODO: unit???
-    /// @param amax maximum acceleration TODO: unit???
     void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
     {
         // flip direction if std direction ain't matching
@@ -225,8 +197,6 @@ namespace spiDevices
               getters & setters
        ================================== */
 
-    /// @brief performs a dummy write cycle in order to get the devices current spi-statusflags
-    /// @return statusflags
     uint8_t Tmc5240::getCurrentStatusFlag()
     {
         // trigger dummy Register Read
@@ -236,8 +206,6 @@ namespace spiDevices
         return _spiStatus;
     }
 
-    /// @brief sets motor direction
-    /// @param direction true/false
     void Tmc5240::setShaftDirection(bool direction)
     {
         uint32_t GCONF_val = _spiReadReg(TMC5240_GCONF);
@@ -247,8 +215,6 @@ namespace spiDevices
         return;
     }
 
-    /// @brief reads out xActual register
-    /// @return actual steps
     int32_t Tmc5240::getXActual()
     {
         int32_t retVal = _spiReadReg(TMC5240_XACTUAL);
@@ -260,8 +226,6 @@ namespace spiDevices
         return _spiReadReg(TMC5240_VMAX);
     }
 
-    /// @brief sets IRUN based on a percentage value
-    /// @param percent percantage value from 0 ... 100
     void Tmc5240::setRunCurrent(uint8_t percent)
     {
         if (percent > 100)
@@ -277,8 +241,6 @@ namespace spiDevices
         _setIRun(value);
     }
 
-    /// @brief disables Driver
-    /// @param val false for disable! true to set Toff out of config header
     void Tmc5240::toggleToff(bool val)
     {
         uint32_t chopConfValue = _spiReadReg(TMC5240_CHOPCONF);
@@ -292,8 +254,6 @@ namespace spiDevices
         _spiWriteReg(TMC5240_CHOPCONF, chopConfValue);
     }
 
-    /// @brief checks StatusFlgs if standstill status flags are set
-    /// @return true if driver is in standstill
     bool Tmc5240::checkForStandstill()
     {
         if (getStatus() & TMC5240_SPI_STATUS_POSITION_REACHED_MASK)
@@ -313,52 +273,4 @@ namespace spiDevices
     {
         _spiWriteReg(TMC5240_GSTAT, 0x1F);
     }
-
-    /* ==================================
-             some static helpers
-       ================================== */
-
-    /// @brief convert mm to usteps
-    /// @param distance distance in [mm]
-    /// @return microsteps
-    int32_t Tmc5240::convertDistanceMmToMicrosteps(float distance)
-    {
-        float res = (distance / WHEELCIRCUMFENCE_MM) * MICROSTEPSPERREVOLUTION;
-
-        int32_t retVal = static_cast<int32_t>(std::round(res));
-        return retVal;
-    }
-
-    /// @brief convert ustep/s in cm
-    /// @param uSteps microsteps
-    /// @return Distance in Centimeter
-    int32_t Tmc5240::convertMicrostepsToCentimeter(uint32_t uSteps)
-    {
-        float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE_MM;
-
-        int32_t retVal = static_cast<int32_t>(std::round(res));
-        return retVal;
-    }
-
-    /// @brief convert degree to microsteps
-    /// @param degrees float degrees
-    /// @return value of Microsteps
-    int32_t Tmc5240::convertDegreeToMicrosteps(int32_t degrees)
-    {
-        float usps = (degrees / 360.0f) * MICROSTEPS_PER_REVOLUTION;
-        return static_cast<int32_t>(round(usps));
-    }
-
-    /// @brief calcs rotatinal angle given by driven distances of 2 wheels on one axis
-    /// @param uStepsDifference step difference in Microsteps!
-    /// @return angle
-    float Tmc5240::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
-    {
-        float dsMeters = convertMicrostepsToCentimeter(uStepsDifference) * 1e2;
-
-        float res = (dsMeters * 180.0f) / (WHEELCIRCUMFENCE_MM);
-
-        return res;
-    }
-
 }

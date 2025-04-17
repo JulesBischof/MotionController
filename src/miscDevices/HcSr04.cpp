@@ -3,6 +3,8 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+#include "HcSr04Config.hpp"
+
 namespace miscDevices
 {
 
@@ -28,9 +30,6 @@ namespace miscDevices
             Constructor / Deconstructor
        ================================== */
 
-    /// @brief creates instance of HCSR04 Ultrasonic distance-Sensor
-    /// @param triggerPin GPIO conntected to trigger
-    /// @param echoPin GPIO connected to echo
     HcSr04::HcSr04(uint8_t triggerPin, uint8_t echoPin)
         : _triggerPin(triggerPin), _echoPin(echoPin)
     {
@@ -155,21 +154,23 @@ namespace miscDevices
 
     void HcSr04::_HcSr04Task()
     {
-        absolute_time_t lastTriggerTime = get_absolute_time();
-
         while (true)
         {
-            // get time increment
-            absolute_time_t timeDiff = absolute_time_diff_us(lastTriggerTime, get_absolute_time());
-            lastTriggerTime = get_absolute_time();
-            float dt = static_cast<float>(timeDiff) / 1e6; // us -> s
-
-            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
             _trigger();
 
+#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
+            static absolute_time_t lastTriggerTime = get_absolute_time();
+            absolute_time_t timeDiff = absolute_time_diff_us(lastTriggerTime, get_absolute_time());
+            lastTriggerTime = get_absolute_time();
+            float dt = static_cast<float>(timeDiff) / 1e6; // us -> s
+#endif
+
+            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
             uint32_t rawTimeDiff = 0;
             float distance = INITIAL_DISTANCE;
+            float value = 500;
 
             if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(100)) == pdTRUE)
             {
@@ -181,13 +182,23 @@ namespace miscDevices
                 /* TIMEOUT ERROR ??? */
             }
 
-            // printf("%f\n", distance); -- debug - get raw values
-
+#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
             _kalmanFilter.setVelocity(_getCurrentVelocity());
             _kalmanFilter.update(distance, dt);
-            float _filteredValue = _kalmanFilter.getDistance();
+            value = _kalmanFilter.getDistance();
+#endif
 
-            xQueueOverwrite(_queueHandle, &_filteredValue);
+#if HCSR04CONFIG_USE_RAW_VALUES == (1)
+            value = distance;
+#endif
+
+#if HCSR04CONFIG_USE_LOW_PASS_IIR == (1)
+            static float lastVal = 500;
+
+            value = HCSR04CONFIG_LOW_PASS_IIR_ALPHA *distance + (1.f - HCSR04CONFIG_LOW_PASS_IIR_ALPHA) * lastVal;
+            lastVal = distance;
+#endif
+            xQueueOverwrite(_queueHandle, &value);
         }
 
         /* never reached */
@@ -212,7 +223,6 @@ namespace miscDevices
         return buffer;
     }
 
-    /// @brief pulls the trigger pin
     void HcSr04::_trigger()
     {
         // TODO: trigger pin by PIO possible ???
@@ -263,9 +273,6 @@ namespace miscDevices
                 IRQ-Handler
        ================================== */
 
-    /// @brief irq callback function for echo-pin interrupt.
-    /// @param gpio gpio that triggered the interrupt
-    /// @param events falling or rising edge
     void HcSr04::_hcSr04GlobalIrq(uint gpio, uint32_t events)
     {
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -283,11 +290,8 @@ namespace miscDevices
                 instance->_hcSr04InstanceIrq(gpio, events);
             }
         }
-    }
+    } // end global isr
 
-    /// @brief instances personal irq handler. Gets triggered by global isr handler
-    /// @param gpio gpio that triggered the event
-    /// @param events event such as gpio rising or falling edge
     void HcSr04::_hcSr04InstanceIrq(uint gpio, uint32_t events)
     {
         static absolute_time_t risingEdge = 0;
@@ -315,5 +319,5 @@ namespace miscDevices
         {
             portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
         }
-    }
+    } // end instance isr
 }

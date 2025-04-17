@@ -11,8 +11,8 @@ namespace MtnCtrl
     /* ================================= */
     /*            consts                 */
     /* ================================= */
-    constexpr float V_MAX_IN_MMPS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC) / MICROSTEPS_PER_REVOLUTION;    // mm per second
-    constexpr float A_MAX_IN_MMPSS = (STEPPERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
+    constexpr float V_MAX_IN_MMPS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_VMAX_STEPSPERSEC) / MICROSTEPS_PER_REVOLUTION;    // mm per second
+    constexpr float A_MAX_IN_MMPSS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
 
     /* ================================= */
     /*           status Flags            */

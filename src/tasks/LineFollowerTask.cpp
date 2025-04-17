@@ -9,12 +9,10 @@
 #include "queue.h"
 #include "task.h"
 
-#include "TMC5240_HW_Abstraction.h"
-
 #include "LineFollowerTaskConfig.h"
-#include "Tmc5240Config.h"
-
 #include "LineFollowerTaskStatusFlags.hpp"
+
+#include "StepperService.hpp"
 
 namespace MtnCtrl
 {
@@ -114,7 +112,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDistance:
-                    dataContainer = static_cast<uint64_t>(_getDrivenDistance(drivenDistanceDriver0, drivenDistanceDriver1));
+//                    dataContainer = static_cast<uint64_t>(_getDrivenDistance(drivenDistanceDriver0, drivenDistanceDriver1));
 
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
@@ -136,7 +134,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDegree:
-                    dataContainer = static_cast<uint64_t>(_getRotationRelativeToStart());
+//                    dataContainer = static_cast<uint64_t>(_getRotationRelativeToStart());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDegree,
@@ -160,38 +158,4 @@ namespace MtnCtrl
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
         }
     } // end Task
-
-    /* ================================= */
-    /*       getters & Conversion        */
-    /* ================================= */
-
-    /// @brief Basic implementation to get the relative rotation of the vehicle seen from startpoint
-    /// @return degree * 10
-    int32_t MotionController::_getRotationRelativeToStart()
-    {
-        int32_t xActualDriver0 = _driver0.getXActual();
-        int32_t xActualDriver1 = _driver1.getXActual();
-
-        int32_t ds = xActualDriver0 - xActualDriver1;
-
-        float degree = spiDevices::Tmc5240::convertDeltaDrivenDistanceToDegree(ds);
-
-        // times 10 due to prain_uart protocoll! ( e.g. 180° => send 1800 in protocoll )
-        int32_t retVal = static_cast<int32_t>(std::round(degree * 10));
-        return retVal;
-    }
-
-    /// @brief calc mean value of driven distance
-    /// @param drivenDistanceDirver0 driven Distance driver0 [MICROSTEPS]
-    /// @param drivenDistanceDirver1 driven Distance driver1 [MICROSTEPS]
-    /// @return mean Value of driven distance
-    int32_t MotionController::_getDrivenDistance(int32_t drivenDistanceDirver0, int32_t drivenDistanceDirver1)
-    {
-        float d1 = static_cast<float>(drivenDistanceDirver0);
-        float d2 = static_cast<float>(drivenDistanceDirver1);
-        int32_t res = static_cast<int32_t>(std::round((d1 + d2) / 2)); // get mean value
-
-        int32_t distance = spiDevices::Tmc5240::convertMicrostepsToCentimeter(res);
-        return distance;
-    }
 }

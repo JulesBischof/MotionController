@@ -14,7 +14,7 @@
 
 namespace miscDevices
 {
-
+    /// @brief Class Represents an instance of a HCSR04 Ultrasonic Sensor 
     class HcSr04
     {
     private:
@@ -41,6 +41,8 @@ namespace miscDevices
         void _initHcSr04Queue();
 
         TaskHandle_t _taskHandle;
+        /// @brief FreeRTOS expects static function pointers. This Wrapper calls an instances method 
+        /// @param pv object instance HcSr04
         static void _HcSr04TaskWrapper(void *pv);
         void _HcSr04Task();
 
@@ -50,23 +52,36 @@ namespace miscDevices
 
         uint32_t _getHcSr04RawTimeDiff();
 
+        /// @brief look up table for ISR - Who's echo pin called the isr? 
         static std::map<uint, HcSr04 *> _instancesMap;
         static SemaphoreHandle_t _instancesMapSemaphore;
 
     public:
+        /// @brief default ctor
         HcSr04();
+
+        /// @brief creates an instance ot HcSr04. Is OK to call before FreeRTOS scheduler is running
+        /// @param triggerPin Pin connected to HcSr04 trigger
+        /// @param echoPin Pin connected to HcSr04 eco
         HcSr04(uint8_t triggerPin, uint8_t echoPin);
         ~HcSr04();
 
+        /// @brief initializes sensortask as well as ISR's. !!! needs to be called AFTER scheduler is running !!!
         void initMeasurmentTask();
 
+        /// @brief triggers a new measurment cycle
         void triggerNewMeasurment();
+
+        /// @brief reads result of last measurment
+        /// @return last distance in mm
         float getSensorData();
 
+        /// @brief getter for HcSr04 status Flags
+        /// @return status Flags
         uint8_t getStatusFlags() { return _statusFlags; }
 
-        void init();
-
+        /// @brief updates the Kalmann Filter state modell
+        /// @param v current velocity in usteps/t (TMC5240 values!)
         void setCurrentVelocity(float v);
     };
 }

@@ -4,7 +4,6 @@
 
 namespace MtnCtrl
 {
-    /// @brief main Loop message dispatcher. Reorders datapackage to receiving task.  
     void MotionController::_messageDispatcherTask()
     {
         // get QueueHandles

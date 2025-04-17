@@ -10,9 +10,6 @@ namespace miscDevices
           constructor / deconstructor
        ================================== */
 
-    /// @brief creates an instance of LineSensor
-    /// @param adcInstance Instance of ADC - with whom the cell values can be read
-    /// @param uvGpio gpio connected to the UV-Tx - LEDs
     LineSensor::LineSensor(i2cDevices::Tla2528 *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
     {
         _status = 0;
@@ -32,7 +29,6 @@ namespace miscDevices
                 init Members
        ================================== */
 
-    /// @brief initializes UV-Transmitter
     void LineSensor::_initUvLed()
     {
         gpio_init(_uvGpio);
@@ -147,8 +143,6 @@ namespace miscDevices
         return linePosition;
     }
 
-    /// @brief get Line Position as an Analog value - see LineSensorConfig.h for maximum value
-    /// @return lineposition
     uint32_t LineSensor::getLinePositionAnalog()
     {
         // get ADC-value
@@ -218,8 +212,6 @@ namespace miscDevices
         return linePosition;
     }
 
-    /// @brief toggles UV-Transmitter due to safety reasons (UV is bad for your Eyes)
-    /// @param state state the led should be toggled to
     void LineSensor::_toggleUvLed(bool state)
     {
         gpio_put(_uvGpio, state);

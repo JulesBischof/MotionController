@@ -4,8 +4,6 @@
 
 namespace miscDevices
 {
-
-    /// @brief
     DigitalOutput::DigitalOutput()
     {
         /* default ctor */

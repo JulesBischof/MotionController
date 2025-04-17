@@ -7,6 +7,7 @@
 
 namespace miscDevices
 {
+    /// @brief Object that represents a Digital Input with it's states. Reentrant
     class DigitalInput
     {
     private:

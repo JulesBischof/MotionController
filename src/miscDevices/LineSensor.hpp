@@ -14,6 +14,7 @@ namespace miscDevices
         LINESENSOR_NO_LINE = 1 << 3
     } LineSensorStatus_t;
 
+    /// @brief Object that represents the self made LineFollower
     class LineSensor
     {
     private:
@@ -26,18 +27,40 @@ namespace miscDevices
         uint16_t _calibValuesLow[NUMBER_OF_CELLS];
         uint16_t _calibValuesHigh[NUMBER_OF_CELLS];
 
+        /// @brief normalizes raw Values of the Line Sensor into range 0 ... 1000
+        /// @param val single Cell raw Sensor value 
+        /// @param calibMin calibration minimum value
+        /// @param calibMax calibration maximum value
+        /// @return 
         static uint16_t _minMaxNormalize(uint16_t val, uint16_t calibMin, uint16_t calibMax);
+
+        /// @brief turns either on or off UV-tx LED's
+        /// @param state true = LED's on; false = LED's off;
         void _toggleUvLed(bool state);
+
+        /// @brief initializes default calibration to LineSensor
         void _initDefaultCalibration();
+
+        /// @brief initializes UV-Transmitter
         void _initUvLed();
 
     public:
+        /// @brief default ctor
         LineSensor();
 
+        /// @brief creates an instance of LineSensor
+        /// @param adcInstance Instance of ADC - with whom the cell values can be read
+        /// @param uvGpio gpio connected to the UV-Tx - LEDs
         LineSensor(i2cDevices::Tla2528 *adcInstance, uint8_t uvGpio);
+        
         ~LineSensor();
 
+        /// @brief get Line Position as an Digital Value.
+        /// @return -4 ... 4  ;  0 = Line in middle Position
         int8_t getLinePositionDigital();
+
+        /// @brief get Line Position as an Analog value - see LineSensorConfig.h for maximum value
+        /// @return lineposition
         uint32_t getLinePositionAnalog();
         uint8_t getStatus() { return _status; };
     };

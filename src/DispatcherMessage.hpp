@@ -50,6 +50,7 @@ namespace MtnCtrl
         TaskCommand command;
         alignas(8) uint32_t data[2];
 
+        /// @brief constructor creates a Dispatcher Message MessageBlock with default values
         DispatcherMessage()
             : senderTaskId(DispatcherTaskId::NoTask),
               receiverTaskId(DispatcherTaskId::NoTask),
@@ -57,6 +58,12 @@ namespace MtnCtrl
               data{0, 0}
         {
         }
+
+        /// @brief creates a Dispatcher Messager 
+        /// @param sender sender Task ID
+        /// @param receiver reciever Task ID
+        /// @param cmd Command to Send
+        /// @param d Data to send (64bit)
         DispatcherMessage(DispatcherTaskId sender, DispatcherTaskId receiver, TaskCommand cmd, uint64_t d)
             : senderTaskId(sender), receiverTaskId(receiver), command(cmd) { setData(d); }
 

@@ -43,9 +43,7 @@ namespace MtnCtrl
              Init Members
    ================================== */
 
-    /// @brief initializes all GPIOs and Communication Channels connected to the MotionController
-    /// @return NOT IMPLEMENTED YET
-    bool MotionController::_initHardware()
+    void MotionController::_initHardware()
     {
         /* ---------- UART ---------- */
         gpio_set_function(Tx_UART0, UART_FUNCSEL_NUM(UART_INSTANCE_RASPBERRYHAT, Tx_UART0));
@@ -82,10 +80,9 @@ namespace MtnCtrl
         _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
         /* ERROR HANDLING ??? */
-        return true;
+        return;
     }
 
-    /// @brief initializes all Classmembers such as sensors and drivers
     void MotionController::_initPeripherals()
     {
         _driver0 = spiDevices::Tmc5240(TMC5240_SPI_INSTANCE, SPI_CS_DRIVER_0, 1);
@@ -117,9 +114,7 @@ namespace MtnCtrl
         return;
     }
 
-    /// @brief initializes all Queues used for intertask communication
-    /// @return true if all queues got created successfully
-    bool MotionController::_initQueues()
+    void MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
@@ -130,12 +125,10 @@ namespace MtnCtrl
             for (;;)
             { /* ERROR??? */
             }
-            return false; // never reached
         }
-        return true;
+        return;
     }
 
-    /// @brief initializes UART0 channel Rx-ISR - neccessary for RaspberryHat Communication
     void MotionController::_initUart0Isr()
     {
         // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
@@ -154,9 +147,6 @@ namespace MtnCtrl
              UART concerning Methods
        ================================== */
 
-    /// @brief sends one package of data using the prain_uart library
-    /// @param data frame of data which is supposed to be send. Needs to be pre-encoded using the encoder-class!
-    /// @param uartId Uart-Channel: uart0 -> RaspberryHat, uart1-> GripController
     void MotionController::sendUartMsg(frame *data, uart_inst_t *uartId)
     {
         // cpy value from data pointer
@@ -174,9 +164,6 @@ namespace MtnCtrl
         return;
     }
 
-    /// @brief Flushes Uart TxChannel after one package of data was send.
-    /// @param uart uart id: uart1/uart0
-    /// @param timeout_ms timeout in ms
     void MotionController::_uartFlushTxWithTimeout(uart_inst_t *uart, uint32_t timeout_ms)
     {
         uint8_t msTicks = 0;
@@ -195,7 +182,6 @@ namespace MtnCtrl
         return;
     }
 
-    /// @brief handles incoming messages. Does not decode data but sends Decode command to RaspberryComTask
     void MotionController::_uart0RxIrqHandler()
     {
         /* some message arrived!! send read command to RaspberryHatComQueue
@@ -227,8 +213,6 @@ namespace MtnCtrl
           start Task and Methodwrapper
        ================================== */
 
-    /// @brief represents a wrapper for the LineFollowerTask due to FreeRTOS only takes static methods
-    /// @param pvParameters void ptr contains MotionController Instance
     void MotionController::_LineFollerTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
@@ -249,8 +233,6 @@ namespace MtnCtrl
         }
     }
 
-    /// @brief represents a wrapper for the RaspberryComTask due to FreeRTOS only takes static methods
-    /// @param pvParameters void ptr contains MotionController Instance
     void MotionController::_RaspberryComTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
@@ -271,8 +253,6 @@ namespace MtnCtrl
         }
     }
 
-    /// @brief represents a wrapper for the MessageDispatcherTast due to FreeRTOS only takes static methods
-    /// @param pvParameters void ptr contains MotionController Instance
     void MotionController::_MessageDispatcherTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
@@ -292,7 +272,6 @@ namespace MtnCtrl
         }
     }
 
-    /// @brief initializes all Tasks running inside MotionController and starts the Scheduler
     void MotionController::startScheduler()
     {
         _startLineFollowerTask();
@@ -310,22 +289,16 @@ namespace MtnCtrl
                 getters & setters
        ================================== */
 
-    /// @brief get QueueHandle of RaspberryHatComTask
-    /// @return QueueHandle
     QueueHandle_t MotionController::getRaspberryHatComQueue()
     {
         return _raspberryHatComQueue;
     }
 
-    /// @brief get QueueHandle of LineFollowerQueue
-    /// @return QueueHandle
     QueueHandle_t MotionController::getLineFollowerQueue()
     {
         return _lineFollowerQueue;
     }
 
-    /// @brief get QueueHandle of MessageDispatcherQueue
-    /// @return QueueHandle
     QueueHandle_t MotionController::getMessageDispatcherQueue()
     {
         return _messageDispatcherQueue;

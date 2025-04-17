@@ -33,6 +33,16 @@ namespace MtnCtrl
 
         bool LineFollowerStm::run()
         {
+            // make sure that the state machine is not called too often
+            static TickType_t lastRunTick = 0;
+            TickType_t now = xTaskGetTickCount();
+            if ((now - lastRunTick) < pdMS_TO_TICKS(LINEFOLLOWERTASKCONFIG_HCSR04_POLLING_RATE_MS))
+            {
+                return false;
+            }
+            lastRunTick = now;
+
+            // now run state maschine
             bool retVal = false;
 
             DispatcherMessage msg;
@@ -154,15 +164,14 @@ namespace MtnCtrl
         /// @return returns controller parameter u as output
         int32_t LineFollowerStm::_controllerC(int32_t e)
         {
-            static int32_t last_e = 0;
-
-#if LINEFOLLERCONFIG_USE_P_CONTROLLER == (1) && LINEFOLLERCONFIG_USE_PD_CONTROLLER == (0)
+#if LINEFOLLERCONFIG_USE_P_CONTROLLER == (1)
             // P-Type Controller
             int32_t u = 0; // default 0
             u = e * LINEFOLLERCONFIG_CONTROLLERVALUE_KP;
 #endif
 
-#if LINEFOLLERCONFIG_USE_P_CONTROLLER == (0) && LINEFOLLERCONFIG_USE_PD_CONTROLLER == (1)
+#if LINEFOLLERCONFIG_USE_PD_CONTROLLER_DIGITAL == (1)
+            static int32_t last_e = 0;
             // D-Controller with low Pass Filter
             int32_t u = 0; // default 0
 
@@ -172,6 +181,19 @@ namespace MtnCtrl
             u = LINEFOLLERCONFIG_CONTROLLERVALUE_KP * e + LINEFOLLERCONFIG_CONTROLLERVALUE_KD * deltaE;
 #endif
 
+#if LINEFOLLERCONFIG_USE_PD_CONTROLLER_Z_TRANSFORM == (1)
+            static double last_e = 0;
+            static double last_u = 0;
+
+            double res = LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_A1 * e +
+                         LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_A2 * last_e -
+                         LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_B2 * last_u;
+
+            int32_t u = static_cast<int32_t>(res);
+
+            last_e = e;
+            last_u = u;
+#endif
             int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
             return retVal;
         } // end ControllerC
