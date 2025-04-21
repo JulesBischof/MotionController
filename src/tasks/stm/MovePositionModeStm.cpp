@@ -4,6 +4,7 @@
 #include "LineFollowerTaskStatusFlags.hpp"
 
 #include "Tmc5240.hpp"
+#include "StepperService.hpp"
 
 namespace MtnCtrl
 {
@@ -49,7 +50,7 @@ namespace MtnCtrl
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 // now send position request to drives
-                _movePositionMode(spiDevices::Tmc5240::convertDistanceMmToMicrosteps(lastMsgData));
+                _movePositionMode(spiDevices::StepperService::convertDistanceMmToMicrosteps(lastMsgData));
                 // now wait for standstill
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
                 break;
@@ -165,7 +166,7 @@ namespace MtnCtrl
             float ds = num / dnum;
 
             // unit conversion mm -> uSteps
-            int32_t nStepsDriver = spiDevices::Tmc5240::convertDistanceMmToMicrosteps(ds);
+            int32_t nStepsDriver = spiDevices::StepperService::convertDistanceMmToMicrosteps(ds);
 
             // move drives in different directions
             _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);

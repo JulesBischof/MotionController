@@ -27,7 +27,10 @@ namespace MtnCtrl
         PollDegree,
         PollStatusFlags,
         HandThroughMessage,
-        DecodeMessage
+        DecodeMessage,
+        CraneGrip,
+        CraneRelease,
+        GcAck
     };
 
     enum class TaskInfo : uint8_t
