@@ -1,10 +1,10 @@
-#include "LineSensorTest.h"
+#include "LineSensorTest.hpp"
 
-#include "TestConfig.h"
+#include "TestConfig.hpp"
 
 #include "LineSensor.hpp"
-#include "MotionControllerConfig.h"
-#include "MotionControllerPinning.h"
+#include "MotionControllerConfig.hpp"
+#include "MotionControllerPinning.hpp"
 
 #include "Tla2528.hpp"
 

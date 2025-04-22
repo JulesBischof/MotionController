@@ -46,7 +46,8 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::RaspberryHatComTask,
                     TaskCommand::Info,
-                    *_statusFlags);
+                    *_statusFlags >> 16); // upper 16 bits = info Flags
+
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 { /* ERROR!!?? */
                 }

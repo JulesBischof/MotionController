@@ -148,8 +148,8 @@ echo.
   attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Portable.h"     >nul
   attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Projdefs.h"     >nul
   attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Queue.h"        >nul
-  attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Semphr.h"       >nul
-  attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Task.h"         >nul
+  attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Semphr.hpp"       >nul
+  attrib +R "%FEDLIBSUSER%\libFreeRTOS\Include\Task.hpp"         >nul
   attrib +R "%FEDLIBSUSER%\FreeRTOS.h"                         >nul
   echo   Done
 

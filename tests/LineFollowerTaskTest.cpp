@@ -1,7 +1,7 @@
 #include "LineFollowerTaskTest.hpp"
 
 #include "MotionController.hpp"
-#include "TestConfig.h"
+#include "TestConfig.hpp"
 
 #include "FreeRTOS.h"
 #include "task.h"

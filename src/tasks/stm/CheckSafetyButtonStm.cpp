@@ -2,7 +2,7 @@
 
 #include "DispatcherMessage.hpp"
 
-#include "LineFollowerTaskConfig.h"
+#include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
 namespace MtnCtrl

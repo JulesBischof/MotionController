@@ -1,9 +1,8 @@
 #include "HandleBarrierStm.hpp"
 
-#include "LineFollowerTaskConfig.h"
+#include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
-#include "DispatcherMessage.hpp"
 #include "LineSensorService.hpp"
 
 namespace MtnCtrl
@@ -53,7 +52,7 @@ namespace MtnCtrl
                 break;
 
             case HandleBarrierStmState::CHECK_DISTANCE:
-                if (distance < BRAKEDISTANCE_BARRIER_IN_MM)
+                if (distance < BRAKEDISTANCE_BARRIER_IN_MM) // BRAKEDISTANCE_BARRIER_IN_MM
                 {
                     // stop drives and start Barrier Detected state maschine
                     msg = DispatcherMessage(
@@ -81,11 +80,12 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Turn,
-                    static_cast<int32_t>(miscDevices::LineSensorService::getVehicleRotation(_lineSensor) * 10));
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
-                { /* ERROR!!?? */
-                }
+                    miscDevices::LineSensorService::getVehicleRotation(_lineSensor));
+                // if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                // { /* ERROR!!?? */
+                // }
 
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_1;
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_1:
@@ -97,10 +97,10 @@ namespace MtnCtrl
 
             case HandleBarrierStmState::POSITION_DISTANCE:
                 // barrier is out of tolerance?
-                if ((distance < LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm ||
-                     distance > LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm + LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm))
+                if ((distance < LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm ||
+                     distance > LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm + LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm))
                 {
-                    int32_t corrPos = (LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - distance);
+                    int32_t corrPos = (distance - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm);
                     // correct postion
                     msg = DispatcherMessage(
                         DispatcherTaskId::LineFollowerTask,
@@ -111,7 +111,6 @@ namespace MtnCtrl
                     { /* ERROR!!?? */
                     }
                 }
-
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
                 break;
 
@@ -235,8 +234,6 @@ namespace MtnCtrl
             default:
                 break;
             }
-
-            _hcSr04->triggerNewMeasurment();
             return retVal;
         }
 
@@ -265,6 +262,12 @@ namespace MtnCtrl
             case TaskCommand::GcAck:
                 lastMsgData = msgData;
                 _gcAck = true;
+                break;
+
+            case TaskCommand::Stop:
+                lastMsgData = msgData;
+                _state = HandleBarrierStmState::IDLE;
+                *_statusFlags &= ~(uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED;
                 break;
             default:
                 /* ERROR shouldnt be reached */

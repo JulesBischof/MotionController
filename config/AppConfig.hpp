@@ -11,5 +11,7 @@
 
 #define ENABLE_PRINTF_DEBUG_INFO (0)
 
+#define SIMULATE_GRIPCONTROLL (0)
+
 
 #endif // APPCONFIG_H

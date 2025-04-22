@@ -1,7 +1,7 @@
 #include "StepperService.hpp"
 
-#include "LineFollowerTaskConfig.h"
-#include "Tmc5240Config.h"
+#include "LineFollowerTaskConfig.hpp"
+#include "Tmc5240Config.hpp"
 #include <cmath>
 #include "pico/stdlib.h"
 

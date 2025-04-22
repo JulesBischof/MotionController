@@ -1,6 +1,6 @@
 #include "MotionController.hpp"
 
-#include "MessageDispatcherTaskConfig.h"
+#include "MessageDispatcherTaskConfig.hpp"
 
 namespace MtnCtrl
 {

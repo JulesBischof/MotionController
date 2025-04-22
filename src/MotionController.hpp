@@ -38,14 +38,13 @@ namespace MtnCtrl
         /// @return true if all queues got created successfully
         void _initQueues();
 
-
-        void _initUart0Isr();
+        void _initUartRxIsr(uart_inst_t *uartId, void (*callback)());
 
         /// @brief initializes all Classmembers such as sensors and drivers
         void _initPeripherals();
 
-        static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue;
-        TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle;
+        static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue, _gripControllerComQueue;
+        TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle, _gripControllerTaskHandle;
 
         // peripherals
         spiDevices::Tmc5240 _driver0, _driver1;
@@ -57,6 +56,7 @@ namespace MtnCtrl
 
         void _lineFollowerTask();
         void _raspberryHatComTask();
+        void _gripControllerComTask();
         void _messageDispatcherTask();
 
         /// @brief main loop LineFollowerTask. Checks on Barrierdistance as  well as on linepossition and moves vehicle accordingly
@@ -64,21 +64,28 @@ namespace MtnCtrl
         
         /// @brief main loop rapberryHatComTask. either waits on uart0 Rx Interrupts or waits on incoming Tx-commands
         void _startRaspberryHatComTask();
-        
+
+        /// @brief main loop rapberryHatComTask. either waits on uart0 Rx Interrupts or waits on incoming Tx-commands
+        void _startGripControllerComTask();
+
         /// @brief main loop MessageDispatcherTask. Takes Messages and Routes them accordingly to the Reciever
         void _startMessageDispatcherTask();
 
         /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task. 
         /// @param pvParameters MotionController Instance
-        static void _LineFollerTaskWrapper(void *pvParameters);
+        static void _lineFollerTaskWrapper(void *pvParameters);
         
         /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
         /// @param pvParameters MotionController Instance
-        static void _RaspberryComTaskWrapper(void *pvParameters);
-        
+        static void _raspberryComTaskWrapper(void *pvParameters);
+
         /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
         /// @param pvParameters MotionController Instance
-        static void _MessageDispatcherTaskWrapper(void *pvParameters);
+        static void _gripControllerComTaskWrapper(void *pvParameters);
+
+        /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
+        /// @param pvParameters MotionController Instance
+        static void _messageDispatcherTaskWrapper(void *pvParameters);
 
         // lineFollower members
         stm::HandleBarrierStm _handleBarrierStm;
@@ -86,8 +93,6 @@ namespace MtnCtrl
         stm::LineFollowerStm _lineFollowerStm;
         stm::MovePositionModeStm _movePositionModeStm;
         stm::SendStatusFlagsStm _sendStatusFlagsStm;
-
-        // raspberryHatCom relevant members
 
         /// @brief reads out UART channel and copys raw frame into a DispatcherMessage Format
         /// @param uartId uart channel - either uart0 or uart1
@@ -106,7 +111,7 @@ namespace MtnCtrl
 
         /// @brief handles incoming messages. Does not decode data but sends Decode command to RaspberryComTask
         static void _uart0RxIrqHandler();
-        // static void _uart1RxIrqHandler();
+        static void _uart1RxIrqHandler();
 
     public:
         /// @brief default ctor
@@ -119,7 +124,11 @@ namespace MtnCtrl
         /// @brief getter RaspberryHatComQueue
         /// @return QueueHandle for RaspberryHatComQueue
         static QueueHandle_t getRaspberryHatComQueue();
-        
+
+        /// @brief getter RaspberryHatComQueue
+        /// @return QueueHandle for RaspberryHatComQueue
+        static QueueHandle_t getGripControllerComQueue();
+
         /// @brief getter LineFollowerQueue
         /// @return QueueHandle for LineFollowerQueue
         static QueueHandle_t getLineFollowerQueue();

@@ -1,7 +1,7 @@
 #include "Tmc5240.hpp"
 
 #include "TMC5240_HW_Abstraction.h"
-#include "Tmc5240Config.h"
+#include "Tmc5240Config.hpp"
 
 #include "pico/stdlib.h"
 #include <stdio.h>
@@ -256,11 +256,8 @@ namespace spiDevices
 
     bool Tmc5240::checkForStandstill()
     {
-        if (getStatus() & TMC5240_SPI_STATUS_POSITION_REACHED_MASK)
-        {
-            return true;
-        }
-        return false;
+        // return _spiReadBitField(TMC5240_DRVSTATUS, TMC5240_STST_MASK, TMC5240_STST_SHIFT);
+        return _spiReadBitField(TMC5240_VACTUAL, TMC5240_VACTUAL_MASK, TMC5240_VACTUAL_SHIFT) == 0;
     }
 
     uint32_t Tmc5240::getGSTAT()

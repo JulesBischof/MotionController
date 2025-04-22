@@ -161,7 +161,7 @@ namespace miscDevices
 
         uint8_t lineCounter = 0;
 
-        volatile uint16_t normValues[NUMBER_OF_CELLS] = {0};
+        uint16_t normValues[NUMBER_OF_CELLS] = {0};
 
         // normalize and invert ADC values
         // invert values due to sensor is low active
@@ -175,11 +175,22 @@ namespace miscDevices
             }
         }
 
-        // check if there is a Line
+        static uint8_t noLineCounter = 0;
+
+        // if there is no line - count until LINECOUNTER_MAX_VALUE
         if (!lineCounter)
         {
+            noLineCounter++;
+        }
+        else
+        {
+            noLineCounter = 0;
+        }
+
+        // if there is still no line - set status to no line detected
+        if (!lineCounter && noLineCounter >= LINECOUNTER_MAX_VALUE)
+        {
             _status |= LINESENSOR_NO_LINE;
-            return LINESENSOR_MIDDLE_POSITION;
         }
         else
         {
@@ -203,7 +214,7 @@ namespace miscDevices
 
         if (!denumerator)
         {
-            printf("LineSensor Read Analog DIVIDE ZERO!");
+            printf("LineSensor Read Analog DIVIDE ZERO!\n");
             _status |= LINESENSOR_ERROR;
             return LINESENSOR_MIDDLE_POSITION;
         }

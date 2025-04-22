@@ -1,7 +1,5 @@
 #include "Icm42670p.hpp"
-
-#include "Icm42670p_HW_Abstraction.h"
-#include "Icm42670pConfig.h"
+#include "Icm42670pConfig.hpp"
 
 #include <stdio.h>
 

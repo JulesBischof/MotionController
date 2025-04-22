@@ -40,12 +40,17 @@ namespace miscDevices
 
         /// @brief updates the Kalmann Filter with a new value
         /// @param z new sensor data
-        /// @param dt time increment since last measurment
+        /// @param dt time increment since last measurment in ms
         void update(float z, float dt);
 
         /// @brief get the current value the Filter is able to print
+        /// @param dt time increment since last measurment in ms
         /// @return current distance in mm
-        float getDistance();
+        float getDistancePredicted(float dt);
+
+        /// @brief get the current value the Filter is able to print
+        /// @return current distance in mm
+        float getDistance() { return _distance; }
     };
 
 }

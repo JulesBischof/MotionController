@@ -108,8 +108,11 @@ namespace miscDevices
         _correctionPhase(z);
     }
 
-    float HcSr04KalmanFilter::getDistance()
+    float HcSr04KalmanFilter::getDistancePredicted(float dt)
     {
+        setDt(dt);
+        _predictionPhase();
         return _distance;
     }
 }
+ 

@@ -1,7 +1,7 @@
-#include "HcSr04Test.h"
+#include "HcSr04Test.hpp"
 
 #include "HcSr04.hpp"
-#include "MotionControllerPinning.h"
+#include "MotionControllerPinning.hpp"
 
 #include "FreeRTOS.h"
 #include "task.h"

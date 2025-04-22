@@ -1,7 +1,7 @@
-#include "Icm42670pTest.h"
+#include "Icm42670pTest.hpp"
 
-#include "MotionControllerConfig.h"
-#include "Icm42670pConfig.h"
+#include "MotionControllerConfig.hpp"
+#include "Icm42670pConfig.hpp"
 
 void Icm42670Test(void)
 {

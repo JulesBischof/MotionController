@@ -2,7 +2,7 @@
 #define LINESENSOR_H
 
 #include "Tla2528.hpp"
-#include "LineSensorConfig.h"
+#include "LineSensorConfig.hpp"
 
 namespace miscDevices
 {

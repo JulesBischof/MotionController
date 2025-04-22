@@ -7,9 +7,10 @@
 
 #include "FreeRTOS.h"
 #include "queue.h"
+
 #include "task.h"
 
-#include "LineFollowerTaskConfig.h"
+#include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
 #include "StepperService.hpp"
@@ -17,7 +18,16 @@
 #include "MovementTracker.hpp"
 
 namespace MtnCtrl
-{
+{   
+    /* ================================= */
+    /*            consts                 */
+    /* ================================= */
+
+    constexpr float ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
+    constexpr float V_MAX_IN_MMPS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC); // mm per second
+
+    constexpr float ROTATIONS_PER_SEC_SQUARED = (LINEFOLLERCONFIG_AMAX_REGISTER_VALUE / (131072.f / TMC5240CLOCKFREQUENCY));
+    constexpr float A_MAX_IN_MMPSS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC_SQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
 
     /* ================================= */
     /*          Running Task             */
@@ -92,13 +102,15 @@ namespace MtnCtrl
                     _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
 
                     _lineFollowerStm.update(message.getData());
-                    _movePositionModeStm.update(message.getData(), TaskCommand::Move); // 10 due to data gets send in cm but motion controller works with mm
+                    _movePositionModeStm.update(message.getData(), message.command);
+                    _handleBarrierStm.update(message.getData(), message.command);
 
                     break;
 
                 case TaskCommand::Stop:
                     _lineFollowerStm.reset();
-                    _movePositionModeStm.update(message.getData(), TaskCommand::Stop);
+                    _movePositionModeStm.update(message.getData(), message.command);
+
                     break;
 
                 case TaskCommand::Turn:

@@ -1,9 +1,9 @@
-#include "Tla2528Test.h"
+#include "Tla2528Test.hpp"
 
 #include <stdio.h>
 #include "pico/stdlib.h"
 
-#include "MotionControllerConfig.h"
+#include "MotionControllerConfig.hpp"
 
 #include "Tla2528.hpp"
 

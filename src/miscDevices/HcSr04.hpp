@@ -33,6 +33,11 @@ namespace miscDevices
         void _initGpios();
 
         HcSr04KalmanFilter _kalmanFilter;
+        SemaphoreHandle_t _kalmanFilterSemaphore;
+
+        absolute_time_t _lastPredictionTimestamp;
+        SemaphoreHandle_t _lastPredictionTimestampSemaphore;
+        float _getTimeDiff();
 
         volatile uint32_t _rawtimediff;
         SemaphoreHandle_t _rawtimediffSemaphore;

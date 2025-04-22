@@ -7,18 +7,6 @@
 
 namespace miscDevices
 {
-
-    constexpr float SPEEDOFSOUND = 343.2f;
-    constexpr float CONVERSION_FACTOR = 2000.f;
-
-    constexpr float INITIAL_DISTANCE = 500;
-    constexpr float INITIAL_VELOCITY = 0;
-    constexpr float INITIAL_DT = 0.1;
-
-    constexpr float FILTER_QD = 5.0;  // position
-    constexpr float FILTER_QV = 1e-5; // velocity - stepper motors are very percise
-    constexpr float FILTER_R = 9;     // measurment noise HC-SR04 - Excel calculations
-
     /* ==================================
                 static Members
        ================================== */
@@ -55,6 +43,11 @@ namespace miscDevices
 
         _rawtimediffSemaphore = xSemaphoreCreateMutex();
         _rawtimediff = 0; // ctor runs in advance to scheduler - no need to protect
+
+        _lastPredictionTimestampSemaphore = xSemaphoreCreateMutex();
+        _lastPredictionTimestamp = get_absolute_time(); // ctor runs in advance to scheduler - no need to protect
+
+        _kalmanFilterSemaphore = xSemaphoreCreateMutex();
     }
 
     HcSr04::HcSr04()
@@ -81,6 +74,15 @@ namespace miscDevices
 
         gpio_init(_echoPin);
         gpio_set_dir(_echoPin, GPIO_IN);
+    }
+
+    float HcSr04::_getTimeDiff()
+    {
+        xSemaphoreTake(_lastPredictionTimestampSemaphore, pdMS_TO_TICKS(100));
+        absolute_time_t timeDiff = absolute_time_diff_us(_lastPredictionTimestamp, get_absolute_time());
+        _lastPredictionTimestamp = get_absolute_time();
+        xSemaphoreGive(_lastPredictionTimestampSemaphore);
+        return timeDiff;
     }
 
     void HcSr04::_initHcSr04Queue()
@@ -154,24 +156,21 @@ namespace miscDevices
 
     void HcSr04::_HcSr04Task()
     {
+        TickType_t previousWakeTime = xTaskGetTickCount();
+
         while (true)
         {
 
             _trigger();
 
 #if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
-            static absolute_time_t lastTriggerTime = get_absolute_time();
-            absolute_time_t timeDiff = absolute_time_diff_us(lastTriggerTime, get_absolute_time());
-            lastTriggerTime = get_absolute_time();
-            float dt = static_cast<float>(timeDiff) / 1e6; // us -> s
+            float dt = static_cast<float>(_getTimeDiff()) / 1e6; // us -> s
 #endif
-
-            ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
             uint32_t rawTimeDiff = 0;
             float distance = INITIAL_DISTANCE;
-            float value = 500;
 
+            // wait for interrupt event
             if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(100)) == pdTRUE)
             {
                 rawTimeDiff = _getHcSr04RawTimeDiff();
@@ -183,22 +182,35 @@ namespace miscDevices
             }
 
 #if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
+            if (distance < INITIAL_DISTANCE)
+            {
+            xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
             _kalmanFilter.setVelocity(_getCurrentVelocity());
             _kalmanFilter.update(distance, dt);
-            value = _kalmanFilter.getDistance();
+            xSemaphoreGive(_kalmanFilterSemaphore);
+            }
+            else 
+            {
+            xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
+            _kalmanFilter.setVelocity(0); // otherwise kalmanfilter predicts movement - thats wrong
+            _kalmanFilter.update(INITIAL_DISTANCE, dt);
+            xSemaphoreGive(_kalmanFilterSemaphore);
+            }
 #endif
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)
             value = distance;
+            xQueueOverwrite(_queueHandle, &value);
 #endif
 
 #if HCSR04CONFIG_USE_LOW_PASS_IIR == (1)
-            static float lastVal = 500;
+            static float lastVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
 
-            value = HCSR04CONFIG_LOW_PASS_IIR_ALPHA *distance + (1.f - HCSR04CONFIG_LOW_PASS_IIR_ALPHA) * lastVal;
+            value = HCSR04CONFIG_LOW_PASS_IIR_ALPHA * distance + (1.f - HCSR04CONFIG_LOW_PASS_IIR_ALPHA) * lastVal;
             lastVal = distance;
-#endif
             xQueueOverwrite(_queueHandle, &value);
+#endif
+            vTaskDelayUntil(&previousWakeTime, pdMS_TO_TICKS(HCSR04CONFIG_POLLING_RATE_MS));
         }
 
         /* never reached */
@@ -211,16 +223,23 @@ namespace miscDevices
 
     float HcSr04::getSensorData()
     {
-        float buffer = 500;
+#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
+        float dt = static_cast<float>(_getTimeDiff()) / 1e6; // us -> s
 
+        // access to kalmanFilter is protected by semaphore - so is retVal
+        xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
+        float retVal = _kalmanFilter.getDistancePredicted(dt);
+        xSemaphoreGive(_kalmanFilterSemaphore);
+#elif
+        float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
         if (_queueHandle == nullptr)
         {
             return buffer;
             /* ERROR ??? */
         }
-
-        xQueuePeek(_queueHandle, &buffer, pdMS_TO_TICKS(10));
-        return buffer;
+        xQueuePeek(_queueHandle, &retVal, pdMS_TO_TICKS(10));
+#endif
+        return retVal;
     }
 
     void HcSr04::_trigger()

@@ -1,6 +1,6 @@
 #include "LineFollowerStm.hpp"
 
-#include "LineFollowerTaskConfig.h"
+#include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
 #include "DispatcherMessage.hpp"
@@ -33,15 +33,6 @@ namespace MtnCtrl
 
         bool LineFollowerStm::run()
         {
-            // make sure that the state machine is not called too often
-            static TickType_t lastRunTick = 0;
-            TickType_t now = xTaskGetTickCount();
-            if ((now - lastRunTick) < pdMS_TO_TICKS(LINEFOLLOWERTASKCONFIG_HCSR04_POLLING_RATE_MS))
-            {
-                return false;
-            }
-            lastRunTick = now;
-
             // now run state maschine
             bool retVal = false;
 
@@ -150,13 +141,13 @@ namespace MtnCtrl
             u = _controllerC(e);
 
             // set Motor values (Process P)
-            v1 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC + u;
-            v2 = LINEFOLLERCONFIG_VMAX_STEPSPERSEC - u;
+            v1 = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE + u;
+            v2 = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE - u;
             
 
             // set Motor values
-            _driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-            _driver1->moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+            _driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
+            _driver1->moveVelocityMode(0, v2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
         } // end followLine
 
         /// @brief Controller Method for LineFollowing
@@ -170,12 +161,16 @@ namespace MtnCtrl
             u = e * LINEFOLLERCONFIG_CONTROLLERVALUE_KP;
 #endif
 
-#if LINEFOLLERCONFIG_USE_PD_CONTROLLER_DIGITAL == (1)
+#if LINEFOLLERCONFIG_USE_PD_CONTROLLER == (1)
             static int32_t last_e = 0;
-            // D-Controller with low Pass Filter
             int32_t u = 0; // default 0
 
-            int32_t deltaE = (e - last_e) / LINEFOLLOWERCONFIG_POLLING_RATE_MS;
+            // getTimeDifference in s
+            static absolute_time_t lastTime = 0;
+            absolute_time_t now = get_absolute_time();
+            float deltaT = absolute_time_diff_us(lastTime, now) / 1e6; // s
+
+            int32_t deltaE = (e - last_e) / deltaT;
             last_e = e;
 
             u = LINEFOLLERCONFIG_CONTROLLERVALUE_KP * e + LINEFOLLERCONFIG_CONTROLLERVALUE_KD * deltaE;

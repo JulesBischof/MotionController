@@ -1,6 +1,6 @@
 #include "MovePositionModeStm.hpp"
 
-#include "LineFollowerTaskConfig.h"
+#include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
 #include "Tmc5240.hpp"
@@ -49,8 +49,8 @@ namespace MtnCtrl
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
-                // now send position request to drives
-                _movePositionMode(spiDevices::StepperService::convertMillimeterToMicrosteps(lastMsgData));
+                // now send position request to drives;
+                _movePositionMode(spiDevices::StepperService::convertMillimeterToMicrosteps(static_cast<int32_t>(lastMsgData)));
                 // now wait for standstill
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
                 break;
@@ -62,7 +62,7 @@ namespace MtnCtrl
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 // send position request to drives
-                _turnRobot(lastMsgData);
+                _turnRobot(static_cast<int32_t>(lastMsgData));
                 // now wait for standstill
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
                 break;
@@ -80,7 +80,7 @@ namespace MtnCtrl
 
                 break;
             case MovePositionModeStmState::WAIT_FOR_STOP:
-                if (_driver0->checkForStandstill() && _driver1->checkForStandstill())
+                if (_checkForStandstill())
                 {
                     _state = MovePositionModeStmState::STOPPED;
                 }
@@ -140,9 +140,21 @@ namespace MtnCtrl
         /// @param distance distance [IN MICROSTEPS]
         void MovePositionModeStm::_movePositionMode(int32_t distance)
         {
-            _driver0->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 1);
-            _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_STEPSPERSEC, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _driver0->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 1);
+            _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
             return;
+        }
+
+        bool MovePositionModeStm::_checkForStandstill()
+        {
+            bool val_driver0 = _driver0->checkForStandstill();
+            bool val_driver1 = _driver1->checkForStandstill();
+            if (val_driver0 && val_driver1)
+            {
+                *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
+                return true;
+            }
+            return false;
         }
 
         /// @brief Turn Robort a certain angle.
@@ -169,16 +181,16 @@ namespace MtnCtrl
             int32_t nStepsDriver = spiDevices::StepperService::convertMillimeterToMicrosteps(ds);
 
             // move drives in different directions
-            _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
-            _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_STEPSPERSEC * 2, LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED, 0);
+            _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE * 2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
+            _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE * 2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
         }
 
         /// @brief stops the drives
         /// @details stops the drives in velocity mode. In position mode, the drives are stopped by the driver itself.
         void MovePositionModeStm::_stopDrives()
         {
-            _driver0->moveVelocityMode(1, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
-            _driver1->moveVelocityMode(0, 0, 5 * LINEFOLLERCONFIG_AMAX_STEPSPERSECSQUARED);
+            _driver0->moveVelocityMode(1, 0, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
+            _driver1->moveVelocityMode(0, 0, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
             return;
         }
 

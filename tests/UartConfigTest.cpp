@@ -1,9 +1,9 @@
-#include "UartConfigTest.h"
+#include "UartConfigTest.hpp"
 
 #include "hardware/uart.h"
 #include "pico/stdlib.h"
 #include <stdio.h>
-#include "MotionControllerPinning.h"
+#include "MotionControllerPinning.hpp"
 
 static void on_uart_rx()
 {

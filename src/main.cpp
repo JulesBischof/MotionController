@@ -2,8 +2,8 @@
 #include "task.h"
 
 #include "pico/stdlib.h"
-#include "AppConfig.h"
-#include "tests.h"
+#include "AppConfig.hpp"
+#include "tests.hpp"
 
 #include "MotionController.hpp"
 

@@ -34,15 +34,6 @@ namespace MtnCtrl
         GcAck
     };
 
-    enum class TaskInfo : uint8_t
-    {
-        NoInfo,
-        LineFollowerLostLine,
-        LineFollowerCrosspointDetected,
-        GripControllerReady,
-        GripControllerNotReady
-    };
-
     /// @brief struct containing Messages for intertask communication
     /// data is split into 2 32bit values due to memory allignment
     /// difficulties in the beginnning. Defining one uint64_t for data

@@ -1,14 +1,15 @@
 #include "MotionController.hpp"
 
-#include "MessageDispatcherTaskConfig.h"
-#include "LineFollowerTaskConfig.h"
-#include "RaspberryHatComTaskConfig.h"
+#include "MessageDispatcherTaskConfig.hpp"
+#include "LineFollowerTaskConfig.hpp"
+#include "RaspberryHatComTaskConfig.hpp"
+#include "GripControllerComTaskConfig.hpp"
 
 #include "Tmc5240.hpp"
 
-#include "MotionControllerConfig.h"
-#include "MotionControllerPinning.h"
-#include "Tmc5240Config.h"
+#include "MotionControllerConfig.hpp"
+#include "MotionControllerPinning.hpp"
+#include "Tmc5240Config.hpp"
 #include <string.h>
 
 namespace MtnCtrl
@@ -20,6 +21,7 @@ namespace MtnCtrl
 
     // queue handles delared as static due to they get messages from uart ISR
     QueueHandle_t MotionController::_raspberryHatComQueue = nullptr;
+    QueueHandle_t MotionController::_gripControllerComQueue = nullptr;
     QueueHandle_t MotionController::_lineFollowerQueue = nullptr;
     QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
 
@@ -117,6 +119,7 @@ namespace MtnCtrl
     void MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+        _gripControllerComQueue = xQueueCreate(GRIPCONTROLLERCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _messageDispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
 
@@ -129,18 +132,20 @@ namespace MtnCtrl
         return;
     }
 
-    void MotionController::_initUart0Isr()
+    void MotionController::_initUartRxIsr(uart_inst_t *uartId, void (*callback)())
     {
+        irq_num_rp2350 UARTX_IRQ = (uartId == uart0) ? UART0_IRQ : UART1_IRQ;
+
         // Set UART flow control CTS/RTS, we don't want these, so turn them off ### sure???
         // uart_set_hw_flow(UART_INSTANCE_RASPBERRYHAT, false, false);
 
         // Set our data format
         // uart_set_format(UART_INSTANCE_RASPBERRYHAT, 8, 1, UART_PARITY_NONE);
 
-        uart_set_fifo_enabled(UART_INSTANCE_RASPBERRYHAT, true);
-        irq_set_exclusive_handler(UART0_IRQ, _uart0RxIrqHandler);
-        irq_set_enabled(UART0_IRQ, true);
-        uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
+        uart_set_fifo_enabled(uartId, true);
+        irq_set_exclusive_handler(UARTX_IRQ, callback);
+        irq_set_enabled(UARTX_IRQ, true);
+        uart_set_irq_enables(uartId, true, false);
     }
 
     /* ==================================
@@ -182,47 +187,19 @@ namespace MtnCtrl
         return;
     }
 
-    void MotionController::_uart0RxIrqHandler()
-    {
-        /* some message arrived!! send read command to RaspberryHatComQueue
-        buffer-read and decoding shouldn't be handled inside a isr */
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-        QueueHandle_t queueHandle = getRaspberryHatComQueue();
-
-        if (queueHandle != nullptr)
-        {
-            DispatcherMessage msg(
-                DispatcherTaskId::RaspberryHatComTask,
-                DispatcherTaskId::RaspberryHatComTask,
-                TaskCommand::DecodeMessage,
-                0);
-
-            xQueueSendFromISR(queueHandle, &msg, &xHigherPriorityTaskWoken);
-        }
-        // disable uart interrupts
-        uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
-
-        if (xHigherPriorityTaskWoken)
-        {
-            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-        }
-    }
-
     /* ==================================
           start Task and Methodwrapper
        ================================== */
 
-    void MotionController::_LineFollerTaskWrapper(void *pvParameters)
+    void MotionController::_lineFollerTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
         obj->_lineFollowerTask();
     }
 
-    /// @brief Creates LineFollower Task.
     void MotionController::_startLineFollowerTask()
     {
-        if (xTaskCreate(_LineFollerTaskWrapper,
+        if (xTaskCreate(_lineFollerTaskWrapper,
                         LINEFOLLOWERTASK_NAME,
                         LINEFOLLOWERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
@@ -233,16 +210,15 @@ namespace MtnCtrl
         }
     }
 
-    void MotionController::_RaspberryComTaskWrapper(void *pvParameters)
+    void MotionController::_raspberryComTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
         obj->_raspberryHatComTask();
     }
 
-    /// @brief creates RaspberryHatComTask
     void MotionController::_startRaspberryHatComTask()
     {
-        if (xTaskCreate(_RaspberryComTaskWrapper,
+        if (xTaskCreate(_raspberryComTaskWrapper,
                         RASPBERRYHATCOMTASK_NAME,
                         RASPBERRYHATCOMTASK_STACKSIZE / sizeof(StackType_t),
                         this,
@@ -253,7 +229,26 @@ namespace MtnCtrl
         }
     }
 
-    void MotionController::_MessageDispatcherTaskWrapper(void *pvParameters)
+    void MotionController::_gripControllerComTaskWrapper(void *pvParameters)
+    {
+        MotionController *obj = static_cast<MotionController *>(pvParameters);
+        obj->_gripControllerComTask();
+    }
+
+    void MotionController::_startGripControllerComTask()
+    {
+        if (xTaskCreate(_gripControllerComTaskWrapper,
+                        GRIPCONTROLLERCOMTASK_NAME,
+                        GRIPCONTROLLERCOMTASK_STACKSIZE / sizeof(StackType_t),
+                        this,
+                        tskIDLE_PRIORITY + GRIPCONTROLLERCOMTASK_PRIORITY,
+                        &_gripControllerTaskHandle) != pdTRUE)
+        {
+            /* ERROR HANDLING ??? */
+        }
+    }
+
+    void MotionController::_messageDispatcherTaskWrapper(void *pvParameters)
     {
         MotionController *obj = static_cast<MotionController *>(pvParameters);
         obj->_messageDispatcherTask();
@@ -261,7 +256,7 @@ namespace MtnCtrl
 
     void MotionController::_startMessageDispatcherTask()
     {
-        if (xTaskCreate(_MessageDispatcherTaskWrapper,
+        if (xTaskCreate(_messageDispatcherTaskWrapper,
                         MESSAGEDISPATCHERTASK_NAME,
                         MESSAGEDISPATCHERTASK_STACKSIZE / sizeof(StackType_t),
                         this,
@@ -292,6 +287,11 @@ namespace MtnCtrl
     QueueHandle_t MotionController::getRaspberryHatComQueue()
     {
         return _raspberryHatComQueue;
+    }
+
+    QueueHandle_t MotionController::getGripControllerComQueue()
+    {
+        return _gripControllerComQueue;
     }
 
     QueueHandle_t MotionController::getLineFollowerQueue()

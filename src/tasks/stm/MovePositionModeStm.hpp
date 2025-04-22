@@ -32,6 +32,7 @@ namespace MtnCtrl
             void _movePositionMode(int32_t distance);
             void _turnRobot(int32_t angle);
             void _stopDrives();
+            bool _checkForStandstill();
 
         public:
             MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1);

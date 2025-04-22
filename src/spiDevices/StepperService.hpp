@@ -1,5 +1,7 @@
 #pragma once
 
+#include "pico/stdlib.h"
+
 namespace spiDevices
 {
     /// @brief service class providing methods to convert units & Co

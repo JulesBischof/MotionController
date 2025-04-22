@@ -9,6 +9,9 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 
+
+#include "DispatcherMessage.hpp"
+
 namespace MtnCtrl
 {
     namespace stm

@@ -9,14 +9,15 @@
 #include "prain_uart/decoder.hpp"
 #include "prain_uart/encoder.hpp"
 
-#include "MotionControllerConfig.h"
-#include "MotionControllerPinning.h"
+#include "MotionControllerConfig.hpp"
+#include "MotionControllerPinning.hpp"
 
-#include "RaspberryHatComTaskConfig.h"
+#include "RaspberryHatComTaskConfig.hpp"
 
 #include "FreeRTOS.h"
 #include "semphr.h"
 #include "queue.h"
+
 
 using namespace prain_uart;
 using namespace encoder;
@@ -26,7 +27,7 @@ namespace MtnCtrl
     void MotionController::_raspberryHatComTask()
     {
         // init Rx interrupts
-        _initUart0Isr();
+        _initUartRxIsr(UART_INSTANCE_RASPBERRYHAT, _uart0RxIrqHandler);
 
         // get QueueHandles
         QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
@@ -111,9 +112,36 @@ namespace MtnCtrl
         }
     }
 
+    void MotionController::_uart0RxIrqHandler()
+    {
+        /* some message arrived!! send read command to RaspberryHatComQueue
+        buffer-read and decoding shouldn't be handled inside a isr */
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+        QueueHandle_t queueHandle = getRaspberryHatComQueue();
+
+        if (queueHandle != nullptr)
+        {
+            DispatcherMessage msg(
+                DispatcherTaskId::RaspberryHatComTask,
+                DispatcherTaskId::RaspberryHatComTask,
+                TaskCommand::DecodeMessage,
+                0);
+
+            xQueueSendFromISR(queueHandle, &msg, &xHigherPriorityTaskWoken);
+        }
+        // disable uart interrupts
+        uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, false, false);
+
+        if (xHigherPriorityTaskWoken)
+        {
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    }
+
     DispatcherMessage MotionController::_getCommand(uart_inst_t *uartId)
     {
-        if (!uart_is_readable(UART_INSTANCE_RASPBERRYHAT))
+        if (!uart_is_readable(uartId))
         {
             DispatcherMessage msg(
                 DispatcherTaskId::RaspberryHatComTask,
@@ -127,9 +155,9 @@ namespace MtnCtrl
         char rawMessage[8] = {0};
 
         // LSB FIRST
-        for (int i = 0; uart_is_readable_within_us(UART_INSTANCE_RASPBERRYHAT, 1000) && i < 8; i++)
+        for (int i = 0; uart_is_readable_within_us(uartId, 1000) && i < 8; i++)
         {
-            rawMessage[i] = uart_getc(UART_INSTANCE_RASPBERRYHAT);
+            rawMessage[i] = uart_getc(uartId);
         }
 
         // // MSB FIRST
@@ -146,7 +174,7 @@ namespace MtnCtrl
         address addr = dec.get_address();
 
         DispatcherMessage retVal;
-        retVal.senderTaskId = DispatcherTaskId::RaspberryHatComTask;
+        retVal.senderTaskId = (uartId == UART_INSTANCE_RASPBERRYHAT) ? DispatcherTaskId::RaspberryHatComTask : DispatcherTaskId::GripControllerComTask;
 
         bool crcCheck = dec.verify_crc();
         command cmd = dec.get_command();
@@ -203,6 +231,12 @@ namespace MtnCtrl
                 retVal.setData(0);
                 break;
 
+            case (command::RESPONSE):
+                retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
+                retVal.command = TaskCommand::GcAck;
+                retVal.setData(0);
+                break;
+
             case (command::POLL):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
 
@@ -235,13 +269,13 @@ namespace MtnCtrl
         } // end msg mtnctr
 
         // flush rx FIFO
-        while (uart_is_readable(UART_INSTANCE_RASPBERRYHAT))
+        while (uart_is_readable(uartId))
         {
-            uart_getc(UART_INSTANCE_RASPBERRYHAT);
+            uart_getc(uartId);
         }
 
         // enable uart interrupts again
-        uart_set_irq_enables(UART_INSTANCE_RASPBERRYHAT, true, false);
+        uart_set_irq_enables(uartId, true, false);
 
         return retVal;
     } // end _getCommand

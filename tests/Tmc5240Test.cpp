@@ -1,10 +1,10 @@
-#include "Tmc5240Test.h"
+#include "Tmc5240Test.hpp"
 
-#include "TestConfig.h"
+#include "TestConfig.hpp"
 
 #include "Tmc5240.hpp"
-#include "MotionControllerConfig.h"
-#include "MotionControllerPinning.h"
+#include "MotionControllerConfig.hpp"
+#include "MotionControllerPinning.hpp"
 
 void Tmc5240Test(void)
 {
