@@ -218,6 +218,9 @@ namespace MtnCtrl
                 case static_cast<uint8_t>(poll_id::LINE_SENSOR):
                     retVal.command = TaskCommand::PollLineSensor;
                     break;
+                case static_cast<uint8_t>(poll_id::ULTRASONIC):
+                    retVal.command = TaskCommand::PollUltrasonic;
+                    break;
                 default:
                     break;
                 }

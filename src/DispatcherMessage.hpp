@@ -26,6 +26,7 @@ namespace MtnCtrl
         PollLineSensor,
         PollDegree,
         PollStatusFlags,
+        PollUltrasonic,
         HandThroughMessage,
         DecodeMessage,
         CraneGrip,

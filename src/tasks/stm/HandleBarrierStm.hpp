@@ -45,7 +45,7 @@ namespace MtnCtrl
             bool _gcAck;
 
         public:
-            HandleBarrierStm(uint32_t *_statusFlags,
+            HandleBarrierStm(uint32_t *statusFlags,
                              miscDevices::HcSr04 *hcSr04,
                              miscDevices::LineSensor *lineSensor,
                              QueueHandle_t lineFollowerTaskQueue,

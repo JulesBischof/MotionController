@@ -14,6 +14,8 @@
 
 #include "StepperService.hpp"
 
+#include "MovementTracker.hpp"
+
 namespace MtnCtrl
 {
 
@@ -32,12 +34,14 @@ namespace MtnCtrl
         _lineFollowerStm.init();
         stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1);
         _movePositionModeStm.init();
-        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_driver0, &_driver1, getLineFollowerQueue());
+        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_lineSensor, getLineFollowerQueue(), getMessageDispatcherQueue());
         _handleBarrierStm.init();
         stm::SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, getMessageDispatcherQueue());
         _sendStatusFlagsStm.init();
 
+        // init misc members
         _hcSr04->initMeasurmentTask();
+        MovementTracker _movementTracker(&_driver0, &_driver1);
 
         // get Queues
         QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
@@ -56,13 +60,6 @@ namespace MtnCtrl
             { /*  ERROR  */
             }
         }
-
-        // Variables
-        int32_t X_ACTUAL_startValueDriver0 = _driver0.getXActual();
-        int32_t drivenDistanceDriver0 = 0;
-
-        int32_t X_ACTUAL_startValueDriver1 = _driver1.getXActual();
-        int32_t drivenDistanceDriver1 = 0;
 
         uint32_t maxDistance = 0;
 
@@ -92,9 +89,6 @@ namespace MtnCtrl
                 case TaskCommand::Move:
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
 
-                    X_ACTUAL_startValueDriver0 = _driver0.getXActual();
-                    X_ACTUAL_startValueDriver1 = _driver1.getXActual();
-
                     _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
 
                     _lineFollowerStm.update(message.getData());
@@ -112,17 +106,27 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDistance:
-//                    dataContainer = static_cast<uint64_t>(_getDrivenDistance(drivenDistanceDriver0, drivenDistanceDriver1));
-
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
-                                                 dataContainer);
+                                                 _movementTracker.getDistance());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 
                 case TaskCommand::PollLineSensor:
-                    // TODO
+                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                 message.senderTaskId,
+                                                 TaskCommand::PollDistance,
+                                                 _lineSensor.getLinePositionAnalog());
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                    break;
+
+                case TaskCommand::PollUltrasonic:
+                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                 message.senderTaskId,
+                                                 TaskCommand::PollDistance,
+                                                 _hcSr04->getSensorData());
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 
                 case TaskCommand::PollStatusFlags:
@@ -134,11 +138,10 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDegree:
-//                    dataContainer = static_cast<uint64_t>(_getRotationRelativeToStart());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDegree,
-                                                 dataContainer);
+                                                 _movementTracker.getRotation());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 

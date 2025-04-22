@@ -9,12 +9,12 @@ namespace spiDevices
         /// @brief convert mm to usteps
         /// @param distance distance in [mm]
         /// @return microsteps
-        static int32_t convertDistanceMmToMicrosteps(float meter);
+        static int32_t convertMillimeterToMicrosteps(float meter);
 
         /// @brief convert ustep/s in cm
         /// @param uSteps microsteps
         /// @return Distance in Centimeter
-        static int32_t convertMicrostepsToCentimeter(uint32_t uSteps);
+        static int32_t convertMicrostepsToMillimeter(uint32_t uSteps);
 
         /// @brief convert degree to microsteps
         /// @param degrees float degrees

@@ -14,7 +14,7 @@ namespace MtnCtrl
                                            miscDevices::HcSr04 *hcSr04,
                                            miscDevices::LineSensor *lineSensor,
                                            QueueHandle_t lineFollowerTaskQueue,
-                                           QueueSetHandle_t messageDispatcherQueue)
+                                           QueueHandle_t messageDispatcherQueue)
             : StmBase(statusFlags),
               _hcSr04(hcSr04),
               _lineSensor(lineSensor),

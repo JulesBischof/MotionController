@@ -10,7 +10,7 @@ namespace spiDevices
     constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
     constexpr float WHEELCIRCUMFENCE_MM = LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI;
 
-    int32_t StepperService::convertDistanceMmToMicrosteps(float distance)
+    int32_t StepperService::convertMillimeterToMicrosteps(float distance)
     {
         float res = (distance / WHEELCIRCUMFENCE_MM) * MICROSTEPSPERREVOLUTION;
 
@@ -18,9 +18,9 @@ namespace spiDevices
         return retVal;
     }
 
-    int32_t StepperService::convertMicrostepsToCentimeter(uint32_t uSteps)
+    int32_t StepperService::convertMicrostepsToMillimeter(uint32_t uSteps)
     {
-        float res = (uSteps * MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE_MM;
+        float res = (uSteps / MICROSTEPSPERREVOLUTION) * WHEELCIRCUMFENCE_MM;
 
         int32_t retVal = static_cast<int32_t>(std::round(res));
         return retVal;
@@ -34,11 +34,12 @@ namespace spiDevices
 
     float StepperService::convertDeltaDrivenDistanceToDegree(int32_t uStepsDifference)
     {
-        float dsMeters = convertMicrostepsToCentimeter(uStepsDifference) * 1e2;
+        // convert microsteps to mm
+        float s = convertMicrostepsToMillimeter(uStepsDifference);
 
-        float res = (dsMeters * 180.0f) / (WHEELCIRCUMFENCE_MM);
-
-        return res;
+        // calc angle
+        float angle = (s * 2 * 180) / (LINEFOLLOWERCONFIG_AXIS_WIDTH_mm * M_PI);
+        return angle;
     }
 
 }
