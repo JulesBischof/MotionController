@@ -4,7 +4,7 @@
  * @brief Kalman filter for distance and velocity fusion (HC-SR04)
  *
  * Created with assistance from ChatGPT (OpenAI), April 2025.
- * Modifications, integration, and structure provided by the project developer.
+ * Modifications, integration, and structure provided by julian bischof.
  */
 
 namespace miscDevices
