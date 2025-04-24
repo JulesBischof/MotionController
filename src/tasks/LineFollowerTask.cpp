@@ -20,16 +20,6 @@
 namespace MtnCtrl
 {   
     /* ================================= */
-    /*            consts                 */
-    /* ================================= */
-
-    constexpr float ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
-    constexpr float V_MAX_IN_MMPS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC); // mm per second
-
-    constexpr float ROTATIONS_PER_SEC_SQUARED = (LINEFOLLERCONFIG_AMAX_REGISTER_VALUE / (131072.f / TMC5240CLOCKFREQUENCY));
-    constexpr float A_MAX_IN_MMPSS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC_SQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
-
-    /* ================================= */
     /*          Running Task             */
     /* ================================= */
 
@@ -109,6 +99,9 @@ namespace MtnCtrl
 
                 case TaskCommand::Stop:
                     _lineFollowerStm.reset();
+                    
+                    _hcSr04->setCurrentVelocity(0);
+
                     _movePositionModeStm.update(message.getData(), message.command);
 
                     break;

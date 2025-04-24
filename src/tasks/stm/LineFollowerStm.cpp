@@ -27,7 +27,7 @@ namespace MtnCtrl
 
         void LineFollowerStm::init()
         {
-            lastMsgData = 0;
+            _lastMsgData = 0;
             _state = LineFollowerStmState::IDLE;
         }
 

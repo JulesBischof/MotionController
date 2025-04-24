@@ -4,9 +4,9 @@
 
 #include <cmath>
 
-namespace miscDevices
+namespace services
 {
-    int32_t LineSensorService::getVehicleRotation(LineSensor *lineSensor)
+    int32_t LineSensorService::getVehicleRotation(miscDevices::LineSensor *lineSensor)
     {
         int32_t linePosition = lineSensor->getLinePositionAnalog();
 

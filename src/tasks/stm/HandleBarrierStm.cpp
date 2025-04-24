@@ -80,7 +80,7 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Turn,
-                    miscDevices::LineSensorService::getVehicleRotation(_lineSensor));
+                    services::LineSensorService::getVehicleRotation(_lineSensor));
                 // if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
                 // { /* ERROR!!?? */
                 // }
@@ -252,7 +252,7 @@ namespace MtnCtrl
             switch (cmd)
             {
             case TaskCommand::Move:
-                lastMsgData = msgData;
+                _lastMsgData = msgData;
                 if (msgData == 0) // LineFollowerMode
                 {
                     _state = HandleBarrierStmState::CHECK_DISTANCE;
@@ -260,12 +260,12 @@ namespace MtnCtrl
                 break;
 
             case TaskCommand::GcAck:
-                lastMsgData = msgData;
+                _lastMsgData = msgData;
                 _gcAck = true;
                 break;
 
             case TaskCommand::Stop:
-                lastMsgData = msgData;
+                _lastMsgData = msgData;
                 _state = HandleBarrierStmState::IDLE;
                 *_statusFlags &= ~(uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED;
                 break;

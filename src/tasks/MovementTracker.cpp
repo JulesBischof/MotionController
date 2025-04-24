@@ -43,7 +43,7 @@ int32_t MtnCtrl::MovementTracker::getRotation()
     int32_t drivenDistance0 = _rotationXActualStartDriver0 - _driver0->getXActual();
     int32_t drivenDistance1 = _rotationXActualStartDriver1 - _driver1->getXActual();
 
-    float phi = spiDevices::StepperService::convertDeltaDrivenDistanceToDegree(drivenDistance0 - drivenDistance1);
+    float phi = services::StepperService::convertDeltaDrivenDistanceToDegree(drivenDistance0 - drivenDistance1);
 
     // 10 due to prain uart expects rotation in form of 10 * degree
     return static_cast<int32_t>(round(phi * 10));
@@ -56,5 +56,5 @@ int32_t MtnCtrl::MovementTracker::getDistance()
 
     int32_t average = ( (xActualDriver0 - _rotationXActualStartDriver0) + (xActualDriver1 - _rotationXActualStartDriver1) / 2);
 
-    return spiDevices::StepperService::convertMicrostepsToMillimeter(average);
+    return services::StepperService::convertMicrostepsToMillimeter(average);
 }

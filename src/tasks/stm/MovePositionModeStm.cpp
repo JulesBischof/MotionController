@@ -18,7 +18,7 @@ namespace MtnCtrl
             _driver0 = driver0;
             _driver1 = driver1;
 
-            lastMsgData = 0;
+            _lastMsgData = 0;
 
             _state = MovePositionModeStmState::IDLE;
         }
@@ -50,7 +50,7 @@ namespace MtnCtrl
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 // now send position request to drives;
-                _movePositionMode(spiDevices::StepperService::convertMillimeterToMicrosteps(static_cast<int32_t>(lastMsgData)));
+                _movePositionMode(services::StepperService::convertMillimeterToMicrosteps(static_cast<int32_t>(_lastMsgData)));
                 // now wait for standstill
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
                 break;
@@ -62,7 +62,7 @@ namespace MtnCtrl
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 // send position request to drives
-                _turnRobot(static_cast<int32_t>(lastMsgData));
+                _turnRobot(static_cast<int32_t>(_lastMsgData));
                 // now wait for standstill
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
                 break;
@@ -102,7 +102,7 @@ namespace MtnCtrl
         void MovePositionModeStm::reset()
         {
             _state = MovePositionModeStmState::IDLE;
-            lastMsgData = 0;
+            _lastMsgData = 0;
         }
 
         void MovePositionModeStm::update(uint32_t msgData)
@@ -115,7 +115,7 @@ namespace MtnCtrl
             switch (cmd)
             {
             case TaskCommand::Move:
-                lastMsgData = msgData;
+                _lastMsgData = msgData;
                 if (msgData != 0)
                 {
                     _state = MovePositionModeStmState::POSITION_MODE;
@@ -123,11 +123,12 @@ namespace MtnCtrl
                 break;
 
             case TaskCommand::Turn:
-                lastMsgData = msgData;
+                _lastMsgData = msgData;
                 _state = MovePositionModeStmState::TURN_MODE;
                 break;
 
             case TaskCommand::Stop:
+                _stoppedTimeStamp = xTaskGetTickCount();
                 _state = MovePositionModeStmState::STOP_MODE;
                 break;
             default:
@@ -147,9 +148,12 @@ namespace MtnCtrl
 
         bool MovePositionModeStm::_checkForStandstill()
         {
-            bool val_driver0 = _driver0->checkForStandstill();
-            bool val_driver1 = _driver1->checkForStandstill();
-            if (val_driver0 && val_driver1)
+            // bool val_driver0 = _driver0->checkForStandstill();
+            // bool val_driver1 = _driver1->checkForStandstill();
+            // if (val_driver0 && val_driver1)
+
+            // just wait a certain time - asking the driver resluts in target-velocity; the motors then are still driving
+            if ((_stoppedTimeStamp + TIME_UNTIL_STANDSTILL_IN_MS) >= xTaskGetTickCount())
             {
                 *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 return true;
@@ -178,7 +182,7 @@ namespace MtnCtrl
             float ds = num / dnum;
 
             // unit conversion mm -> uSteps
-            int32_t nStepsDriver = spiDevices::StepperService::convertMillimeterToMicrosteps(ds);
+            int32_t nStepsDriver = services::StepperService::convertMillimeterToMicrosteps(ds);
 
             // move drives in different directions
             _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE * 2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);

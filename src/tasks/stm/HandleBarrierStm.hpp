@@ -44,7 +44,7 @@ namespace MtnCtrl
             miscDevices::HcSr04 *_hcSr04;
             miscDevices::LineSensor *_lineSensor;
             QueueHandle_t _lineFollowerTaskQueue, _messageDispatcherQueue;
-            uint32_t lastMsgData;
+            uint32_t _lastMsgData;
             bool _gcAck;
 
         public:

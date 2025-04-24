@@ -5,7 +5,7 @@
 #include <cmath>
 #include "pico/stdlib.h"
 
-namespace spiDevices
+namespace services
 {
     constexpr float MICROSTEPSPERREVOLUTION = STEPPERCONFIG_NR_FULLSTEPS_PER_TURN * STEPPERCONFIG_MICROSTEPPING;
     constexpr float WHEELCIRCUMFENCE_MM = LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI;

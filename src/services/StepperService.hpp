@@ -2,7 +2,7 @@
 
 #include "pico/stdlib.h"
 
-namespace spiDevices
+namespace services
 {
     /// @brief service class providing methods to convert units & Co
     class StepperService

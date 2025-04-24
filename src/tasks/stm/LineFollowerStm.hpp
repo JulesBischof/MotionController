@@ -35,7 +35,7 @@ namespace MtnCtrl
             int32_t _controllerC(int32_t e);
             void _checkLineFollowerStatus();
 
-            uint32_t lastMsgData;
+            uint32_t _lastMsgData;
 
         public:
             LineFollowerStm(uint32_t *_statusFlags, miscDevices::LineSensor *lineSensor, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue);

@@ -53,7 +53,6 @@ namespace miscDevices
 
         SemaphoreHandle_t _currentVelocitySemaphore;
         float _currentVelocity;
-        float _getCurrentVelocity();
 
         uint32_t _getHcSr04RawTimeDiff();
 
@@ -88,6 +87,10 @@ namespace miscDevices
         /// @brief updates the Kalmann Filter state modell
         /// @param v current velocity in usteps/t (TMC5240 values!)
         void setCurrentVelocity(float v);
+
+        /// @brief returns current veloity used for Kalman Filter
+        /// @return velocity in mm per second
+        float getCurrentVelocity();
     };
 }
 #endif

@@ -27,7 +27,8 @@ namespace MtnCtrl
             spiDevices::Tmc5240 *_driver0;
             spiDevices::Tmc5240 *_driver1;
 
-            uint32_t lastMsgData;
+            uint32_t _lastMsgData;
+            TickType_t _stoppedTimeStamp;
 
             void _movePositionMode(int32_t distance);
             void _turnRobot(int32_t angle);

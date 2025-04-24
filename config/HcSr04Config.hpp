@@ -34,6 +34,15 @@ constexpr float INITIAL_DISTANCE = HCSR04CONFIG_DISTANCE_TRESHHOLD;
 constexpr float INITIAL_VELOCITY = 0;
 constexpr float INITIAL_DT = 0.1;
 
-constexpr float FILTER_QD = 5.0;  // position
-constexpr float FILTER_QV = 1e-5; // velocity - stepper motors are very percise
-constexpr float FILTER_R = 9;     // measurment noise HC-SR04 - Excel calculations
+constexpr float FILTER_QD = 1e-5;    // position
+constexpr float FILTER_QV = 1e-9;    // velocity - stepper motors are very percise
+constexpr float FILTER_RD = 3.8474f; // measurment noise HC-SR04 - Excel calculations
+constexpr float FILTER_RV = 1e-4;    // measurment noise velocity: very percise, acceleration not part of model though
+
+/* ==============================================================
+
+                            Debug
+
+============================================================== */
+#define HCSR04CONFIG_PRINTF_RAW_DATA (1)
+#define HCSR04CONFIG_PRINTF_FILTEROUTPUT_DATA (0)

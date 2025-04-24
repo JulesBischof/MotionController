@@ -36,7 +36,8 @@ namespace miscDevices
                                            INITIAL_DT,
                                            FILTER_QD,
                                            FILTER_QV,
-                                           FILTER_R);
+                                           FILTER_RD,
+                                           FILTER_RV);
 
         _currentVelocitySemaphore = xSemaphoreCreateMutex();
         _currentVelocity = 0; // ctor runs in advance to scheduler - no need to protect
@@ -185,15 +186,14 @@ namespace miscDevices
             if (distance < INITIAL_DISTANCE)
             {
             xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-            _kalmanFilter.setVelocity(_getCurrentVelocity());
-            _kalmanFilter.update(distance, dt);
+            _kalmanFilter.update(distance, dt, getCurrentVelocity());
             xSemaphoreGive(_kalmanFilterSemaphore);
             }
             else 
             {
             xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-            _kalmanFilter.setVelocity(0); // otherwise kalmanfilter predicts movement - thats wrong
-            _kalmanFilter.update(INITIAL_DISTANCE, dt);
+            // set v to 0, otherwise kalmanfilter predicts movement - thats wrong
+            _kalmanFilter.update(INITIAL_DISTANCE, dt, 0);
             xSemaphoreGive(_kalmanFilterSemaphore);
             }
 #endif
@@ -209,6 +209,12 @@ namespace miscDevices
             value = HCSR04CONFIG_LOW_PASS_IIR_ALPHA * distance + (1.f - HCSR04CONFIG_LOW_PASS_IIR_ALPHA) * lastVal;
             lastVal = distance;
             xQueueOverwrite(_queueHandle, &value);
+#endif
+
+#if HCSR04CONFIG_PRINTF_RAW_DATA == (1)
+            xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
+            printf("%f;%f\n", distance, _currentVelocity);
+            xSemaphoreGive(_currentVelocitySemaphore);
 #endif
             vTaskDelayUntil(&previousWakeTime, pdMS_TO_TICKS(HCSR04CONFIG_POLLING_RATE_MS));
         }
@@ -239,6 +245,12 @@ namespace miscDevices
         }
         xQueuePeek(_queueHandle, &retVal, pdMS_TO_TICKS(10));
 #endif
+
+#if HCSR04CONFIG_PRINTF_FILTEROUTPUT_DATA == (1)
+        xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
+        printf("%f;%f\n", retVal, _currentVelocity);
+        xSemaphoreGive(_currentVelocitySemaphore);
+#endif
         return retVal;
     }
 
@@ -263,7 +275,7 @@ namespace miscDevices
         xSemaphoreGive(_currentVelocitySemaphore);
     }
 
-    float HcSr04::_getCurrentVelocity()
+    float HcSr04::getCurrentVelocity()
     {
         if (_currentVelocitySemaphore == nullptr)
         {
