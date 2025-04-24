@@ -30,22 +30,8 @@ namespace MtnCtrl
         _initUartRxIsr(UART_INSTANCE_GRIPCONTROLLER, _uart1RxIrqHandler);
 
         // get QueueHandles
-        QueueHandle_t gripControllerComQueue = getGripControllerComQueue();
-        if (gripControllerComQueue == nullptr)
-        {
-            printf("ERROR #gripControllerComTask# NULLREFERENCE gripControllerComQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
-        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-        if (messageDispatcherQueue == nullptr)
-        {
-            printf("ERROR #gripControllerComTask# NULLREFERENCE messageDispatcherQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
+        QueueHandle_t gripControllerComQueue = _gripControllerComQueue;
+        QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         // loop forever
         for (;;)
@@ -100,7 +86,8 @@ namespace MtnCtrl
         buffer-read and decoding shouldn't be handled inside an isr */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-        QueueHandle_t queueHandle = getGripControllerComQueue();
+        // access is atomic - no protection neccessary
+        QueueHandle_t queueHandle = _gripControllerComQueue;
 
         if (queueHandle != nullptr)
         {

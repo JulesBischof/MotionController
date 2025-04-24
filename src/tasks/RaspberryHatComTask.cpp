@@ -30,22 +30,8 @@ namespace MtnCtrl
         _initUartRxIsr(UART_INSTANCE_RASPBERRYHAT, _uart0RxIrqHandler);
 
         // get QueueHandles
-        QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
-        if (raspberryHatComQueue == nullptr)
-        {
-            printf("ERROR #raspberryHatComTask# NULLREFERENCE raspberryHatComQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
-        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-        if (messageDispatcherQueue == nullptr)
-        {
-            printf("ERROR #raspberryHatComTask# NULLREFERENCE messageDispatcherQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
+        QueueHandle_t raspberryHatComQueue = _raspberryHatComQueue;
+        QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         // loop forever
         for (;;)
@@ -118,7 +104,8 @@ namespace MtnCtrl
         buffer-read and decoding shouldn't be handled inside a isr */
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-        QueueHandle_t queueHandle = getRaspberryHatComQueue();
+        // access is atomic - no protection neccessary
+        QueueHandle_t queueHandle = _raspberryHatComQueue;
 
         if (queueHandle != nullptr)
         {

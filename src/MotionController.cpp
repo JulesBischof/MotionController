@@ -267,40 +267,10 @@ namespace MtnCtrl
         }
     }
 
-    void MotionController::startScheduler()
+    void MotionController::startTasks()
     {
         _startLineFollowerTask();
         _startMessageDispatcherTask();
         _startRaspberryHatComTask();
-
-        vTaskStartScheduler();
-        for (;;)
-        {
-            /* never reached */
-        }
-    }
-
-    /* ==================================
-                getters & setters
-       ================================== */
-
-    QueueHandle_t MotionController::getRaspberryHatComQueue()
-    {
-        return _raspberryHatComQueue;
-    }
-
-    QueueHandle_t MotionController::getGripControllerComQueue()
-    {
-        return _gripControllerComQueue;
-    }
-
-    QueueHandle_t MotionController::getLineFollowerQueue()
-    {
-        return _lineFollowerQueue;
-    }
-
-    QueueHandle_t MotionController::getMessageDispatcherQueue()
-    {
-        return _messageDispatcherQueue;
     }
 }

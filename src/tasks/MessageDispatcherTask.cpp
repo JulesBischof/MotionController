@@ -7,30 +7,9 @@ namespace MtnCtrl
     void MotionController::_messageDispatcherTask()
     {
         // get QueueHandles
-        QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
-        if (lineFollowerQueue == nullptr)
-        {
-            printf("ERROR #messageDispatcherTask# NULLREFERENCE lineFollowerQueueHandle\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
-        QueueHandle_t raspberryHatComQueue = getRaspberryHatComQueue();
-        if (raspberryHatComQueue == nullptr)
-        {
-            printf("ERROR #messageDispatcherTask# NULLREFERENCE raspberryHatComQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
-        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-        if (messageDispatcherQueue == nullptr)
-        {
-            printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcherQueue\n");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
+        QueueHandle_t lineFollowerQueue = _lineFollowerQueue;
+        QueueHandle_t raspberryHatComQueue = _raspberryHatComQueue;
+        QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         // loop forever
         for (;;)

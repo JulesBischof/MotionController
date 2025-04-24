@@ -119,23 +119,7 @@ namespace MtnCtrl
         ~MotionController();
 
         /// @brief Starts FreeRTOS Scheduler
-        void startScheduler();
-
-        /// @brief getter RaspberryHatComQueue
-        /// @return QueueHandle for RaspberryHatComQueue
-        static QueueHandle_t getRaspberryHatComQueue();
-
-        /// @brief getter RaspberryHatComQueue
-        /// @return QueueHandle for RaspberryHatComQueue
-        static QueueHandle_t getGripControllerComQueue();
-
-        /// @brief getter LineFollowerQueue
-        /// @return QueueHandle for LineFollowerQueue
-        static QueueHandle_t getLineFollowerQueue();
-
-        /// @brief getter MessageDispatcherQueue
-        /// @return QueueHandle for MessageDispatcherQueue
-        static QueueHandle_t getMessageDispatcherQueue();
+        void startTasks();
     };
 }
 

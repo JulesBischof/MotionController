@@ -28,38 +28,24 @@ namespace MtnCtrl
     {
         // init stms
         uint32_t _lineFollowerStatusFlags = 0;
-        stm::CheckSafetyButtonStm _checkSafetyButtonStm(&_lineFollowerStatusFlags, &_safetyButton, getLineFollowerQueue());
+        stm::CheckSafetyButtonStm _checkSafetyButtonStm(&_lineFollowerStatusFlags, &_safetyButton, _lineFollowerQueue);
         _checkSafetyButtonStm.init();
-        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, getLineFollowerQueue());
+        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, _lineFollowerQueue);
         _lineFollowerStm.init();
         stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1);
         _movePositionModeStm.init();
-        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_lineSensor, getLineFollowerQueue(), getMessageDispatcherQueue());
+        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_lineSensor, _lineFollowerQueue, _messageDispatcherQueue);
         _handleBarrierStm.init();
-        stm::SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, getMessageDispatcherQueue());
+        stm::SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, _messageDispatcherQueue);
         _sendStatusFlagsStm.init();
 
         // init misc members
         _hcSr04->initMeasurmentTask();
         MovementTracker _movementTracker(&_driver0, &_driver1);
 
-        // get Queues
-        QueueHandle_t lineFollowerQueue = getLineFollowerQueue();
-        if (lineFollowerQueue == nullptr)
-        {
-            printf("ERROR #lineFollowerTask# NULLREFERENCE lineFollowerQueueHandle");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
-        QueueHandle_t messageDispatcherQueue = getMessageDispatcherQueue();
-        if (messageDispatcherQueue == nullptr)
-        {
-            printf("ERROR #lineFollowerTask# NULLREFERENCE messageDispatcherQueueHandle");
-            while (1)
-            { /*  ERROR  */
-            }
-        }
+        // get Queues - access is atomic, no protection neccesary
+        QueueHandle_t lineFollowerQueue = _lineFollowerQueue;
+        QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         uint32_t maxDistance = 0;
 

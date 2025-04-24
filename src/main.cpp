@@ -18,12 +18,14 @@ int main()
 #if APP_MODE == 1
 
     MtnCtrl::MotionController motionController = MtnCtrl::MotionController();
-    motionController.startScheduler();
+    motionController.startTasks();
 
-    // never reached
-    while (1)
+    vTaskStartScheduler();
+    for (;;)
     {
-    };
+        /* never reached */
+    }
+
 #endif
 }
 
