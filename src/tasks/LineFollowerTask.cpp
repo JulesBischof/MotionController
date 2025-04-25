@@ -63,19 +63,18 @@ namespace MtnCtrl
 
                 if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask)
                 {
-                    printf("ERROR LINEFOLLOWERTASK - Message contains wrong Task ID \n");
+                    services::LoggerService::error("_lineFollowerTask", "wrong TaskId: %x", message.receiverTaskId);
                     continue;
                 }
 
                 // you cant declare vars inside a switch statement, thats why dataContainer fol polling
                 uint64_t dataContainer = 0;
 
+                services::LoggerService::debug("_lineFollowerComTask", "Queue recieved Command: %x from TaskId: ", message.command, message.senderTaskId);
                 switch (message.command)
                 {
                 case TaskCommand::Move:
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
-
-                    _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
 
                     _lineFollowerStm.update(message.getData());
                     _movePositionModeStm.update(message.getData(), message.command);
@@ -85,11 +84,8 @@ namespace MtnCtrl
 
                 case TaskCommand::Stop:
                     _lineFollowerStm.reset();
-                    
-                    _hcSr04->setCurrentVelocity(0);
-
+                    _handleBarrierStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
-
                     break;
 
                 case TaskCommand::Turn:
@@ -137,7 +133,7 @@ namespace MtnCtrl
                     break;
 
                 default:
-                    printf("ERROR LineFollowerTask - COMMAND UNKNOWN ?");
+                    services::LoggerService::error("_lineFollowerTask", "command unknown: %x", message.command);
                     break;
                 }
             } // end of message handling

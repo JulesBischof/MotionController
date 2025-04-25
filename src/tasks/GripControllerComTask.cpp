@@ -45,7 +45,7 @@ namespace MtnCtrl
             {
                 if (message.receiverTaskId != DispatcherTaskId::GripControllerComTask)
                 {
-                    printf("ERROR #_gripControllerComTask# - Message contains wrong Task ID \n");
+                    services::LoggerService::error("_gripControllerTask", "recieved wrong TaskId");
                     continue;
                 }
 
@@ -65,7 +65,9 @@ namespace MtnCtrl
                     
                     if (xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
                     {
-                        printf("ERROR #_gripControllerComTask# WRITE TO QUEUE cmd decode msg FAILED\n");
+                        services::LoggerService::fatal("_gripControllerTask", "writing to messageDispatcherTaskQueue");
+                        for (;;)
+                            ;
                     }
                     break;
                 default:

@@ -178,9 +178,7 @@ namespace MtnCtrl
             vTaskDelay(pdMS_TO_TICKS(1));
             if (msTicks > timeout_ms)
             {
-#if ENABLE_PRINTF_DEBUG_INFO
-                printf("UART TX ERROR - TIMEOUT");
-#endif
+                services::LoggerService::error("_uartFlushWithTimeout", "TIMEOUT");
                 return;
             }
         }

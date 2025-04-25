@@ -71,6 +71,7 @@ namespace MtnCtrl
             case HandleBarrierStmState::WAIT_FOR_STOP_0:
                 if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
                 {
+                    _hcSr04->setCurrentVelocity(0);
                     _state = HandleBarrierStmState::MIDDLE_ON_LINE;
                 }
                 break;
@@ -256,6 +257,7 @@ namespace MtnCtrl
                 if (msgData == 0) // LineFollowerMode
                 {
                     _state = HandleBarrierStmState::CHECK_DISTANCE;
+                    _hcSr04->setCurrentVelocity(V_MAX_IN_MMPS);
                 }
                 break;
 

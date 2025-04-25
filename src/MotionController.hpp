@@ -4,6 +4,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "LoggerService.hpp"
+
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"

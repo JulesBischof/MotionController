@@ -45,7 +45,7 @@ namespace MtnCtrl
             {
                 if (message.receiverTaskId != DispatcherTaskId::RaspberryHatComTask)
                 {
-                    printf("ERROR #_raspberryHatComTask# - Message contains wrong Task ID \n");
+                    services::LoggerService::error("_raspberryHatComTask", "Message contains wrong Task ID");
                     continue;
                 }
 
@@ -81,9 +81,11 @@ namespace MtnCtrl
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
                     
-                    if (xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(100)) != pdTRUE)
+                    if (xQueueSend(messageDispatcherQueue, &uartMsg, portMAX_DELAY) != pdTRUE)
                     {
-                        printf("ERROR #_raspberryHatComTask# WRITE TO QUEUE cmd decode msg FAILED\n");
+                        services::LoggerService::fatal("_raspberryHatComTask", "WRITE TO QUEUE cmd decode msg FAILED");
+                        for(;;)
+                            ;
                     }
                     break;
                 default:
@@ -135,7 +137,7 @@ namespace MtnCtrl
                 DispatcherTaskId::RaspberryHatComTask,
                 TaskCommand::Error,
                 static_cast<uint64_t>(error_code::INTERNAL));
-            printf("ERROR #_raspberryHatComTask# _getuartMsg\n");
+            services::LoggerService::fatal("MotionController::_getCommand", "Uart not readable");
             return msg;
         }
 

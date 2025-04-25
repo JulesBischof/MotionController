@@ -1,4 +1,5 @@
 #include "I2cBase.hpp"
+#include "LoggerService.hpp"
 #include <stdio.h>
 
 namespace i2cDevices
@@ -75,9 +76,7 @@ namespace i2cDevices
         if (err != num)
         {
             this->_setError(err);
-#if ENABLE_PRINTF_DEBUG_INFO
-            printf("I2C_Error! ReadFrame \n");
-#endif
+            services::LoggerService::error("i2cReadFrame", "-");
             return false;
         }
         return true;
@@ -103,9 +102,7 @@ namespace i2cDevices
         if (err != 1)
         {
             this->_setError(err);
-#if ENABLE_PRINTF_DEBUG_INFO
-            printf("I2C_Error! ReadReg \n");
-#endif
+            services::LoggerService::error("i2cReadReg", "-");
             return false;
         }
         return true;
@@ -130,9 +127,7 @@ namespace i2cDevices
         if (err != 2) // 2 due to 2Bytes data were send
         {
             this->_setError(err);
-#if ENABLE_PRINTF_DEBUG_INFO
-            printf("I2C_Error! WriteReg \n");
-#endif
+            services::LoggerService::error("i2cWriteReg", "-");
             return false;
         }
         return true;
@@ -146,15 +141,11 @@ namespace i2cDevices
         {
         case -PICO_ERROR_GENERIC:
             this->_i2cStatus = I2C_NO_ACK;
-#if ENABLE_PRINTF_DEBUG_INFO
-            printf("# I2C_NO_ACK # \n");
-#endif
+            services::LoggerService::error("i2cSetError", "no Ack");
             break;
         case -PICO_ERROR_TIMEOUT:
             this->_i2cStatus = I2C_TIMEOUT;
-#if ENABLE_PRINTF_DEBUG_INFO
-            printf("# I2C_TIMEOUT # \n");
-#endif
+            services::LoggerService::error("i2cSetError", "Timeout");
             break;
         default:
             break;

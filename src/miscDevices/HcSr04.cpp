@@ -3,6 +3,8 @@
 #include "pico/stdlib.h"
 #include <stdio.h>
 
+#include "LoggerService.hpp"
+
 #include "HcSr04Config.hpp"
 
 namespace miscDevices
@@ -199,7 +201,7 @@ namespace miscDevices
 #endif
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)
-            value = distance;
+            float value = distance;
             xQueueOverwrite(_queueHandle, &value);
 #endif
 
@@ -236,11 +238,12 @@ namespace miscDevices
         xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
         float retVal = _kalmanFilter.getDistancePredicted(dt);
         xSemaphoreGive(_kalmanFilterSemaphore);
-#elif
+#else
         float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
         if (_queueHandle == nullptr)
         {
-            return buffer;
+            services::LoggerService::fatal("HcSr04 getSensorData", "queueHandle is nullptr");
+            return retVal;
             /* ERROR ??? */
         }
         xQueuePeek(_queueHandle, &retVal, pdMS_TO_TICKS(10));
@@ -264,15 +267,10 @@ namespace miscDevices
 
     void HcSr04::setCurrentVelocity(float v)
     {
-        if (_currentVelocitySemaphore == nullptr)
-        {
-            return;
-            /* ERROR ??? */
-        }
-
         xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
         _currentVelocity = v;
         xSemaphoreGive(_currentVelocitySemaphore);
+        services::LoggerService::debug("HcSr04 setCurrentCelocity", "set Current Velocity to %f", _currentVelocity);
     }
 
     float HcSr04::getCurrentVelocity()

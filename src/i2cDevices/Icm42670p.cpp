@@ -1,7 +1,7 @@
 #include "Icm42670p.hpp"
 #include "Icm42670pConfig.hpp"
 
-#include <stdio.h>
+#include "LoggerService.hpp"
 
 namespace i2cDevices
 {
@@ -36,36 +36,36 @@ namespace i2cDevices
         uint8_t address = 0;
 
         address = (uint8_t)(PWR_MGMT0 & 0xFF);
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("init PWR_MGMT0 register (addr %Xh) value: (%Xh)\n", address, PWR_MGMT0_INITVALUE);
-#endif
+        services::LoggerService::debug("Icm42670p::_initDevice()", "PWR_MGMT0 register (addr %Xh) value: (%Xh)", address, PWR_MGMT0_INITVALUE);
+
         if (!i2cWriteReg(address, PWR_MGMT0_INITVALUE))
-            printf("Failed to write PWR_MGMT0 register\n");
+        {
+            services::LoggerService::fatal("Icm42670p::_initDevice()", "failed to Write PWR_MGMT0");
+        }
 
         address = (uint8_t)(GYRO_CONFIG0 & 0xFF);
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("init GYRO_CONFIG0 register (addr %Xh) value: (%Xh)\n", address, CONFIG0_INITVALUE);
-#endif
+        services::LoggerService::debug("Icm42670p::_initDevice()", "GYRO_CONFIG0 register (addr %Xh) value: (%Xh)\n", address, CONFIG0_INITVALUE);
+
         if (!i2cWriteReg(address, CONFIG0_INITVALUE))
-            printf("Failed to write GYRO_CONFIG0 register\n");
+        {
+            services::LoggerService::fatal("Icm42670p::_initDevice()", "failed to Write GYRO_CONFIG0");
+        }
 
         address = (uint8_t)(GYRO_CONFIG1 & 0xFF);
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("init GYRO_CONFIG1 register (addr %Xh) value: (%Xh)\n", address, CONFIG1_INITVALUE);
-#endif
+        services::LoggerService::debug("Icm42670p::_initDevice()", "GYRO_CONFIG1 register (addr %Xh) value: (%Xh)\n", address, CONFIG1_INITVALUE);
+
         if (!i2cWriteReg(address, CONFIG1_INITVALUE))
-            printf("Failed to write GYRO_CONFIG1 register\n");
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("Icm4670p init done! \n");
-#endif
+        {
+            services::LoggerService::fatal("Icm42670p::_initDevice()", "failed to Write GYRO_CONFIG1");
+        }
+        services::LoggerService::info("Icm42670p::_initDevice()", "init done!");
     }
 
     /// @brief sends example message to device
     void Icm42670p::_checkDevice()
     {
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("check Device ... Read out initialization values ... \n");
-#endif
+        services::LoggerService::debug("Icm42670p::_checkDevice()", "check initialisation values");
+
         uint8_t address = 0;
         uint8_t buffer[3] = {0};
 
@@ -77,10 +77,8 @@ namespace i2cDevices
 
         address = (uint8_t)(GYRO_CONFIG1);
         i2cReadReg(address, &buffer[2], 1);
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("Initialization Register values: \n - PWR_MGMT0: %Xh \n - GYRO_CONFIG0: %Xh \n - GYRO_CONFIG1: %Xh \n", buffer[0], buffer[1], buffer[2]);
-        printf("Icm4670p check done! \n");
-#endif
+
+        services::LoggerService::debug("Icm42670p::_checkDevice()", "Initialization Register values: \n - PWR_MGMT0: %Xh \n - GYRO_CONFIG0: %Xh \n - GYRO_CONFIG1: %Xh \n", buffer[0], buffer[1], buffer[2]);
         return;
     }
 

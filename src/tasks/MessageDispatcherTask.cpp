@@ -28,14 +28,16 @@ namespace MtnCtrl
                 case (DispatcherTaskId::LineFollowerTask):
                     if(xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
                     {
-                        printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcher - send to LineFollowerTask\n");
-                        while(1){} /* ERROR */
+                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
                     }
                     break;
                 case (DispatcherTaskId::RaspberryHatComTask):
-                    if (xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    if (xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) != pdTRUE)
                     {
-                        printf("ERROR #messageDispatcherTask# NULLREFERENCE messageDispatcher - send to RaspiComTask\n");
+                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
                         while (1)
                         {
                         } /* ERROR */

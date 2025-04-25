@@ -10,6 +10,7 @@
 int main()
 {
     stdio_init_all();
+    services::LoggerService::setLogLevel(APPCONFIG_LOGLEVEL);
 
 #if APP_MODE == 0
     testApp();
@@ -32,9 +33,7 @@ int main()
 // -------- Hooks
 void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 {
-    // Handle Stack Overflow hier
-    printf("Stack Overflow in Task: %s\n", pcTaskName);
-    // Optional: Hier kannst du das System stoppen, neu starten oder debuggen.
+    services::LoggerService::fatal("vApplicationStackOverflowHook","stack overflow in Task: %s\n", pcTaskName);
     for (;;)
-        ; // Endlosschleife, falls erforderlich
+        ;
 }

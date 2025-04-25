@@ -1,7 +1,7 @@
 #include "LineSensor.hpp"
 
 #include "pico/stdlib.h"
-#include <stdio.h>
+#include "LoggerService.hpp"
 
 namespace miscDevices
 {
@@ -49,9 +49,7 @@ namespace miscDevices
             this->_calibValuesLow[i] = defValuesLow[i];
             this->_calibValuesHigh[i] = defValuesHigh[i];
         }
-#if ENABLE_PRINTF_DEBUG_INFO
-        printf("LINESENSOR - default calibration set \n");
-#endif
+        services::LoggerService::debug("LineSensor::_initDefaultCalibration", "default calibration set");
     }
 
     /* ==================================
@@ -69,7 +67,7 @@ namespace miscDevices
 
         if (!err)
         {
-            printf("ERROR OCCURRED read adcValue in Line Sensor instance\n");
+            services::LoggerService::fatal("LineSensor::getLinePositionDigital", "reading adcValue");
             return 0;
         }
 
@@ -154,9 +152,9 @@ namespace miscDevices
 
         if (!err)
         {
-            printf("ERROR OCCURRED read adcValue in Line Sensor instance\n");
+            services::LoggerService::error("LineSensor::getLinePositionAnalog", "reading adcValue");
             _status |= LINESENSOR_ERROR;
-            return -1;
+            return LINESENSOR_MIDDLE_POSITION;
         }
 
         uint8_t lineCounter = 0;
@@ -214,7 +212,8 @@ namespace miscDevices
 
         if (!denumerator)
         {
-            printf("LineSensor Read Analog DIVIDE ZERO!\n");
+            // this is just info logLevel due to this can happen if LineSensor stands on top of a Node
+            services::LoggerService::info("LineSensor::_minMaxNormalize", "prevented division by zero");
             _status |= LINESENSOR_ERROR;
             return LINESENSOR_MIDDLE_POSITION;
         }
@@ -238,7 +237,10 @@ namespace miscDevices
     {
         if (calibMax <= calibMin)
         {
-            printf("ERROR - wrong calibration! _minMaxNormalize \n");
+            services::LoggerService::fatal("LineSensor::_minMaxNormalize", "wrong calibration value! calibMax <= calibMin");
+            for (;;)
+            {
+            }
             return 0;
         }
 

@@ -2,7 +2,7 @@
 
 namespace services
 {
-    static logLevel _logLevel = logLevel::None;
+    logLevel LoggerService::_logLevel = logLevel::None;
 
     void services::LoggerService::_print(const char *prfx, const char *call, const char *msg, va_list args)
     {
