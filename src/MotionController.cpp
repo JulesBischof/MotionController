@@ -119,9 +119,12 @@ namespace MtnCtrl
     void MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
-        _gripControllerComQueue = xQueueCreate(GRIPCONTROLLERCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _messageDispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+
+#if INCLUDE_GRIPCONTROLLER_AS_INSTANCE == (0)
+        _gripControllerComQueue = xQueueCreate(GRIPCONTROLLERCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+#endif
 
         if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr)
         {
@@ -270,5 +273,16 @@ namespace MtnCtrl
         _startLineFollowerTask();
         _startMessageDispatcherTask();
         _startRaspberryHatComTask();
+
+#if INCLUDE_GRIPCONTROLLER_AS_INSTANCE == (0)
+        _startGripControllerComTask();
+#endif
     }
+
+#if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
+    void MotionController::registerGripControllerInstance(QueueHandle_t gripControllerQueue)
+    {
+        _gripControllerComQueue = gripControllerQueue;
+    }
+#endif
 }

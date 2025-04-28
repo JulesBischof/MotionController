@@ -76,8 +76,16 @@ namespace MtnCtrl
                 case TaskCommand::Move:
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
 
-                    _lineFollowerStm.update(message.getData());
+                    _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
+                    _handleBarrierStm.update(message.getData(), message.command);
+
+                    break;
+
+                case TaskCommand::SlowDown:
+                    _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
+
+                    _lineFollowerStm.update(message.getData(), message.command);
                     _handleBarrierStm.update(message.getData(), message.command);
 
                     break;

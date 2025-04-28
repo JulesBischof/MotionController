@@ -21,6 +21,7 @@ namespace MtnCtrl
     {
         // lower 16 bits statemaschine relevant flags
         MOTORS_AT_STANDSTILL = 1 << 0,
+        RUNMODE_SLOW = 1 << 1,
 
         // upper 16 bits events and infos for raspberry hat
         CROSSPOINT_DETECTED = 1 << 16,
@@ -35,8 +36,11 @@ namespace MtnCtrl
     /*            consts                 */
     /* ================================= */
 
-    constexpr float ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
-    constexpr float V_MAX_IN_MMPS = ( (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM)* M_PI * ROTATIONS_PER_SEC); // mm per second
+    constexpr float V_MAX_ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
+    constexpr float V_MAX_IN_MMPS = ( (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM)* M_PI * V_MAX_ROTATIONS_PER_SEC); // mm per second
+
+    constexpr float V_SLOW_ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE_SLOW / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
+    constexpr float V_SLOW_IN_MMPS = ((LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM)*M_PI * V_SLOW_ROTATIONS_PER_SEC); // mm per second
 
     constexpr float ROTATIONS_PER_SEC_SQUARED = (LINEFOLLERCONFIG_AMAX_REGISTER_VALUE / (131072.f / TMC5240CLOCKFREQUENCY));
     constexpr float A_MAX_IN_MMPSS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC_SQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2

@@ -15,7 +15,7 @@ namespace MtnCtrl
     {
         NoCommand,
         Move,
-        Reverse,
+        SlowDown,
         Turn,
         Stop,
         Info,

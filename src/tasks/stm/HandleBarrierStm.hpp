@@ -9,7 +9,6 @@
 #include "FreeRTOS.h"
 #include "queue.h"
 
-
 #include "DispatcherMessage.hpp"
 
 namespace MtnCtrl
@@ -20,6 +19,7 @@ namespace MtnCtrl
         {
             IDLE,              // IDLE
             CHECK_DISTANCE,    // check distance
+            SLOW_DOWN,         // slow down vehicle nearby barrier
             WAIT_FOR_STOP_0,   // wait for robot to stop
             MIDDLE_ON_LINE,    // send driver command: middle on line
             WAIT_FOR_STOP_1,   // wait for robot to stop
@@ -29,12 +29,14 @@ namespace MtnCtrl
             WAIT_FOR_GC_ACK_0, // wait for GC-ACK
             TURN_ROBOT_0,      // send driver command: turn robot
             WAIT_FOR_STOP_3,   // wait for robot to stop
-            SET_BACK_ROBOT,    // send driver command: move back
+            SET_BACK_ROBOT_0,  // send driver command: move back
             WAIT_FOR_STOP_4,   // wait for robot to stop
             SEND_RELEASE_CMD,  // send GC-command: release barrier
             WAIT_FOR_GC_ACK_1, // wait for GC-ACK
-            TURN_ROBOT_1,      // send driver command: turn robot
+            SET_BACK_ROBOT_1,  // turned back - set back a little
             WAIT_FOR_STOP_5,   // wait for robot to stop
+            TURN_ROBOT_1,      // send driver command: turn robot
+            WAIT_FOR_STOP_6,   // wait for robot to stop
             DONE,              // send driver command: move robot
         };
 
@@ -46,6 +48,8 @@ namespace MtnCtrl
             QueueHandle_t _lineFollowerTaskQueue, _messageDispatcherQueue;
             uint32_t _lastMsgData;
             bool _gcAck;
+
+            absolute_time_t _stopTimeStamp;
 
         public:
             HandleBarrierStm(uint32_t *statusFlags,

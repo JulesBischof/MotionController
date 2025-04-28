@@ -11,6 +11,7 @@
 #include "semphr.h"
 
 #include "HcSr04KalmanFilter.hpp"
+#include "AdaptiveLowPassFilter.hpp"
 
 namespace miscDevices
 {
@@ -34,6 +35,9 @@ namespace miscDevices
 
         HcSr04KalmanFilter _kalmanFilter;
         SemaphoreHandle_t _kalmanFilterSemaphore;
+
+        AdaptiveLowPassFilter _adaptiveLowPassFilter;
+        SemaphoreHandle_t _adaptiveLowPassFilterSemaphore;
 
         absolute_time_t _lastPredictionTimestamp;
         SemaphoreHandle_t _lastPredictionTimestampSemaphore;
@@ -72,9 +76,6 @@ namespace miscDevices
 
         /// @brief initializes sensortask as well as ISR's. !!! needs to be called AFTER scheduler is running !!!
         void initMeasurmentTask();
-
-        /// @brief triggers a new measurment cycle
-        void triggerNewMeasurment();
 
         /// @brief reads result of last measurment
         /// @return last distance in mm

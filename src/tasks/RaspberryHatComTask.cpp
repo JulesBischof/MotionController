@@ -196,12 +196,6 @@ namespace MtnCtrl
                 retVal.setData(dec.get_raw_parameters());
                 break;
 
-            case (command::REVERSE):
-                retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
-                retVal.command = TaskCommand::Reverse;
-                retVal.setData(dec.get_raw_parameters());
-                break;
-
             case (command::STOP):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::Stop;

@@ -51,6 +51,15 @@ namespace miscDevices
         _lastPredictionTimestamp = get_absolute_time(); // ctor runs in advance to scheduler - no need to protect
 
         _kalmanFilterSemaphore = xSemaphoreCreateMutex();
+
+        _adaptiveLowPassFilter = AdaptiveLowPassFilter(HCSR04_CONFIG_ADAPTIVELOWPASS_ALPHASTANDSTILL,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_ALPHAVELOCITYPHASE,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_BETA,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_GAMMA,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_KI,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_ANTIWINDUP,
+                                                       HCSR04_CONFIG_ADAPTIVELOWPASS_INITIDISTANCE);
+        _adaptiveLowPassFilterSemaphore = xSemaphoreCreateMutex();
     }
 
     HcSr04::HcSr04()
@@ -138,22 +147,11 @@ namespace miscDevices
                         tskIDLE_PRIORITY + 2,
                         &_taskHandle) != pdTRUE)
         {
-            /* ERROR HANDLING ? */
+            services::LoggerService::fatal("HcSr04::initMeasurmentTask()", "failed to create Task");
+            for (;;)
+                ;
         }
-
         _initHcSr04Isr();
-        return;
-    }
-
-    void HcSr04::triggerNewMeasurment()
-    {
-        if (_taskHandle == nullptr)
-        {
-            return;
-            /* ERROR ??? */
-        }
-
-        xTaskNotifyGive(_taskHandle);
         return;
     }
 
@@ -187,16 +185,16 @@ namespace miscDevices
 #if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
             if (distance < INITIAL_DISTANCE)
             {
-            xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-            _kalmanFilter.update(distance, dt, getCurrentVelocity());
-            xSemaphoreGive(_kalmanFilterSemaphore);
+                xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
+                _kalmanFilter.update(distance, dt, getCurrentVelocity());
+                xSemaphoreGive(_kalmanFilterSemaphore);
             }
-            else 
+            else
             {
-            xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-            // set v to 0, otherwise kalmanfilter predicts movement - thats wrong
-            _kalmanFilter.update(INITIAL_DISTANCE, dt, 0);
-            xSemaphoreGive(_kalmanFilterSemaphore);
+                xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
+                // set v to 0, otherwise kalmanfilter predicts movement - thats wrong
+                _kalmanFilter.update(INITIAL_DISTANCE, dt, 0);
+                xSemaphoreGive(_kalmanFilterSemaphore);
             }
 #endif
 
@@ -205,7 +203,13 @@ namespace miscDevices
             xQueueOverwrite(_queueHandle, &value);
 #endif
 
-#if HCSR04CONFIG_USE_LOW_PASS_IIR == (1)
+#if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
+            xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+            _adaptiveLowPassFilter.update(distance);
+            xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
+#endif
+
+#if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS == (1)
             static float lastVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
 
             value = HCSR04CONFIG_LOW_PASS_IIR_ALPHA * distance + (1.f - HCSR04CONFIG_LOW_PASS_IIR_ALPHA) * lastVal;
@@ -238,7 +242,8 @@ namespace miscDevices
         xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
         float retVal = _kalmanFilter.getDistancePredicted(dt);
         xSemaphoreGive(_kalmanFilterSemaphore);
-#else
+#endif
+#if HCSR04CONFIG_USE_RAW_VALUES || HCSR04CONFIG_USE_KALMAN_FILTER
         float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
         if (_queueHandle == nullptr)
         {
@@ -247,6 +252,12 @@ namespace miscDevices
             /* ERROR ??? */
         }
         xQueuePeek(_queueHandle, &retVal, pdMS_TO_TICKS(10));
+#endif
+#if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
+        float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
+        xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+        retVal = _adaptiveLowPassFilter.getData();
+        xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
 #endif
 
 #if HCSR04CONFIG_PRINTF_FILTEROUTPUT_DATA == (1)
@@ -259,17 +270,22 @@ namespace miscDevices
 
     void HcSr04::_trigger()
     {
-        // TODO: trigger pin by PIO possible ???
         gpio_put(_triggerPin, false);
         sleep_us(10);
-        gpio_put(_triggerPin, true); // pin is negative active
+        gpio_put(_triggerPin, true);
     }
 
     void HcSr04::setCurrentVelocity(float v)
     {
+#if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
+        xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+        _adaptiveLowPassFilter.setVelocity(v);
+        xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
+#else
         xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
         _currentVelocity = v;
         xSemaphoreGive(_currentVelocitySemaphore);
+#endif
         services::LoggerService::debug("HcSr04 setCurrentCelocity", "set Current Velocity to %f", _currentVelocity);
     }
 
@@ -292,6 +308,7 @@ namespace miscDevices
     uint32_t HcSr04::_getHcSr04RawTimeDiff()
     {
         uint32_t retVal = 0;
+
 
         retVal = _rawtimediff; // acces is atomic - no protection neccesseary
 

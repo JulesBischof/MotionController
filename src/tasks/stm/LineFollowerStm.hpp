@@ -5,6 +5,7 @@
 
 #include "Tmc5240.hpp"
 #include "LineSensor.hpp"
+#include "DispatcherMessage.hpp"
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -29,7 +30,10 @@ namespace MtnCtrl
             spiDevices::Tmc5240 *_driver1;
             miscDevices::LineSensor *_lineSensor;
 
+            absolute_time_t _stopTimeStamp;
+
             QueueHandle_t _lineFollowerTaskQueue;
+            bool _slowFlag;
 
             void _followLine();
             int32_t _controllerC(int32_t e);
@@ -46,8 +50,12 @@ namespace MtnCtrl
             bool run() override;
             void reset() override;
             void update(uint32_t msgData) override;
+            void update(uint32_t msgData, TaskCommand cmd);
 
-            LineFollowerStmState getState() override { return _state; };
+                LineFollowerStmState getState() override
+            {
+                return _state;
+            };
         };
     }
 }

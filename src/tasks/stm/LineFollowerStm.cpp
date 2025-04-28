@@ -3,6 +3,8 @@
 #include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
+#include "LoggerService.hpp"
+
 #include "DispatcherMessage.hpp"
 
 #include "pico/stdlib.h"
@@ -98,11 +100,24 @@ namespace MtnCtrl
 
         void LineFollowerStm::reset()
         {
+            _slowFlag = false;
             _state = LineFollowerStmState::IDLE;
         }
 
         void LineFollowerStm::update(uint32_t msgData)
         {
+            services::LoggerService::fatal("LineFollwerStm::update(uint32_t msgData);", "not implemented");
+            while (1)
+            {
+                /* code */
+            }
+            
+        }
+
+        void LineFollowerStm::update(uint32_t msgData, TaskCommand cmd)
+        {
+            _slowFlag = (cmd == TaskCommand::SlowDown) ? true : false;
+
             if (msgData == 0)
             {
                 _state = LineFollowerStmState::FOLLOW_LINE;
@@ -116,6 +131,9 @@ namespace MtnCtrl
             uint32_t statusFlags = *_statusFlags;
             int32_t v1 = 0;
             int32_t v2 = 0;
+
+            // decide for speedmode
+            uint32_t vmax = (_slowFlag == true) ? LINEFOLLERCONFIG_VMAX_REGISTER_VALUE_SLOW : LINEFOLLERCONFIG_VMAX_REGISTER_VALUE;
 
             // get Sensor values
 #if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
@@ -141,9 +159,8 @@ namespace MtnCtrl
             u = _controllerC(e);
 
             // set Motor values (Process P)
-            v1 = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE + u;
-            v2 = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE - u;
-            
+            v1 = vmax + u;
+            v2 = vmax - u;
 
             // set Motor values
             _driver0->moveVelocityMode(1, v1, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);

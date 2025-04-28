@@ -80,16 +80,20 @@ namespace MtnCtrl
 
                 break;
             case MovePositionModeStmState::WAIT_FOR_STOP:
-                if (_checkForStandstill())
+                if (_checkDriversForStandstill())
                 {
+                    _stoppedTimeStamp = get_absolute_time();
                     _state = MovePositionModeStmState::STOPPED;
                 }
 
                 break;
             case MovePositionModeStmState::STOPPED:
-                // set flag
-                *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
-                _state = MovePositionModeStmState::IDLE;
+                // for safety resons - wait a certain time
+                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000) ) <= get_absolute_time())
+                {
+                    *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
+                    _state = MovePositionModeStmState::IDLE;
+                }
                 break;
             default:
                 /* ERROR..? */
@@ -128,7 +132,6 @@ namespace MtnCtrl
                 break;
 
             case TaskCommand::Stop:
-                _stoppedTimeStamp = xTaskGetTickCount();
                 _state = MovePositionModeStmState::STOP_MODE;
                 break;
             default:
@@ -146,14 +149,11 @@ namespace MtnCtrl
             return;
         }
 
-        bool MovePositionModeStm::_checkForStandstill()
+        bool MovePositionModeStm::_checkDriversForStandstill()
         {
-            // bool val_driver0 = _driver0->checkForStandstill();
-            // bool val_driver1 = _driver1->checkForStandstill();
-            // if (val_driver0 && val_driver1)
-
-            // just wait a certain time - asking the driver resluts in target-velocity; the motors then are still driving
-            if ((_stoppedTimeStamp + TIME_UNTIL_STANDSTILL_IN_MS) >= xTaskGetTickCount())
+            bool val_driver0 = _driver0->checkForStandstill();
+            bool val_driver1 = _driver1->checkForStandstill();
+            if (val_driver0 && val_driver1)
             {
                 *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 return true;

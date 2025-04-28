@@ -245,7 +245,14 @@ namespace spiDevices
     bool Tmc5240::checkForStandstill()
     {
         // return _spiReadBitField(TMC5240_DRVSTATUS, TMC5240_STST_MASK, TMC5240_STST_SHIFT);
-        return _spiReadBitField(TMC5240_VACTUAL, TMC5240_VACTUAL_MASK, TMC5240_VACTUAL_SHIFT) == 0;
+        // return _spiReadBitField(TMC5240_VACTUAL, TMC5240_VACTUAL_MASK, TMC5240_VACTUAL_SHIFT) == 0;
+        bool vel = _spiReadBitField(TMC5240_RAMPSTAT, TMC5240_VELOCITY_REACHED_MASK, TMC5240_VELOCITY_REACHED_SHIFT);
+        bool pos = _spiReadBitField(TMC5240_RAMPSTAT, TMC5240_POSITION_REACHED_MASK, TMC5240_POSITION_REACHED_SHIFT);
+
+        if (vel || pos)
+            return true; // either velocity reached OR position reached
+        else
+            return false;
     }
 
     uint32_t Tmc5240::getGSTAT()

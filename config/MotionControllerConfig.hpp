@@ -28,4 +28,8 @@
 #define I2C_INSTANCE_DEVICES (i2c0)
 #define TMC5240_SPI_INSTANCE (spi0)
 
+/* -------------- GripController ------------------- */
+#define INCLUDE_GRIPCONTROLLER_AS_INSTANCE (0)
+
+
 #endif

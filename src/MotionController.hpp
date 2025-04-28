@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "LoggerService.hpp"
+#include "MotionControllerConfig.hpp"
 
 #include "FreeRTOS.h"
 #include "task.h"
@@ -120,8 +121,13 @@ namespace MtnCtrl
         MotionController();
         ~MotionController();
 
-        /// @brief Starts FreeRTOS Scheduler
+        /// @brief initialises FreeRTOS Tasks
         void startTasks();
+
+#if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
+        void registerGripControllerInstance(QueueHandle_t gripControllerQueue);
+#endif
+
     };
 }
 

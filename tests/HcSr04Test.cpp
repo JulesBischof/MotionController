@@ -17,7 +17,7 @@ void HcSr04Test(void)
     while (1)
     {
         float buffer = hcSr04.getSensorData();
-        hcSr04.triggerNewMeasurment();
+        // hcSr04.triggerNewMeasurment();
 
         printf("%f\n", buffer);
 
