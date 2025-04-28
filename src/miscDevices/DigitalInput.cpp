@@ -36,6 +36,15 @@ namespace miscDevices
         /* not implemented yet */
     }
 
+    void DigitalInput::addIsrHandler(void (*IsrCallback)(uint, uint32_t), uint32_t event)
+    {
+        gpio_set_irq_enabled_with_callback(
+            _gpio,
+            event,
+            true,
+            IsrCallback);
+    }
+
     /* ==================================
             getters & setters
        ================================== */

@@ -27,6 +27,8 @@ namespace MtnCtrl
             spiDevices::Tmc5240 *_driver0;
             spiDevices::Tmc5240 *_driver1;
 
+            QueueHandle_t _messageDispatcherQueue;
+
             uint32_t _lastMsgData;
             absolute_time_t _stoppedTimeStamp;
 
@@ -36,7 +38,7 @@ namespace MtnCtrl
             bool _checkDriversForStandstill();
 
         public:
-            MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1);
+            MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t messageDispatcherQueue);
             MovePositionModeStm();
             ~MovePositionModeStm() override;
 

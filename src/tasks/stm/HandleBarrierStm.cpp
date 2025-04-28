@@ -12,12 +12,10 @@ namespace MtnCtrl
         HandleBarrierStm::HandleBarrierStm(uint32_t *statusFlags,
                                            miscDevices::HcSr04 *hcSr04,
                                            miscDevices::LineSensor *lineSensor,
-                                           QueueHandle_t lineFollowerTaskQueue,
                                            QueueHandle_t messageDispatcherQueue)
             : StmBase(statusFlags),
               _hcSr04(hcSr04),
               _lineSensor(lineSensor),
-              _lineFollowerTaskQueue(lineFollowerTaskQueue),
               _messageDispatcherQueue(messageDispatcherQueue)
         {
             init();
@@ -35,7 +33,7 @@ namespace MtnCtrl
         {
             _state = HandleBarrierStmState::IDLE;
             _gcAck = false;
-            _stopTimeStamp = get_absolute_time();
+            _posReached = false;
         }
 
         bool HandleBarrierStm::run()
@@ -49,6 +47,8 @@ namespace MtnCtrl
             switch (_state)
             {
             case HandleBarrierStmState::IDLE:
+                _gcAck = false;
+                _posReached = false;
                 retVal = true;
                 break;
 
@@ -57,11 +57,11 @@ namespace MtnCtrl
                 {
                     // slow down robot
                     msg = DispatcherMessage(
-                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::BarrierHandlerTask,
                         DispatcherTaskId::LineFollowerTask,
                         TaskCommand::SlowDown,
                         0);
-                    if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
                     }
                     _state = HandleBarrierStmState::SLOW_DOWN;
@@ -71,35 +71,46 @@ namespace MtnCtrl
             case HandleBarrierStmState::SLOW_DOWN:
                 if (distance < BRAKEDISTANCE_BARRIER_IN_MM)
                 {
-                    // stop drives and start Barrier Detected state maschine
+                    _hcSr04->setCurrentVelocity(V_SLOW_IN_MMPS);
+                    // stop drives
                     msg = DispatcherMessage(
-                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::BarrierHandlerTask,
                         DispatcherTaskId::LineFollowerTask,
                         TaskCommand::Stop,
                         0);
-                    if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
                     }
-                    *_statusFlags |= (uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED;
+
+                    // send msg to RaspberryHAT
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::BarrierHandlerTask,
+                        DispatcherTaskId::RaspberryHatComTask,
+                        TaskCommand::BarrierDetectedInfo,
+                        0);
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                    }
                     _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
                 }
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_0:
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _hcSr04->setCurrentVelocity(0);
                     _state = HandleBarrierStmState::MIDDLE_ON_LINE;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::MIDDLE_ON_LINE:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Turn,
                     services::LineSensorService::getVehicleRotation(_lineSensor));
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
 
@@ -107,19 +118,14 @@ namespace MtnCtrl
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_1:
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
-                    _stopTimeStamp = get_absolute_time();
                     _state = HandleBarrierStmState::POSITION_DISTANCE;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::POSITION_DISTANCE:
-                // wait couple of measurment cycles (due to hcsr04's low pass filter
-                if ((absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) <= (LINEFOLLOWERCONFIG_WAIT_MS_UNTIL_POSITION_CORRECTION * 1e3)) // us -> ms
-                {
-                    break;
-                }
                 // barrier is out of tolerance?
                 if ((distance < LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm ||
                      distance > LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm + LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm))
@@ -127,11 +133,11 @@ namespace MtnCtrl
                     int32_t corrPos = (distance - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm);
                     // correct postion
                     msg = DispatcherMessage(
-                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::BarrierHandlerTask,
                         DispatcherTaskId::LineFollowerTask,
                         TaskCommand::Move,
                         corrPos);
-                    if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
                     }
                 }
@@ -139,19 +145,20 @@ namespace MtnCtrl
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_2:
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _state = HandleBarrierStmState::SEND_GRIP_COMMAND;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::SEND_GRIP_COMMAND:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::GripControllerComTask,
                     TaskCommand::CraneGrip,
                     0);
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
 
@@ -173,50 +180,47 @@ namespace MtnCtrl
 
             case HandleBarrierStmState::TURN_ROBOT_0:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Turn,
                     1800); // ° * 10
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
-                _stopTimeStamp = get_absolute_time();
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_3:
-                if ((absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) <= (LINEFOLLOWERCONFIG_WAIT_MS_180_TURN * 1e3)) // us -> ms
-                {   // TODO !! IS THERE ANY BETTER WAY TO DO THAT???? 
-                    break;
-                }
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::SET_BACK_ROBOT_0:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
                     -1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm); // -1 due to backward
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_4:
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _state = HandleBarrierStmState::SEND_RELEASE_CMD;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::SEND_RELEASE_CMD:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::GripControllerComTask,
                     TaskCommand::CraneRelease,
                     0);
@@ -241,62 +245,55 @@ namespace MtnCtrl
 
             case HandleBarrierStmState::SET_BACK_ROBOT_1:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
                     -1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm); // -1 due to backward
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
-                _stopTimeStamp = get_absolute_time();
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_5:
-                if ((absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) <= (LINEFOLLOWERCONFIG_WAIT_MS_180_TURN * 1e3)) // us -> ms
-                {                                                                                                                // TODO !! IS THERE ANY BETTER WAY TO DO THAT????
-                    break;
-                }
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _state = HandleBarrierStmState::TURN_ROBOT_1;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::TURN_ROBOT_1:
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Turn,
                     -1800); // ° * 10
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_6;
-                _stopTimeStamp = get_absolute_time();
                 break;
 
             case HandleBarrierStmState::WAIT_FOR_STOP_6:
-                if ((absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) <= (LINEFOLLOWERCONFIG_WAIT_MS_180_TURN * 1e3)) // us -> ms
-                {                                                                                                                // TODO !! IS THERE ANY BETTER WAY TO DO THAT????
-                    break;
-                }
-                if (*_statusFlags & (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL)
+                if (_posReached)
                 {
                     _state = HandleBarrierStmState::DONE;
+                    _posReached = false;
                 }
                 break;
 
             case HandleBarrierStmState::DONE:
+                reset();
+                
                 msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
                     0); // 0 = LineFollowerMode
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
-                _state = HandleBarrierStmState::IDLE;
                 break;
 
             default:
@@ -320,7 +317,6 @@ namespace MtnCtrl
             switch (cmd)
             {
             case TaskCommand::Move:
-                _lastMsgData = msgData;
                 if (msgData == 0) // LineFollowerMode
                 {
                     _state = HandleBarrierStmState::CHECK_DISTANCE;
@@ -328,22 +324,15 @@ namespace MtnCtrl
                 }
                 break;
 
+            case TaskCommand::PositionReached:
+                _posReached = true;
+                break;
+
             case TaskCommand::GcAck:
-                _lastMsgData = msgData;
                 _gcAck = true;
                 break;
 
-            case TaskCommand::SlowDown:
-                _lastMsgData = msgData;
-                _hcSr04->setCurrentVelocity(V_SLOW_IN_MMPS);
-                break;
-
             case TaskCommand::Stop:
-                if(*_statusFlags & (uint32_t)RunModeFlag::LINEFOLLOWER_BARRIER_DETECTED)
-                    {
-                        break;
-                    }
-                _lastMsgData = msgData;
                 _state = HandleBarrierStmState::IDLE;
                 break;
             default:

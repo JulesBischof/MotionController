@@ -19,6 +19,8 @@ namespace miscDevices
         DigitalInput(uint8_t gpio);
         ~DigitalInput();
 
+        void addIsrHandler(void (*IsrCallback)(uint, uint32_t), uint32_t event);
+
         bool getValue();
     };
 

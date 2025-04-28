@@ -21,10 +21,8 @@
 #include "DispatcherMessage.hpp"
 
 #include "HandleBarrierStm.hpp"
-#include "CheckSafetyButtonStm.hpp"
 #include "LineFollowerStm.hpp"
 #include "MovePositionModeStm.hpp"
-#include "SendStatusFlagsStm.hpp"
 
 #include "prain_uart/protocol.hpp"
     using namespace prain_uart;
@@ -46,8 +44,8 @@ namespace MtnCtrl
         /// @brief initializes all Classmembers such as sensors and drivers
         void _initPeripherals();
 
-        static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue, _gripControllerComQueue;
-        TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle, _gripControllerTaskHandle;
+        static QueueHandle_t _raspberryHatComQueue, _lineFollowerQueue, _messageDispatcherQueue, _gripControllerComQueue, _barrierHandlerQueue;
+        TaskHandle_t _raspberryComTaskHandle, _lineFollowerTaskHandle, _messageDispatcherTaskHandle, _gripControllerTaskHandle, _barrierHandlerTaskHandle;
 
         // peripherals
         spiDevices::Tmc5240 _driver0, _driver1;
@@ -61,6 +59,7 @@ namespace MtnCtrl
         void _raspberryHatComTask();
         void _gripControllerComTask();
         void _messageDispatcherTask();
+        void _barrierHandlerTask();
 
         /// @brief main loop LineFollowerTask. Checks on Barrierdistance as  well as on linepossition and moves vehicle accordingly
         void _startLineFollowerTask();
@@ -74,10 +73,14 @@ namespace MtnCtrl
         /// @brief main loop MessageDispatcherTask. Takes Messages and Routes them accordingly to the Reciever
         void _startMessageDispatcherTask();
 
-        /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task. 
+        static void _barrierHandlerTaskWrapper(void *pvParameters);
+        void _startBarrierHandlerTask();
+
+        /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
         /// @param pvParameters MotionController Instance
-        static void _lineFollerTaskWrapper(void *pvParameters);
-        
+        static void
+        _lineFollerTaskWrapper(void *pvParameters);
+
         /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
         /// @param pvParameters MotionController Instance
         static void _raspberryComTaskWrapper(void *pvParameters);
@@ -91,11 +94,9 @@ namespace MtnCtrl
         static void _messageDispatcherTaskWrapper(void *pvParameters);
 
         // lineFollower members
-        stm::HandleBarrierStm _handleBarrierStm;
-        stm::CheckSafetyButtonStm _checkSafetyButtonStm;
         stm::LineFollowerStm _lineFollowerStm;
         stm::MovePositionModeStm _movePositionModeStm;
-        stm::SendStatusFlagsStm _sendStatusFlagsStm;
+
 
         /// @brief reads out UART channel and copys raw frame into a DispatcherMessage Format
         /// @param uartId uart channel - either uart0 or uart1
@@ -115,6 +116,8 @@ namespace MtnCtrl
         /// @brief handles incoming messages. Does not decode data but sends Decode command to RaspberryComTask
         static void _uart0RxIrqHandler();
         static void _uart1RxIrqHandler();
+
+        static void _safetyButtonIrqHandler(uint gpio, uint32_t events);
 
     public:
         /// @brief default ctor

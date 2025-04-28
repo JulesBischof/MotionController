@@ -32,7 +32,7 @@ namespace MtnCtrl
 
             absolute_time_t _stopTimeStamp;
 
-            QueueHandle_t _lineFollowerTaskQueue;
+            QueueHandle_t _lineFollowerTaskQueue, _messageDispatcherQueue;
             bool _slowFlag;
 
             void _followLine();
@@ -42,7 +42,7 @@ namespace MtnCtrl
             uint32_t _lastMsgData;
 
         public:
-            LineFollowerStm(uint32_t *_statusFlags, miscDevices::LineSensor *lineSensor, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue);
+            LineFollowerStm(uint32_t *_statusFlags, miscDevices::LineSensor *lineSensor, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue, QueueHandle_t MessageDispatcherQueue);
             LineFollowerStm();
             ~LineFollowerStm() override;
 

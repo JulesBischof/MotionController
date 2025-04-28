@@ -57,6 +57,15 @@ namespace MtnCtrl
                 case (TaskCommand::Info):
                     txMsg = encode_info(address::RASPBERRY_HAT, message.getData());
                     break;
+                case (TaskCommand::BarrierDetectedInfo):
+                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::BARRIER_DETECTED);
+                    break;
+                case (TaskCommand::LostLineInfo):
+                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::LOST_LINE);
+                    break;
+                case (TaskCommand::NodeDetectedInfo):
+                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::NODE_DETECTED);
+                    break;
                 case (TaskCommand::Error):
                     txMsg = encode_error(address::RASPBERRY_HAT, message.getData());
                     break;
@@ -197,7 +206,7 @@ namespace MtnCtrl
                 break;
 
             case (command::STOP):
-                retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
+                retVal.receiverTaskId = DispatcherTaskId::Broadcast;
                 retVal.command = TaskCommand::Stop;
                 retVal.setData(0);
                 break;
@@ -236,6 +245,7 @@ namespace MtnCtrl
                     retVal.command = TaskCommand::PollLineSensor;
                     break;
                 case static_cast<uint8_t>(poll_id::ULTRASONIC):
+                    retVal.receiverTaskId = DispatcherTaskId::BarrierHandlerTask;
                     retVal.command = TaskCommand::PollUltrasonic;
                     break;
                 default:

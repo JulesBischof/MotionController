@@ -28,19 +28,12 @@ namespace MtnCtrl
     {
         // init stms
         uint32_t _lineFollowerStatusFlags = 0;
-        stm::CheckSafetyButtonStm _checkSafetyButtonStm(&_lineFollowerStatusFlags, &_safetyButton, _lineFollowerQueue);
-        _checkSafetyButtonStm.init();
-        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, _lineFollowerQueue);
+        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, _lineFollowerQueue, _messageDispatcherQueue);
         _lineFollowerStm.init();
-        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1);
+        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1, _messageDispatcherQueue);
         _movePositionModeStm.init();
-        stm::HandleBarrierStm _handleBarrierStm(&_lineFollowerStatusFlags, _hcSr04, &_lineSensor, _lineFollowerQueue, _messageDispatcherQueue);
-        _handleBarrierStm.init();
-        stm::SendStatusFlagsStm _sendStatusFlagsStm(&_lineFollowerStatusFlags, _messageDispatcherQueue);
-        _sendStatusFlagsStm.init();
 
         // init misc members
-        _hcSr04->initMeasurmentTask();
         MovementTracker _movementTracker(&_driver0, &_driver1);
 
         // get Queues - access is atomic, no protection neccesary
@@ -75,24 +68,17 @@ namespace MtnCtrl
                 {
                 case TaskCommand::Move:
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
-
                     _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
-                    _handleBarrierStm.update(message.getData(), message.command);
-
                     break;
 
                 case TaskCommand::SlowDown:
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
-
                     _lineFollowerStm.update(message.getData(), message.command);
-                    _handleBarrierStm.update(message.getData(), message.command);
-
                     break;
 
                 case TaskCommand::Stop:
                     _lineFollowerStm.reset();
-                    _handleBarrierStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
                     break;
 
@@ -113,14 +99,6 @@ namespace MtnCtrl
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
                                                  _lineSensor.getLinePositionAnalog());
-                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
-                    break;
-
-                case TaskCommand::PollUltrasonic:
-                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 message.senderTaskId,
-                                                 TaskCommand::PollDistance,
-                                                 _hcSr04->getSensorData());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
                     break;
 
@@ -147,11 +125,8 @@ namespace MtnCtrl
             } // end of message handling
 
             // run statemaschines
-            _checkSafetyButtonStm.run();
-            _handleBarrierStm.run();
             _lineFollowerStm.run();
             _movePositionModeStm.run();
-            _sendStatusFlagsStm.run();
 
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
         }

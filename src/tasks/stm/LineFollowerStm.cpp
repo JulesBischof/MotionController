@@ -14,8 +14,18 @@ namespace MtnCtrl
 {
     namespace stm
     {
-        LineFollowerStm::LineFollowerStm(uint32_t *_statusFlags, miscDevices::LineSensor *lineSensor, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t LineFollowerTaskQueue)
-            : StmBase(_statusFlags), _lineSensor(lineSensor), _driver0(driver0), _driver1(driver1), _lineFollowerTaskQueue(LineFollowerTaskQueue)
+        LineFollowerStm::LineFollowerStm(uint32_t *_statusFlags,
+                                         miscDevices::LineSensor *lineSensor,
+                                         spiDevices::Tmc5240 *driver0,
+                                         spiDevices::Tmc5240 *driver1,
+                                         QueueHandle_t LineFollowerTaskQueue,
+                                         QueueHandle_t MessageDispatcherQueue)
+            : StmBase(_statusFlags),
+              _lineSensor(lineSensor),
+              _driver0(driver0),
+              _driver1(driver1),
+              _lineFollowerTaskQueue(LineFollowerTaskQueue),
+              _messageDispatcherQueue(MessageDispatcherQueue)
         {
         }
 
@@ -66,10 +76,20 @@ namespace MtnCtrl
                 // stop motors
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::Broadcast,
                     TaskCommand::Stop,
                     0);
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                }
+
+                // send info to RaspberryHat
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::RaspberryHatComTask,
+                    TaskCommand::LostLineInfo,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
 
@@ -83,7 +103,17 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
                     LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm);
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(10)) != pdPASS)
+                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                }
+
+                // send info to RaspberryHat
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::RaspberryHatComTask,
+                    TaskCommand::NodeDetectedInfo,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                 }
 
@@ -111,7 +141,6 @@ namespace MtnCtrl
             {
                 /* code */
             }
-            
         }
 
         void LineFollowerStm::update(uint32_t msgData, TaskCommand cmd)

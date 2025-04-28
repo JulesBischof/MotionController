@@ -4,6 +4,7 @@
 #include "LineFollowerTaskConfig.hpp"
 #include "RaspberryHatComTaskConfig.hpp"
 #include "GripControllerComTaskConfig.hpp"
+#include "BarrierHandlerConfig.hpp"
 
 #include "Tmc5240.hpp"
 
@@ -19,11 +20,12 @@ namespace MtnCtrl
         static members & their getters
        ================================== */
 
-    // queue handles delared as static due to they get messages from uart ISR
+    // queue handles delared as static due to they might get messages from ISR
     QueueHandle_t MotionController::_raspberryHatComQueue = nullptr;
     QueueHandle_t MotionController::_gripControllerComQueue = nullptr;
     QueueHandle_t MotionController::_lineFollowerQueue = nullptr;
     QueueHandle_t MotionController::_messageDispatcherQueue = nullptr;
+    QueueHandle_t MotionController::_barrierHandlerQueue = nullptr;
 
     /* ==================================
             Constructor/Deconstructor
@@ -92,6 +94,7 @@ namespace MtnCtrl
         _adc = i2cDevices::Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
         _lineSensor = miscDevices::LineSensor(&_adc, UV_LED_GPIO);
         _safetyButton = miscDevices::DigitalInput(DIN_4);
+        _safetyButton.addIsrHandler(&_safetyButtonIrqHandler, GPIO_IRQ_EDGE_RISE);
         _tmc5240Eval_R2 = miscDevices::DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
@@ -116,18 +119,42 @@ namespace MtnCtrl
         return;
     }
 
+    void MotionController::_safetyButtonIrqHandler(uint gpio, uint32_t events)
+    {
+        services::LoggerService::debug("_safetyButtonIrqHandler", "safety Button pressed!");
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+        // send info to RaspberryHat
+        DispatcherMessage msg(DispatcherTaskId::NoTask,
+                              DispatcherTaskId::RaspberryHatComTask,
+                              TaskCommand::SafetyButtonInfo,
+                              0);
+        xQueueSendFromISR(_raspberryHatComQueue, &msg, &xHigherPriorityTaskWoken);
+
+        // send a stop Broadcast to all Tasks and yield (stop yield is more important)
+        msg = DispatcherMessage(DispatcherTaskId::NoTask,
+                              DispatcherTaskId::Broadcast,
+                              TaskCommand::Stop,
+                              0);
+        
+        xQueueSendFromISR(_messageDispatcherQueue, &msg, &xHigherPriorityTaskWoken);
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+
     void MotionController::_initQueues()
     {
         _raspberryHatComQueue = xQueueCreate(RASPBERRYHATCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _lineFollowerQueue = xQueueCreate(LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
         _messageDispatcherQueue = xQueueCreate(MESSAGEDISPATCHERTASKCONFIG_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
+        _barrierHandlerQueue = xQueueCreate(BARRIERHANDLERTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
 
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE == (0)
         _gripControllerComQueue = xQueueCreate(GRIPCONTROLLERCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
 #endif
 
-        if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr)
+        if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr || _barrierHandlerQueue)
         {
+            services::LoggerService::fatal("_initQueues()", "nullptr");
             for (;;)
             { /* ERROR??? */
             }
@@ -268,11 +295,31 @@ namespace MtnCtrl
         }
     }
 
+    void MotionController::_barrierHandlerTaskWrapper(void *pvParameters)
+    {
+        MotionController *obj = static_cast<MotionController *>(pvParameters);
+        obj->_barrierHandlerTask();
+    }
+
+    void MotionController::_startBarrierHandlerTask()
+    {
+        if (xTaskCreate(_barrierHandlerTaskWrapper,
+                        BARRIERHANDLERTASK_NAME,
+                        BARRIERHANDLERTASK_STACKSIZE / sizeof(StackType_t),
+                        this,
+                        tskIDLE_PRIORITY + BARRIERHANDLERTASK_PRIORITY,
+                        &_barrierHandlerTaskHandle) != pdTRUE)
+        {
+            /* ERROR HANDLING ??? */
+        }
+    }
+
     void MotionController::startTasks()
     {
         _startLineFollowerTask();
         _startMessageDispatcherTask();
         _startRaspberryHatComTask();
+        _startBarrierHandlerTask();
 
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE == (0)
         _startGripControllerComTask();

@@ -5,10 +5,12 @@ namespace MtnCtrl
     enum class DispatcherTaskId : uint8_t
     {
         NoTask,
+        Broadcast,
         DispatcherTask,
         LineFollowerTask,
         RaspberryHatComTask,
-        GripControllerComTask
+        GripControllerComTask,
+        BarrierHandlerTask,
     };
 
     enum class TaskCommand : uint8_t
@@ -16,9 +18,14 @@ namespace MtnCtrl
         NoCommand,
         Move,
         SlowDown,
+        PositionReached,
         Turn,
         Stop,
         Info,
+        BarrierDetectedInfo,
+        NodeDetectedInfo,
+        LostLineInfo,
+        SafetyButtonInfo,
         Ping,
         Pong,
         Error,

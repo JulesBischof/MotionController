@@ -9,7 +9,9 @@ namespace MtnCtrl
         // get QueueHandles
         QueueHandle_t lineFollowerQueue = _lineFollowerQueue;
         QueueHandle_t raspberryHatComQueue = _raspberryHatComQueue;
+        QueueHandle_t gripControllercomQueue = _gripControllerComQueue;
         QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
+        QueueHandle_t barrierHandlerQueue = _barrierHandlerQueue;
 
         // loop forever
         for (;;)
@@ -25,6 +27,7 @@ namespace MtnCtrl
                 case (DispatcherTaskId::DispatcherTask):
                     // shouldn't happen - error Handling..? send ERRORCODE to RaspberryHat
                     break;
+
                 case (DispatcherTaskId::LineFollowerTask):
                     if(xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
                     {
@@ -34,8 +37,9 @@ namespace MtnCtrl
                         } /* ERROR */
                     }
                     break;
+
                 case (DispatcherTaskId::RaspberryHatComTask):
-                    if (xQueueSend(_raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) != pdTRUE)
+                    if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) != pdTRUE)
                     {
                         services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
                         while (1)
@@ -43,8 +47,56 @@ namespace MtnCtrl
                         } /* ERROR */
                     }
                     break;
+
                 case (DispatcherTaskId::GripControllerComTask):
-                    // xQueueSend(_gripControllerComQueue, &message, pdMS_TO_TICKS(10));
+                    if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
+                    break;
+
+                case (DispatcherTaskId::BarrierHandlerTask):
+                    if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
+                    break;
+
+                case (DispatcherTaskId::Broadcast):
+                    if (xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
+                    if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
+                    if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(100)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
+                    if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(10)) != pdTRUE)
+                    {
+                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
+                        while (1)
+                        {
+                        } /* ERROR */
+                    }
                     break;
                 default:
                     break;

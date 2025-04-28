@@ -12,13 +12,14 @@ namespace MtnCtrl
     {
         MovePositionModeStm::MovePositionModeStm() {}
 
-        MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1)
+        MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t messageDispatcherQueue)
             : StmBase(_statusFlags)
         {
             _driver0 = driver0;
             _driver1 = driver1;
 
             _lastMsgData = 0;
+            _messageDispatcherQueue = messageDispatcherQueue;
 
             _state = MovePositionModeStmState::IDLE;
         }
@@ -36,6 +37,7 @@ namespace MtnCtrl
             uint32_t statusFlags = *_statusFlags;
 
             bool retVal = false;
+            DispatcherMessage msg;
 
             switch (_state)
             {
@@ -93,6 +95,17 @@ namespace MtnCtrl
                 {
                     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                     _state = MovePositionModeStmState::IDLE;
+                }
+
+                // inform BarrierHandlerTask
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
+                    TaskCommand::PositionReached,
+                    0);
+
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
                 }
                 break;
             default:

@@ -29,7 +29,6 @@ namespace MtnCtrl
         POSITION_REACHED = 1 << 18,
         SAFETY_BUTTON_PRESSED = 1 << 19,
         LINEFOLLOWER_ERROR = 1 << 20,
-        LINEFOLLOWER_BARRIER_DETECTED = 1 << 21,
     };
 
     /* ================================= */

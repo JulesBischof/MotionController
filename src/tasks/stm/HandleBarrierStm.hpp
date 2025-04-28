@@ -45,9 +45,8 @@ namespace MtnCtrl
         private:
             miscDevices::HcSr04 *_hcSr04;
             miscDevices::LineSensor *_lineSensor;
-            QueueHandle_t _lineFollowerTaskQueue, _messageDispatcherQueue;
-            uint32_t _lastMsgData;
-            bool _gcAck;
+            QueueHandle_t _messageDispatcherQueue;
+            bool _gcAck, _posReached;
 
             absolute_time_t _stopTimeStamp;
 
@@ -55,7 +54,6 @@ namespace MtnCtrl
             HandleBarrierStm(uint32_t *statusFlags,
                              miscDevices::HcSr04 *hcSr04,
                              miscDevices::LineSensor *lineSensor,
-                             QueueHandle_t lineFollowerTaskQueue,
                              QueueHandle_t messageDispatcherQueue);
             HandleBarrierStm();
             ~HandleBarrierStm() override;
