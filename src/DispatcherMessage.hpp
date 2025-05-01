@@ -10,7 +10,10 @@ namespace MtnCtrl
         LineFollowerTask,
         RaspberryHatComTask,
         GripControllerComTask,
+        MotionControllerComTask,
+        ServoDriveTask,
         BarrierHandlerTask,
+        TestTask,
     };
 
     enum class TaskCommand : uint8_t
@@ -61,7 +64,7 @@ namespace MtnCtrl
         {
         }
 
-        /// @brief creates a Dispatcher Messager 
+        /// @brief creates a Dispatcher Messager
         /// @param sender sender Task ID
         /// @param receiver reciever Task ID
         /// @param cmd Command to Send

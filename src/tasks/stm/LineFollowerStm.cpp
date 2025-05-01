@@ -61,11 +61,13 @@ namespace MtnCtrl
 
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_CROSS_DETECTED)
                 {
+                    services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
                     _state = LineFollowerStmState::CROSSPOINT_DETECTED;
                     *_statusFlags |= (uint32_t)RunModeFlag::CROSSPOINT_DETECTED;
                 }
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_NO_LINE)
                 {
+                    services::LoggerService::info("LineFollowerStm::run()", "Node Detected!");
                     _state = LineFollowerStmState::LOST_LINE;
                     *_statusFlags |= (uint32_t)RunModeFlag::LOST_LINE;
                 }
@@ -74,13 +76,18 @@ namespace MtnCtrl
 
             case LineFollowerStmState::LOST_LINE:
                 // stop motors
+                services::LoggerService::debug("LineFollowerStm::run() state#LOST_LINE", "send Stop Cmd");
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::Broadcast,
                     TaskCommand::Stop,
                     0);
-                if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
 
                 // send info to RaspberryHat
@@ -91,6 +98,10 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
+                    while(1)
+                    {
+                    }
                 }
 
                 // stop barrier detection
@@ -101,6 +112,10 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
 
                 _state = LineFollowerStmState::IDLE;
@@ -115,6 +130,10 @@ namespace MtnCtrl
                     LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm);
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
 
                 // send info to RaspberryHat
@@ -125,6 +144,10 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
 
                 // stop barrier detection
@@ -135,6 +158,10 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
 
                 reset();
@@ -150,6 +177,7 @@ namespace MtnCtrl
 
         void LineFollowerStm::reset()
         {
+            services::LoggerService::debug("LineFollowerStm::reset()", "reset lineFollowerStm");
             _slowFlag = false;
             _state = LineFollowerStmState::IDLE;
         }
@@ -159,7 +187,6 @@ namespace MtnCtrl
             services::LoggerService::fatal("LineFollwerStm::update(uint32_t msgData);", "not implemented");
             while (1)
             {
-                /* code */
             }
         }
 
@@ -169,19 +196,8 @@ namespace MtnCtrl
 
             if (msgData == 0)
             {
+                services::LoggerService::debug("LineFollowerStm::update()", "start FOLLOW_LINE");
                 _state = LineFollowerStmState::FOLLOW_LINE;
-
-                // start barrier detection
-
-                // stop barrier detection
-                DispatcherMessage msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::BarrierHandlerTask,
-                    TaskCommand::Move,
-                    0);
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                }
             }
         }
 

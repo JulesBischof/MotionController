@@ -200,7 +200,7 @@ namespace MtnCtrl
             switch (cmd)
             {
             case (command::MOVE):
-                retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
+                retVal.receiverTaskId = DispatcherTaskId::Broadcast;
                 retVal.command = TaskCommand::Move;
                 retVal.setData(dec.get_raw_parameters());
                 break;

@@ -117,7 +117,7 @@ namespace MtnCtrl
         static void _uart0RxIrqHandler();
         static void _uart1RxIrqHandler();
 
-        static void _safetyButtonIrqHandler(uint gpio, uint32_t events);
+        static void _safetyButtonIrqHandler(uint gpio, uint32_t event);
 
     public:
         /// @brief default ctor

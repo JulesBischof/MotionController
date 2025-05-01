@@ -19,7 +19,7 @@ namespace MtnCtrl
         {
             IDLE,              // IDLE
             CHECK_DISTANCE,    // check distance
-            SLOW_DOWN,         // slow down vehicle nearby barrier
+            SLOWED_DOWN,         // slow down vehicle nearby barrier
             WAIT_FOR_STOP_0,   // wait for robot to stop
             MIDDLE_ON_LINE,    // send driver command: middle on line
             WAIT_FOR_STOP_1,   // wait for robot to stop
@@ -53,7 +53,6 @@ namespace MtnCtrl
         public:
             HandleBarrierStm(uint32_t *statusFlags,
                              miscDevices::HcSr04 *hcSr04,
-                             miscDevices::LineSensor *lineSensor,
                              QueueHandle_t messageDispatcherQueue);
             HandleBarrierStm();
             ~HandleBarrierStm() override;

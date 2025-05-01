@@ -3,6 +3,9 @@
 #include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
+#include "LineSensorService.hpp"
+#include "LoggerService.hpp"
+
 #include "Tmc5240.hpp"
 #include "StepperService.hpp"
 
@@ -12,11 +15,16 @@ namespace MtnCtrl
     {
         MovePositionModeStm::MovePositionModeStm() {}
 
-        MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t messageDispatcherQueue)
+        MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags,
+                                                 spiDevices::Tmc5240 *driver0,
+                                                 spiDevices::Tmc5240 *driver1,
+                                                 miscDevices::LineSensor *lineSensor,
+                                                 QueueHandle_t messageDispatcherQueue)
             : StmBase(_statusFlags)
         {
             _driver0 = driver0;
             _driver1 = driver1;
+            _lineSensor = lineSensor;
 
             _lastMsgData = 0;
             _messageDispatcherQueue = messageDispatcherQueue;
@@ -81,21 +89,30 @@ namespace MtnCtrl
                 _state = MovePositionModeStmState::WAIT_FOR_STOP;
 
                 break;
+
+            case MovePositionModeStmState::MIDDLE_ON_LINE_MODE:
+                _lastMsgData = services::LineSensorService::getVehicleRotation(_lineSensor);
+                _state = MovePositionModeStmState::TURN_MODE;
+                break;
+
             case MovePositionModeStmState::WAIT_FOR_STOP:
                 if (_checkDriversForStandstill())
                 {
                     _stoppedTimeStamp = get_absolute_time();
+                    services::LoggerService::debug("MovePositionModeStm::run() state#WAIT_FOR_STOP", "standstill detected");
                     _state = MovePositionModeStmState::STOPPED;
                 }
 
                 break;
             case MovePositionModeStmState::STOPPED:
                 // for safety resons - wait a certain time
-                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000) ) <= get_absolute_time())
+                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000)) <= get_absolute_time())
                 {
                     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                     _state = MovePositionModeStmState::IDLE;
                 }
+
+                services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
 
                 // inform BarrierHandlerTask
                 msg = DispatcherMessage(
@@ -106,6 +123,10 @@ namespace MtnCtrl
 
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
+                    services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
                 }
                 break;
             default:
@@ -118,6 +139,7 @@ namespace MtnCtrl
 
         void MovePositionModeStm::reset()
         {
+            services::LoggerService::debug("MovePositionModeStm::reset()", "reset stm");
             _state = MovePositionModeStmState::IDLE;
             _lastMsgData = 0;
         }
@@ -125,6 +147,8 @@ namespace MtnCtrl
         void MovePositionModeStm::update(uint32_t msgData)
         {
             /* ERROR shouldnt be reached */
+            services::LoggerService::fatal("MovePositionModeStm::update()", "WRONG OVERLOADED FUNCTION");
+            while(1){}
         }
 
         void MovePositionModeStm::update(uint32_t msgData, TaskCommand cmd)
@@ -135,16 +159,19 @@ namespace MtnCtrl
                 _lastMsgData = msgData;
                 if (msgData != 0)
                 {
+                    services::LoggerService::debug("MovePositionModeStm::update()", "recieved command: move in Position Mode");
                     _state = MovePositionModeStmState::POSITION_MODE;
                 }
                 break;
 
             case TaskCommand::Turn:
                 _lastMsgData = msgData;
+                services::LoggerService::debug("MovePositionModeStm::update()", "recieved command: move in Turn Mode");
                 _state = MovePositionModeStmState::TURN_MODE;
                 break;
 
             case TaskCommand::Stop:
+                services::LoggerService::debug("MovePositionModeStm::update()", "recieved command: Stop Drives");
                 _state = MovePositionModeStmState::STOP_MODE;
                 break;
             default:
@@ -166,12 +193,14 @@ namespace MtnCtrl
         {
             bool val_driver0 = _driver0->checkForStandstill();
             bool val_driver1 = _driver1->checkForStandstill();
-            if (val_driver0 && val_driver1)
-            {
-                *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
-                return true;
-            }
-            return false;
+
+            return (val_driver0 && val_driver1);
+            // if (val_driver0 && val_driver1)
+            // {
+            //     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
+            //     return true;
+            // }
+            // return false;
         }
 
         /// @brief Turn Robort a certain angle.

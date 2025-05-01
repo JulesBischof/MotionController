@@ -22,6 +22,8 @@ namespace spiDevices
         _checkDevice();
 
         this->moveVelocityMode(0, 0, 5000); // initially Stop running Motors
+
+        _velocityMode = false;
     }
 
     Tmc5240::~Tmc5240()
@@ -120,6 +122,7 @@ namespace spiDevices
 
     void Tmc5240::moveAbsolutePositionMode(int32_t xTargetVal, uint32_t vmax, uint32_t amax)
     {
+        _velocityMode = false;
         // activate position mode
         _spiWriteReg(TMC5240_RAMPMODE, TMC5240_MODE_POSITION);
 
@@ -136,6 +139,7 @@ namespace spiDevices
 
     void Tmc5240::moveRelativePositionMode(int32_t targexPos, uint32_t vmax, uint32_t amax, bool dir)
     {
+        _velocityMode = false;
         // activate position mode
         _spiWriteReg(TMC5240_RAMPMODE, TMC5240_MODE_POSITION);
 
@@ -167,6 +171,7 @@ namespace spiDevices
 
     void Tmc5240::moveVelocityMode(bool direction, uint32_t vmax, uint32_t amax)
     {
+        _velocityMode = true;
         // flip direction if std direction ain't matching
         if (!_stdDir)
             direction = !direction;
@@ -209,6 +214,18 @@ namespace spiDevices
         return retVal;
     }
 
+    int32_t Tmc5240::getXTarget()
+    {
+        int32_t retVal = _spiReadReg(TMC5240_XTARGET);
+        return retVal;
+    }
+
+    int32_t Tmc5240::getVActual()
+    {
+        int32_t retVal = _spiReadReg(TMC5240_VACTUAL);
+        return retVal;
+    }
+
     int32_t Tmc5240::getVmax()
     {
         return _spiReadReg(TMC5240_VMAX);
@@ -244,15 +261,21 @@ namespace spiDevices
 
     bool Tmc5240::checkForStandstill()
     {
-        // return _spiReadBitField(TMC5240_DRVSTATUS, TMC5240_STST_MASK, TMC5240_STST_SHIFT);
-        // return _spiReadBitField(TMC5240_VACTUAL, TMC5240_VACTUAL_MASK, TMC5240_VACTUAL_SHIFT) == 0;
-        bool vel = _spiReadBitField(TMC5240_RAMPSTAT, TMC5240_VELOCITY_REACHED_MASK, TMC5240_VELOCITY_REACHED_SHIFT);
-        bool pos = _spiReadBitField(TMC5240_RAMPSTAT, TMC5240_POSITION_REACHED_MASK, TMC5240_POSITION_REACHED_SHIFT);
+        bool standstillFlag = false;
 
-        if (vel || pos)
-            return true; // either velocity reached OR position reached
+        if (_velocityMode)
+        {
+            int32_t vActual = getVActual();
+            standstillFlag = (vActual == 0);
+        }
         else
-            return false;
+        { // position Mode
+            int32_t xActual = getXActual();
+            int32_t xTarget = getXTarget();
+
+            standstillFlag = (xActual == xTarget);
+        }
+        return standstillFlag;
     }
 
     uint32_t Tmc5240::getGSTAT()

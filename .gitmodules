@@ -4,3 +4,6 @@
 [submodule "lib/prain_uart"]
 	path = lib/prain_uart
 	url = https://github.com/tramasys/prain_uart.git
+[submodule "extern/GripController"]
+	path = extern/GripController
+	url = git@github.com:ManuelZihlmann/GripController.git

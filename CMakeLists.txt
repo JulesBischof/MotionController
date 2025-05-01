@@ -62,6 +62,38 @@ target_include_directories(MotionController PUBLIC lib/prain_uart/include)
 file(GLOB_RECURSE PRAIN_UART_SOURCES lib/prain_uart/src/*.cpp)
 target_sources(MotionController PRIVATE ${PRAIN_UART_SOURCES})
 
+# add sourefiles to Project
+target_sources(MotionController PRIVATE ${CURRENT_SOURCES})
+
+# =========================
+
+# ==== GripController =====
+SET(GRIPCONTROLLER_PATH ${CMAKE_CURRENT_SOURCE_DIR}/extern/GripController)
+
+# include headers
+target_include_directories(${PROJECT_NAME} PRIVATE 
+                                    ${GRIPCONTROLLER_PATH}/config
+                                    ${GRIPCONTROLLER_PATH}/src/miscDevices
+                                    ${GRIPCONTROLLER_PATH}/src/tasks
+                                    ${GRIPCONTROLLER_PATH}/src/tasks/stm
+                                    ${GRIPCONTROLLER_PATH}/src
+)
+
+
+# search for source files
+file(GLOB_RECURSE GRIPCONTROLLER_SRC_SOURCES ${GRIPCONTROLLER_PATH}/src/*.cpp)
+file(GLOB_RECURSE GRIPCONTROLLER_MISC_SOURCES ${GRIPCONTROLLER_PATH}/src/miscDevices/*.cpp)
+file(GLOB_RECURSE GRIPCONTROLLER_TASKS_SOURCES ${GRIPCONTROLLER_PATH}/src/tasks/*.cpp)
+file(GLOB_RECURSE GRIPCONTROLLER_TASK_STM_SOURCES ${GRIPCONTROLLER_PATH}/src/tasks/stm/*.cpp)
+
+
+# include those sources
+target_sources(MotionController PRIVATE ${GRIPCONTROLLER_SRC_SOURCES})
+target_sources(MotionController PRIVATE ${GRIPCONTROLLER_MISC_SOURCES})
+target_sources(MotionController PRIVATE ${GRIPCONTROLLER_TASKS_SOURCES})
+target_sources(MotionController PRIVATE ${GRIPCONTROLLER_TASK_STM_SOURCES})
+
+
 # =========================
 
 # file to the "lib" directory

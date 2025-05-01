@@ -13,7 +13,7 @@ namespace MtnCtrl
         QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         // init stm
-        stm::HandleBarrierStm _handleBarrierStm(&statusFlags, _hcSr04, &_lineSensor, messageDispatcherQueue);
+        stm::HandleBarrierStm _handleBarrierStm(&statusFlags, _hcSr04, messageDispatcherQueue);
 
         _handleBarrierStm.init();
 
@@ -31,7 +31,8 @@ namespace MtnCtrl
             {
                 xQueueReceive(barrierHandlerTaskQueue, &message, 0);
 
-                if (message.receiverTaskId != DispatcherTaskId::BarrierHandlerTask)
+                if (message.receiverTaskId != DispatcherTaskId::BarrierHandlerTask &&
+                    message.receiverTaskId != DispatcherTaskId::Broadcast)
                 {
                     services::LoggerService::error("_barrierHandlerTask", "wrong TaskId: %x", message.receiverTaskId);
                     continue;
@@ -40,22 +41,27 @@ namespace MtnCtrl
                 switch (message.command)
                 {
                 case TaskCommand::Move:
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: MOVE # data: %d", message.getData());
                     _handleBarrierStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::PositionReached:
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: POSITION REACHED # data: %d", message.getData());
                     _handleBarrierStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::Stop:
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: STOP # data: %d", message.getData());
                     _handleBarrierStm.reset();
                     break;
 
                 case TaskCommand::GcAck:
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: GCACK # data: %d", message.getData());
                     _handleBarrierStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::PollUltrasonic:
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: POLL ULTRASONIC # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::BarrierHandlerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
@@ -67,7 +73,6 @@ namespace MtnCtrl
 
             // otherwise - run stm Object
             _handleBarrierStm.run();
-
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
         }
     }

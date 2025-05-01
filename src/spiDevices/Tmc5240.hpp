@@ -10,6 +10,7 @@ namespace spiDevices
     {
     private:
         bool _stdDir;
+        bool _velocityMode;
 
         /// @brief inits Current settings out of StepperConfig.h File
         void _initCurrentSetting();
@@ -71,6 +72,9 @@ namespace spiDevices
         /// @return actual usteps sind device Startup
         int32_t getXActual();
 
+        int32_t getXTarget();
+
+        int32_t getVActual();
 
         uint32_t getGSTAT();
         void clearGSTAT();

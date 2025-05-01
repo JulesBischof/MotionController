@@ -18,7 +18,7 @@
 #include "MovementTracker.hpp"
 
 namespace MtnCtrl
-{   
+{
     /* ================================= */
     /*          Running Task             */
     /* ================================= */
@@ -30,7 +30,7 @@ namespace MtnCtrl
         uint32_t _lineFollowerStatusFlags = 0;
         stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, _lineFollowerQueue, _messageDispatcherQueue);
         _lineFollowerStm.init();
-        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1, _messageDispatcherQueue);
+        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1, &_lineSensor, _messageDispatcherQueue);
         _movePositionModeStm.init();
 
         // init misc members
@@ -54,39 +54,41 @@ namespace MtnCtrl
             {
                 xQueueReceive(lineFollowerQueue, &message, 0);
 
-                if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask)
+                if (message.receiverTaskId != DispatcherTaskId::LineFollowerTask &&
+                    message.receiverTaskId != DispatcherTaskId::Broadcast)
                 {
                     services::LoggerService::error("_lineFollowerTask", "wrong TaskId: %x", message.receiverTaskId);
                     continue;
                 }
 
-                // you cant declare vars inside a switch statement, thats why dataContainer fol polling
-                uint64_t dataContainer = 0;
-
-                services::LoggerService::debug("_lineFollowerComTask", "Queue recieved Command: %x from TaskId: ", message.command, message.senderTaskId);
                 switch (message.command)
                 {
                 case TaskCommand::Move:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: MOVE # data: %d", message.getData());
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
                     _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::SlowDown:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: SLOW DOWN # data: %d", message.getData());
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
                     _lineFollowerStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::Stop:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: STOP # data: %d", message.getData());
                     _lineFollowerStm.reset();
                     _movePositionModeStm.update(message.getData(), message.command);
                     break;
 
                 case TaskCommand::Turn:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: TURN # data: %d", message.getData());
                     _movePositionModeStm.update(message.getData(), TaskCommand::Turn);
                     break;
 
                 case TaskCommand::PollDistance:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DISTANCE # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
@@ -95,6 +97,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollLineSensor:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL LINESENSOR # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
@@ -103,6 +106,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollStatusFlags:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL STATUSFLAGS # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollStatusFlags,
@@ -111,6 +115,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDegree:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DEGREE # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDegree,

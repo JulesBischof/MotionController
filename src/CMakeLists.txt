@@ -36,6 +36,7 @@ target_link_libraries(MotionController PUBLIC
     hardware_uart
     hardware_timer
     hardware_pio
+    hardware_pwm
 
     FreeRTOS-Kernel-Heap4 
     )

@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 
 #include "Tmc5240.hpp"
+#include "LineSensor.hpp"
 
 #include "DispatcherMessage.hpp"
 
@@ -17,6 +18,7 @@ namespace MtnCtrl
             POSITION_MODE,
             TURN_MODE,
             STOP_MODE,
+            MIDDLE_ON_LINE_MODE,
             WAIT_FOR_STOP,
             STOPPED,
         };
@@ -26,6 +28,7 @@ namespace MtnCtrl
         private:
             spiDevices::Tmc5240 *_driver0;
             spiDevices::Tmc5240 *_driver1;
+            miscDevices::LineSensor *_lineSensor;
 
             QueueHandle_t _messageDispatcherQueue;
 
@@ -38,7 +41,12 @@ namespace MtnCtrl
             bool _checkDriversForStandstill();
 
         public:
-            MovePositionModeStm(uint32_t *_statusFlags, spiDevices::Tmc5240 *driver0, spiDevices::Tmc5240 *driver1, QueueHandle_t messageDispatcherQueue);
+            MovePositionModeStm(uint32_t *_statusFlags,
+                                spiDevices::Tmc5240 *driver0,
+                                spiDevices::Tmc5240 *driver1,
+                                miscDevices::LineSensor *lineSensor,
+                                QueueHandle_t messageDispatcherQueue);
+
             MovePositionModeStm();
             ~MovePositionModeStm() override;
 

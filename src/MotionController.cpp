@@ -94,7 +94,7 @@ namespace MtnCtrl
         _adc = i2cDevices::Tla2528(I2C_INSTANCE_DEVICES, I2C_DEVICE_TLA2528_ADDRESS);
         _lineSensor = miscDevices::LineSensor(&_adc, UV_LED_GPIO);
         _safetyButton = miscDevices::DigitalInput(DIN_4);
-        _safetyButton.addIsrHandler(&_safetyButtonIrqHandler, GPIO_IRQ_EDGE_RISE);
+        _safetyButton.addIsrHandler(_safetyButtonIrqHandler, GPIO_IRQ_EDGE_FALL);
         _tmc5240Eval_R2 = miscDevices::DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
 
@@ -119,7 +119,7 @@ namespace MtnCtrl
         return;
     }
 
-    void MotionController::_safetyButtonIrqHandler(uint gpio, uint32_t events)
+    void MotionController::_safetyButtonIrqHandler(uint gpio, uint32_t event)
     {
         services::LoggerService::debug("_safetyButtonIrqHandler", "safety Button pressed!");
         BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -152,7 +152,10 @@ namespace MtnCtrl
         _gripControllerComQueue = xQueueCreate(GRIPCONTROLLERCOMTASK_QUEUESIZE_N_ELEMENTS, sizeof(DispatcherMessage));
 #endif
 
-        if (_raspberryHatComQueue == nullptr || _lineFollowerQueue == nullptr || _messageDispatcherQueue == nullptr || _barrierHandlerQueue)
+        if (_raspberryHatComQueue == nullptr || 
+            _lineFollowerQueue == nullptr || 
+            _messageDispatcherQueue == nullptr || 
+            _barrierHandlerQueue == nullptr)
         {
             services::LoggerService::fatal("_initQueues()", "nullptr");
             for (;;)
