@@ -93,6 +93,16 @@ namespace MtnCtrl
                 { /* ERROR!!?? */
                 }
 
+                // stop barrier detection
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
+                    TaskCommand::Stop,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                }
+
                 _state = LineFollowerStmState::IDLE;
                 break;
 
@@ -112,6 +122,16 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::RaspberryHatComTask,
                     TaskCommand::NodeDetectedInfo,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                }
+
+                // stop barrier detection
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
+                    TaskCommand::Stop,
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
@@ -150,6 +170,18 @@ namespace MtnCtrl
             if (msgData == 0)
             {
                 _state = LineFollowerStmState::FOLLOW_LINE;
+
+                // start barrier detection
+
+                // stop barrier detection
+                DispatcherMessage msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
+                    TaskCommand::Move,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                }
             }
         }
 
