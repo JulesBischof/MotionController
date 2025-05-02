@@ -58,7 +58,7 @@ namespace MtnCtrl
 
             case LineFollowerStmState::FOLLOW_LINE:
                 _followLine();
-
+                
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_CROSS_DETECTED)
                 {
                     services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
@@ -194,7 +194,7 @@ namespace MtnCtrl
         {
             _slowFlag = (cmd == TaskCommand::SlowDown) ? true : false;
 
-            if (msgData == 0)
+            if (msgData == 0 && cmd == TaskCommand::Move)
             {
                 services::LoggerService::debug("LineFollowerStm::update()", "start FOLLOW_LINE");
                 _state = LineFollowerStmState::FOLLOW_LINE;

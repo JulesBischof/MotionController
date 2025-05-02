@@ -43,7 +43,8 @@ namespace MtnCtrl
             // suspend Task until Message is recieved
             if (xQueueReceive(raspberryHatComQueue, &message, portMAX_DELAY) == pdTRUE)
             {
-                if (message.receiverTaskId != DispatcherTaskId::RaspberryHatComTask)
+                if (message.receiverTaskId != DispatcherTaskId::RaspberryHatComTask &&
+                    message.receiverTaskId != DispatcherTaskId::Broadcast)
                 {
                     services::LoggerService::error("_raspberryHatComTask", "Message contains wrong Task ID");
                     continue;

@@ -44,9 +44,9 @@ namespace MtnCtrl
                     services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: MOVE # data: %d", message.getData());
                     _handleBarrierStm.update(message.getData(), message.command);
                     break;
-
+                
                 case TaskCommand::PositionReached:
-                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: POSITION REACHED # data: %d", message.getData());
+                    services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: POSITION_REACHED # data: %d", message.getData());
                     _handleBarrierStm.update(message.getData(), message.command);
                     break;
 

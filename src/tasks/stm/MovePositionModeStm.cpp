@@ -19,7 +19,8 @@ namespace MtnCtrl
                                                  spiDevices::Tmc5240 *driver0,
                                                  spiDevices::Tmc5240 *driver1,
                                                  miscDevices::LineSensor *lineSensor,
-                                                 QueueHandle_t messageDispatcherQueue)
+                                                 QueueHandle_t messageDispatcherQueue
+                                                 )
             : StmBase(_statusFlags)
         {
             _driver0 = driver0;
@@ -109,24 +110,25 @@ namespace MtnCtrl
                 if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000)) <= get_absolute_time())
                 {
                     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
-                    _state = MovePositionModeStmState::IDLE;
-                }
 
-                services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
+                    services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
 
-                // inform BarrierHandlerTask
-                msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::BarrierHandlerTask,
-                    TaskCommand::PositionReached,
-                    0);
+                    // inform other Tasks
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::BarrierHandlerTask,
+                        TaskCommand::PositionReached,
+                        0);
 
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                    services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
-                    while (1)
-                    {
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                        services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
+                        while (1)
+                        {
+                        }
                     }
+
+                    _state = MovePositionModeStmState::IDLE;
                 }
                 break;
             default:
@@ -148,7 +150,9 @@ namespace MtnCtrl
         {
             /* ERROR shouldnt be reached */
             services::LoggerService::fatal("MovePositionModeStm::update()", "WRONG OVERLOADED FUNCTION");
-            while(1){}
+            while (1)
+            {
+            }
         }
 
         void MovePositionModeStm::update(uint32_t msgData, TaskCommand cmd)

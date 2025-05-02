@@ -13,6 +13,9 @@
 
 #define SIMULATE_GRIPCONTROLL (0)
 
-constexpr services::logLevel APPCONFIG_LOGLEVEL = services::logLevel::Error;
+#define MTNCTRL
+
+
+constexpr services::logLevel APPCONFIG_LOGLEVEL = services::logLevel::Debug;
 
 #endif // APPCONFIG_H

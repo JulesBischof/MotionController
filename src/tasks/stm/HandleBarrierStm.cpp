@@ -43,6 +43,8 @@ namespace MtnCtrl
             switch (_state)
             {
             case HandleBarrierStmState::IDLE:
+                _posReached = false;
+                _gcAck = false;
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -106,8 +108,8 @@ namespace MtnCtrl
                     {
                     }
                 }
-
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -115,7 +117,8 @@ namespace MtnCtrl
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_0 ", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
-                    services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
+                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_0 ", "_posReached = true");
+                    _posReached = false;
                     _state = HandleBarrierStmState::MIDDLE_ON_LINE;
                 }
                 break;
@@ -131,6 +134,7 @@ namespace MtnCtrl
             case HandleBarrierStmState::WAIT_FOR_STOP_1:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_1 ", "_posReached = %d", _posReached);
                 /* NOT REACHED FOR NOW due to middle on line is not part of stm */
+                _posReached = false;
                 _state = HandleBarrierStmState::POSITION_DISTANCE;
                 break;
 
@@ -160,7 +164,9 @@ namespace MtnCtrl
                     }
                 }
             }
+                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -169,6 +175,7 @@ namespace MtnCtrl
                 if (_posReached)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
+                    _posReached = false;
                     _state = HandleBarrierStmState::SEND_GRIP_COMMAND;
                 }
                 break;
@@ -189,6 +196,7 @@ namespace MtnCtrl
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_0;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -197,6 +205,7 @@ namespace MtnCtrl
                 if (_gcAck)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_GC_ACK_0 ", "_gcAck = true");
+                    _gcAck = false;
                     _state = HandleBarrierStmState::TURN_ROBOT_0;
                 }
                 break;
@@ -217,6 +226,7 @@ namespace MtnCtrl
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -226,6 +236,7 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = true");
                     _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
+                    _posReached = false;
                 }
                 break;
 
@@ -244,7 +255,9 @@ namespace MtnCtrl
                     {
                     }
                 }
+                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -253,6 +266,7 @@ namespace MtnCtrl
                 if (_posReached)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
+                    _posReached = false;
                     _state = HandleBarrierStmState::SEND_RELEASE_CMD;
                 }
                 break;
@@ -273,6 +287,7 @@ namespace MtnCtrl
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_1;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -282,6 +297,7 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_gcAck = true");
                     _state = HandleBarrierStmState::SET_BACK_ROBOT_1;
+                    _gcAck = false;
                 }
                 break;
 
@@ -300,7 +316,9 @@ namespace MtnCtrl
                     {
                     }
                 }
+                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -310,6 +328,7 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = true");
                     _state = HandleBarrierStmState::TURN_ROBOT_1;
+                    _posReached = false;
                 }
                 break;
 
@@ -328,7 +347,9 @@ namespace MtnCtrl
                     {
                     }
                 }
+                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_6;
+                taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -338,6 +359,7 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_6 ", "_posReached = true");
                     _state = HandleBarrierStmState::DONE;
+                    _posReached = false;
                 }
                 break;
 
@@ -384,13 +406,13 @@ namespace MtnCtrl
                 }
                 break;
 
-            case TaskCommand::PositionReached:
-                _posReached = true;
-                services::LoggerService::debug("HandleBarrierStm::update() cmd#PositionReached ", "recieved position Reached cmd");
-                break;
-
             case TaskCommand::GcAck:
                 _gcAck = true;
+                break;
+
+            case TaskCommand::PositionReached:
+                services::LoggerService::debug("HandleBarrierStm::update() ", "Recieved Command: POSITION_REACHED");
+                _posReached = true;
                 break;
 
             case TaskCommand::Stop:

@@ -34,7 +34,7 @@ namespace miscDevices
         // no barrier in sight - ignore
         if (value > HCSR04CONFIG_DISTANCE_TRESHHOLD)
         {
-            services::LoggerService::debug("AdaptiveLowPassFilter::_correction()", "value higher than treshhold - no prediction neccessary");
+            // services::LoggerService::debug("AdaptiveLowPassFilter::_correction()", "value higher than treshhold - no prediction neccessary");
             _y_k = HCSR04CONFIG_DISTANCE_TRESHHOLD;
             _barrierDetected = false;
             return;
@@ -61,7 +61,7 @@ namespace miscDevices
 
         // predict - ci & cv are the adaptive prediction constants
         float y_k = y_k - ((_v * _cv) * dt) + _ki * _ci * _dxIntegral;
-        services::LoggerService::debug("AdaptiveLowPassFilter::_prediction", "y_k = %f", _y_k);
+        // services::LoggerService::debug("AdaptiveLowPassFilter::_prediction", "y_k = %f", _y_k);
 
         // no velocity? roll off integrations
         if(_v == 0)
@@ -102,6 +102,6 @@ namespace miscDevices
             _dxIntegral = -1 * _antiWindup;
         }
 
-        services::LoggerService::debug("AdaptiveLowPassFilter::_correction", "x_k = %f, _v = %f, _cv = %f, _ci = %f", x_k, _v, _cv, _ci);
+        // services::LoggerService::debug("AdaptiveLowPassFilter::_correction", "x_k = %f, _v = %f, _cv = %f, _ci = %f", x_k, _v, _cv, _ci);
     }
 }

@@ -43,7 +43,8 @@ namespace MtnCtrl
             // suspend Task until Message is recieved
             if (xQueueReceive(gripControllerComQueue, &message, portMAX_DELAY) == pdTRUE)
             {
-                if (message.receiverTaskId != DispatcherTaskId::GripControllerComTask)
+                if (message.receiverTaskId != DispatcherTaskId::GripControllerComTask &&
+                    message.receiverTaskId != DispatcherTaskId::Broadcast)
                 {
                     services::LoggerService::error("_gripControllerTask", "recieved wrong TaskId");
                     continue;

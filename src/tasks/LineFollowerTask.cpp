@@ -28,9 +28,20 @@ namespace MtnCtrl
     {
         // init stms
         uint32_t _lineFollowerStatusFlags = 0;
-        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags, &_lineSensor, &_driver0, &_driver1, _lineFollowerQueue, _messageDispatcherQueue);
+        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags,
+                                              &_lineSensor,
+                                              &_driver0,
+                                              &_driver1,
+                                              _lineFollowerQueue,
+                                              _messageDispatcherQueue
+                                              );
         _lineFollowerStm.init();
-        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags, &_driver0, &_driver1, &_lineSensor, _messageDispatcherQueue);
+        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags,
+                                                      &_driver0,
+                                                      &_driver1,
+                                                      &_lineSensor,
+                                                      _messageDispatcherQueue
+                                                      );
         _movePositionModeStm.init();
 
         // init misc members

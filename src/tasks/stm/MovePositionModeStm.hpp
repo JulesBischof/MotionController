@@ -45,7 +45,8 @@ namespace MtnCtrl
                                 spiDevices::Tmc5240 *driver0,
                                 spiDevices::Tmc5240 *driver1,
                                 miscDevices::LineSensor *lineSensor,
-                                QueueHandle_t messageDispatcherQueue);
+                                QueueHandle_t messageDispatcherQueue
+                                );
 
             MovePositionModeStm();
             ~MovePositionModeStm() override;
@@ -55,6 +56,8 @@ namespace MtnCtrl
             void reset() override;
             void update(uint32_t msgData) override;
             void update(uint32_t msgData, TaskCommand cmd);
+
+            SemaphoreHandle_t getMotorMovingSemaphore();
 
             MovePositionModeStmState getState() override { return _state; };
         };

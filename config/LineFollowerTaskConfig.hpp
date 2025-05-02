@@ -71,7 +71,7 @@
                     Physical dimensions
 
 ============================================================== */
-#define LINEFOLLOWERCONFIG_AXIS_WIDTH_mm (280)                 // 272 - using CAD
+#define LINEFOLLOWERCONFIG_AXIS_WIDTH_mm (250)                 // 272 - using CAD
 #define LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm (111.f)
 #define LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM (80)
 #define LINEFOLLOWERCONFIG_LINESENSOR_CELLDISTANCE_mm (9)
