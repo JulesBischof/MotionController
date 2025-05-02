@@ -193,6 +193,7 @@ namespace MtnCtrl
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_GC_ACK_0:
+                _gcAck = true; /* \TODO !!! ONLY FOR DEBUG REASONS*/
                 if (_gcAck)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_GC_ACK_0 ", "_gcAck = true");
@@ -276,6 +277,7 @@ namespace MtnCtrl
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_GC_ACK_1:
+                _gcAck = true; /* \TODO !!! ONLY FOR DEBUG REASONS*/
                 if (_gcAck)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_gcAck = true");
