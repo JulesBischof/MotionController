@@ -189,6 +189,7 @@ namespace miscDevices
         if (!lineCounter && noLineCounter >= LINECOUNTER_MAX_VALUE)
         {
             _status |= LINESENSOR_NO_LINE;
+            return LINESENSOR_MIDDLE_POSITION;
         }
         else
         {

@@ -107,7 +107,7 @@ namespace MtnCtrl
                 break;
             case MovePositionModeStmState::STOPPED:
                 // for safety resons - wait a certain time
-                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000)) <= get_absolute_time())
+                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000 * 3)) <= get_absolute_time())
                 {
                     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
 
@@ -188,8 +188,17 @@ namespace MtnCtrl
         /// @param distance distance [IN MICROSTEPS]
         void MovePositionModeStm::_movePositionMode(int32_t distance)
         {
-            _driver0->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 1);
-            _driver1->moveRelativePositionMode(distance, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
+            int32_t vmax = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE;
+            int32_t amax = LINEFOLLERCONFIG_AMAX_REGISTER_VALUE;
+
+            if (distance < 0)
+            {
+                vmax = -0.5 * vmax;
+                amax = 0.2 * amax;
+            }
+
+            _driver0->moveRelativePositionMode(distance, vmax, amax, 1);
+            _driver1->moveRelativePositionMode(distance, vmax, amax, 0);
             return;
         }
 
@@ -231,8 +240,8 @@ namespace MtnCtrl
             int32_t nStepsDriver = services::StepperService::convertMillimeterToMicrosteps(ds);
 
             // move drives in different directions
-            _driver0->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE * 2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
-            _driver1->moveRelativePositionMode(nStepsDriver, LINEFOLLERCONFIG_VMAX_REGISTER_VALUE * 2, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
+            _driver0->moveRelativePositionMode(nStepsDriver, 0.4 * LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, 0.5 * LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
+            _driver1->moveRelativePositionMode(nStepsDriver, 0.4 * LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, 0.5 * LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
         }
 
         /// @brief stops the drives

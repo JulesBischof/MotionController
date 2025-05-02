@@ -127,6 +127,8 @@ namespace MtnCtrl
         /// @brief initialises FreeRTOS Tasks
         void startTasks();
 
+        QueueHandle_t getMessageDispatcherQueue();
+
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
         void registerGripControllerInstance(QueueHandle_t gripControllerQueue);
 #endif

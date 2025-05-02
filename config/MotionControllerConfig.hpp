@@ -29,7 +29,7 @@
 #define TMC5240_SPI_INSTANCE (spi0)
 
 /* -------------- GripController ------------------- */
-#define INCLUDE_GRIPCONTROLLER_AS_INSTANCE (0)
+#define INCLUDE_GRIPCONTROLLER_AS_INSTANCE (1)
 
 
 

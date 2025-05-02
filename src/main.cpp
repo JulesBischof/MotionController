@@ -11,6 +11,7 @@
 int main()
 {
 
+
     stdio_init_all();
     services::LoggerService::setLogLevel(APPCONFIG_LOGLEVEL);
 
@@ -21,12 +22,16 @@ int main()
 #if APP_MODE == 1
 
     GripControllerBoard::GripController gripController = GripControllerBoard::GripController();
-    QueueHandle_t comQueue = gripController.getMotionControllerComQueue();
-    gripController.startTasks();
-
     MtnCtrl::MotionController motionController = MtnCtrl::MotionController();
+
+    QueueHandle_t comQueue = gripController.getGripControllerRxQueue();
+    QueueHandle_t dispatcher = motionController.getMessageDispatcherQueue();
+
+    motionController.registerGripControllerInstance(comQueue);
+    gripController.registerTxQueue(dispatcher);
+
+    gripController.startTasks();
     motionController.startTasks();
-    //motionController.registerComQueue(comQueue);
 
     services::LoggerService::info("main", "init done - gonna start scheduler now! ");
     vTaskStartScheduler();

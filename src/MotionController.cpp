@@ -329,6 +329,11 @@ namespace MtnCtrl
 #endif
     }
 
+    QueueHandle_t MotionController::getMessageDispatcherQueue()
+    {
+        return _messageDispatcherQueue;
+    }
+
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
     void MotionController::registerGripControllerInstance(QueueHandle_t gripControllerQueue)
     {

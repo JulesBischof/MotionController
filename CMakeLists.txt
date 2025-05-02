@@ -34,6 +34,7 @@ include(pico_sdk_import.cmake)
 
 project(MotionController C CXX ASM)
 
+# disables unneccessary code from GripController
 add_compile_definitions(EN_MTNCTRL=1)
 
 # ================================== FreeRTOS ==========================================
