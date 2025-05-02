@@ -20,13 +20,13 @@ int main()
 
 #if APP_MODE == 1
 
-    // GripControllerBoard::GripController gripController = GripControllerBoard::GripController();
-    // QueueHandle_t comQueue = gripController.getComQueue();
-    // gripController.startTasks();
+    GripControllerBoard::GripController gripController = GripControllerBoard::GripController();
+    QueueHandle_t comQueue = gripController.getMotionControllerComQueue();
+    gripController.startTasks();
 
     MtnCtrl::MotionController motionController = MtnCtrl::MotionController();
     motionController.startTasks();
-//    motionController.registerComQueue(comQueue);
+    //motionController.registerComQueue(comQueue);
 
     services::LoggerService::info("main", "init done - gonna start scheduler now! ");
     vTaskStartScheduler();
