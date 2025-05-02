@@ -366,12 +366,26 @@ namespace MtnCtrl
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::DONE:
                 services::LoggerService::debug("HandleBarrierStm::run() state#DONE ", "Barrier Handling DONE");
+
+                services::LoggerService::debug("HandleBarrierStm::run() state#DONE ", "send cmd LINEFOLLOWER_MODE");
+                msg = DispatcherMessage(
+                    DispatcherTaskId::BarrierHandlerTask,
+                    DispatcherTaskId::LineFollowerTask,
+                    TaskCommand::Move,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                    services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
+                }
                 _state = HandleBarrierStmState::IDLE;
                 break;
 
                 /* ---------------------------------------------------------------*/
             default:
-                services::LoggerService::error("HAndleBarrierStm::run()", "unknown state! ");
+                services::LoggerService::error("HandleBarrierStm::run()", "unknown state! ");
                 break;
             }
 
