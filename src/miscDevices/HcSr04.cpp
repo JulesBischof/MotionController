@@ -33,14 +33,6 @@ namespace miscDevices
         // no semaphore protection neccesary - while declaration no scheduler is active
         _instancesMap.insert(std::make_pair(_echoPin, this));
 
-        _kalmanFilter = HcSr04KalmanFilter(INITIAL_DISTANCE,
-                                           INITIAL_VELOCITY,
-                                           INITIAL_DT,
-                                           FILTER_QD,
-                                           FILTER_QV,
-                                           FILTER_RD,
-                                           FILTER_RV);
-
         _currentVelocitySemaphore = xSemaphoreCreateMutex();
         _currentVelocity = 0; // ctor runs in advance to scheduler - no need to protect
 
@@ -49,8 +41,6 @@ namespace miscDevices
 
         _lastPredictionTimestampSemaphore = xSemaphoreCreateMutex();
         _lastPredictionTimestamp = get_absolute_time(); // ctor runs in advance to scheduler - no need to protect
-
-        _kalmanFilterSemaphore = xSemaphoreCreateMutex();
 
         _adaptiveLowPassFilter = AdaptiveLowPassFilter(HCSR04_CONFIG_ADAPTIVELOWPASS_ALPHASTANDSTILL,
                                                        HCSR04_CONFIG_ADAPTIVELOWPASS_ALPHAVELOCITYPHASE,
@@ -164,10 +154,6 @@ namespace miscDevices
 
             _trigger();
 
-#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
-            float dt = static_cast<float>(_getTimeDiff()) / 1e6; // us -> s
-#endif
-
             uint32_t rawTimeDiff = 0;
             float distance = INITIAL_DISTANCE;
 
@@ -181,22 +167,6 @@ namespace miscDevices
             {
                 /* TIMEOUT ERROR ??? */
             }
-
-#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
-            if (distance < INITIAL_DISTANCE)
-            {
-                xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-                _kalmanFilter.update(distance, dt, getCurrentVelocity());
-                xSemaphoreGive(_kalmanFilterSemaphore);
-            }
-            else
-            {
-                xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-                // set v to 0, otherwise kalmanfilter predicts movement - thats wrong
-                _kalmanFilter.update(INITIAL_DISTANCE, dt, 0);
-                xSemaphoreGive(_kalmanFilterSemaphore);
-            }
-#endif
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)
             float value = distance;
@@ -235,15 +205,7 @@ namespace miscDevices
 
     float HcSr04::getSensorData()
     {
-#if HCSR04CONFIG_USE_KALMAN_FILTER == (1)
-        float dt = static_cast<float>(_getTimeDiff()) / 1e6; // us -> s
-
-        // access to kalmanFilter is protected by semaphore - so is retVal
-        xSemaphoreTake(_kalmanFilterSemaphore, pdMS_TO_TICKS(100));
-        float retVal = _kalmanFilter.getDistancePredicted(dt);
-        xSemaphoreGive(_kalmanFilterSemaphore);
-#endif
-#if HCSR04CONFIG_USE_RAW_VALUES || HCSR04CONFIG_USE_KALMAN_FILTER
+#if HCSR04CONFIG_USE_RAW_VALUES
         float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
         if (_queueHandle == nullptr)
         {

@@ -107,7 +107,7 @@ namespace MtnCtrl
                 break;
             case MovePositionModeStmState::STOPPED:
                 // for safety resons - wait a certain time
-                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000 * 3)) <= get_absolute_time())
+                if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000)) <= get_absolute_time())
                 {
                     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
 
@@ -208,12 +208,6 @@ namespace MtnCtrl
             bool val_driver1 = _driver1->checkForStandstill();
 
             return (val_driver0 && val_driver1);
-            // if (val_driver0 && val_driver1)
-            // {
-            //     *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
-            //     return true;
-            // }
-            // return false;
         }
 
         /// @brief Turn Robort a certain angle.

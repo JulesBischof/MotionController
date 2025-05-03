@@ -33,9 +33,6 @@ namespace miscDevices
         uint8_t _echoPin;
         void _initGpios();
 
-        HcSr04KalmanFilter _kalmanFilter;
-        SemaphoreHandle_t _kalmanFilterSemaphore;
-
         AdaptiveLowPassFilter _adaptiveLowPassFilter;
         SemaphoreHandle_t _adaptiveLowPassFilterSemaphore;
 
@@ -85,11 +82,11 @@ namespace miscDevices
         /// @return status Flags
         uint8_t getStatusFlags() { return _statusFlags; }
 
-        /// @brief updates the Kalmann Filter state modell
+        /// @brief updates the state model
         /// @param v current velocity in usteps/t (TMC5240 values!)
         void setCurrentVelocity(float v);
 
-        /// @brief returns current veloity used for Kalman Filter
+        /// @brief returns current veloity used for position prediction
         /// @return velocity in mm per second
         float getCurrentVelocity();
     };

@@ -4,7 +4,6 @@
 #include "pico/stdlib.h"
 
 #include "HcSr04.hpp"
-#include "LineSensor.hpp"
 
 #include "FreeRTOS.h"
 #include "queue.h"
