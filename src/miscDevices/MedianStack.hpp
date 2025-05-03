@@ -15,6 +15,7 @@ namespace miscDevices
         bool _isEmpty();
 
     public:
+        MedianStack(){};
         MedianStack(uint8_t size);
         ~MedianStack();
 

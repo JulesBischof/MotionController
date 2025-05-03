@@ -33,13 +33,13 @@ namespace miscDevices
         // no semaphore protection neccesary - while declaration no scheduler is active
         _instancesMap.insert(std::make_pair(_echoPin, this));
 
-        _currentVelocitySemaphore = xSemaphoreCreateMutex();
+        _currentVelocityMutex = xSemaphoreCreateMutex();
         _currentVelocity = 0; // ctor runs in advance to scheduler - no need to protect
 
-        _rawtimediffSemaphore = xSemaphoreCreateMutex();
+        _rawtimediffMutex = xSemaphoreCreateMutex();
         _rawtimediff = 0; // ctor runs in advance to scheduler - no need to protect
 
-        _lastPredictionTimestampSemaphore = xSemaphoreCreateMutex();
+        _lastPredictionTimestampMutex = xSemaphoreCreateMutex();
         _lastPredictionTimestamp = get_absolute_time(); // ctor runs in advance to scheduler - no need to protect
 
         _adaptiveLowPassFilter = AdaptiveLowPassFilter(HCSR04_CONFIG_ADAPTIVELOWPASS_ALPHASTANDSTILL,
@@ -49,7 +49,9 @@ namespace miscDevices
                                                        HCSR04_CONFIG_ADAPTIVELOWPASS_KI,
                                                        HCSR04_CONFIG_ADAPTIVELOWPASS_ANTIWINDUP,
                                                        HCSR04_CONFIG_ADAPTIVELOWPASS_INITIDISTANCE);
-        _adaptiveLowPassFilterSemaphore = xSemaphoreCreateMutex();
+        _adaptiveLowPassFilterMutex = xSemaphoreCreateMutex();
+
+        _newMeasurmentSemaphore = xSemaphoreCreateBinary();
     }
 
     HcSr04::HcSr04()
@@ -80,10 +82,10 @@ namespace miscDevices
 
     float HcSr04::_getTimeDiff()
     {
-        xSemaphoreTake(_lastPredictionTimestampSemaphore, pdMS_TO_TICKS(100));
+        xSemaphoreTake(_lastPredictionTimestampMutex, pdMS_TO_TICKS(100));
         absolute_time_t timeDiff = absolute_time_diff_us(_lastPredictionTimestamp, get_absolute_time());
         _lastPredictionTimestamp = get_absolute_time();
-        xSemaphoreGive(_lastPredictionTimestampSemaphore);
+        xSemaphoreGive(_lastPredictionTimestampMutex);
         return timeDiff;
     }
 
@@ -174,9 +176,9 @@ namespace miscDevices
 #endif
 
 #if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
-            xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+            xSemaphoreTake(_adaptiveLowPassFilterMutex, portMAX_DELAY);
             _adaptiveLowPassFilter.update(distance);
-            xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
+            xSemaphoreGive(_adaptiveLowPassFilterMutex);
 #endif
 
 #if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS == (1)
@@ -192,6 +194,8 @@ namespace miscDevices
             printf("%f;%f\n", distance, _currentVelocity);
             xSemaphoreGive(_currentVelocitySemaphore);
 #endif
+            // inform "listening" task
+            xSemaphoreGive(_newMeasurmentSemaphore);
             vTaskDelayUntil(&previousWakeTime, pdMS_TO_TICKS(HCSR04CONFIG_POLLING_RATE_MS));
         }
 
@@ -217,9 +221,9 @@ namespace miscDevices
 #endif
 #if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
         float retVal = HCSR04CONFIG_DISTANCE_TRESHHOLD;
-        xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+        xSemaphoreTake(_adaptiveLowPassFilterMutex, portMAX_DELAY);
         retVal = _adaptiveLowPassFilter.getData();
-        xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
+        xSemaphoreGive(_adaptiveLowPassFilterMutex);
 #endif
 
 #if HCSR04CONFIG_PRINTF_FILTEROUTPUT_DATA == (1)
@@ -240,9 +244,9 @@ namespace miscDevices
     void HcSr04::setCurrentVelocity(float v)
     {
 #if HCSR04CONFIG_USE_ADAPTIVE_LOW_PASS_IIR == (1)
-        xSemaphoreTake(_adaptiveLowPassFilterSemaphore, portMAX_DELAY);
+        xSemaphoreTake(_adaptiveLowPassFilterMutex, portMAX_DELAY);
         _adaptiveLowPassFilter.setVelocity(v);
-        xSemaphoreGive(_adaptiveLowPassFilterSemaphore);
+        xSemaphoreGive(_adaptiveLowPassFilterMutex);
 #else
         xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
         _currentVelocity = v;
@@ -253,24 +257,35 @@ namespace miscDevices
 
     float HcSr04::getCurrentVelocity()
     {
-        if (_currentVelocitySemaphore == nullptr)
+        if (_currentVelocityMutex == nullptr)
         {
             return 0;
             /* ERROR ??? */
         }
 
         float retVal;
-        xSemaphoreTake(_currentVelocitySemaphore, pdMS_TO_TICKS(100));
+        xSemaphoreTake(_currentVelocityMutex, pdMS_TO_TICKS(100));
         retVal = _currentVelocity;
-        xSemaphoreGive(_currentVelocitySemaphore);
+        xSemaphoreGive(_currentVelocityMutex);
 
         return retVal;
+    }
+
+    bool HcSr04::checkForNewMeasurment()
+    {
+        // poll semaphore
+        return xSemaphoreTake(_newMeasurmentSemaphore, 0) == pdPASS;
+    }
+
+    bool HcSr04::blockForNewMeasurment()
+    {
+        // wait for Semaphore
+        return xSemaphoreTake(_newMeasurmentSemaphore, portMAX_DELAY) == pdPASS;
     }
 
     uint32_t HcSr04::_getHcSr04RawTimeDiff()
     {
         uint32_t retVal = 0;
-
 
         retVal = _rawtimediff; // acces is atomic - no protection neccesseary
 

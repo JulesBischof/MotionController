@@ -4,6 +4,7 @@
 #include "pico/stdlib.h"
 
 #include "HcSr04.hpp"
+#include "MedianStack.hpp"
 
 #include "FreeRTOS.h"
 #include "queue.h"
@@ -18,7 +19,7 @@ namespace MtnCtrl
         {
             IDLE,              // IDLE
             CHECK_DISTANCE,    // check distance
-            SLOWED_DOWN,         // slow down vehicle nearby barrier
+            SLOWED_DOWN,       // slow down vehicle nearby barrier
             WAIT_FOR_STOP_0,   // wait for robot to stop
             MIDDLE_ON_LINE,    // send driver command: middle on line
             WAIT_FOR_STOP_1,   // wait for robot to stop
@@ -43,11 +44,12 @@ namespace MtnCtrl
         {
         private:
             miscDevices::HcSr04 *_hcSr04;
-            miscDevices::LineSensor *_lineSensor;
             QueueHandle_t _messageDispatcherQueue;
             bool _gcAck, _posReached;
 
             absolute_time_t _stopTimeStamp;
+
+            miscDevices::MedianStack _medianStack;
 
         public:
             HandleBarrierStm(uint32_t *statusFlags,

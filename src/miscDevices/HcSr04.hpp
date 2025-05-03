@@ -10,7 +10,6 @@
 #include "event_groups.h"
 #include "semphr.h"
 
-#include "HcSr04KalmanFilter.hpp"
 #include "AdaptiveLowPassFilter.hpp"
 
 namespace miscDevices
@@ -34,25 +33,27 @@ namespace miscDevices
         void _initGpios();
 
         AdaptiveLowPassFilter _adaptiveLowPassFilter;
-        SemaphoreHandle_t _adaptiveLowPassFilterSemaphore;
+        SemaphoreHandle_t _adaptiveLowPassFilterMutex;
 
         absolute_time_t _lastPredictionTimestamp;
-        SemaphoreHandle_t _lastPredictionTimestampSemaphore;
+        SemaphoreHandle_t _lastPredictionTimestampMutex;
         float _getTimeDiff();
 
+        SemaphoreHandle_t _newMeasurmentSemaphore;
+
         volatile uint32_t _rawtimediff;
-        SemaphoreHandle_t _rawtimediffSemaphore;
+        SemaphoreHandle_t _rawtimediffMutex;
 
         QueueHandle_t _queueHandle;
         void _initHcSr04Queue();
 
-        TaskHandle_t _taskHandle;
         /// @brief FreeRTOS expects static function pointers. This Wrapper calls an instances method 
         /// @param pv object instance HcSr04
         static void _HcSr04TaskWrapper(void *pv);
         void _HcSr04Task();
+        TaskHandle_t _taskHandle;
 
-        SemaphoreHandle_t _currentVelocitySemaphore;
+        SemaphoreHandle_t _currentVelocityMutex;
         float _currentVelocity;
 
         uint32_t _getHcSr04RawTimeDiff();
@@ -89,6 +90,14 @@ namespace miscDevices
         /// @brief returns current veloity used for position prediction
         /// @return velocity in mm per second
         float getCurrentVelocity();
+
+        /// @brief polls status - provides polling synchronisation to SensorTask
+        /// @return true if new measurment is available
+        bool checkForNewMeasurment();
+
+        /// @brief blocks calling task unitl new Measurment is available - provices synchronisation to SensorTask
+        /// @return true if no TimeOut occurred
+        bool blockForNewMeasurment();
     };
 }
 #endif

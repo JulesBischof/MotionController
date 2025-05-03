@@ -32,6 +32,8 @@ namespace MtnCtrl
             _state = HandleBarrierStmState::IDLE;
             _gcAck = false;
             _posReached = false;
+
+            _medianStack = miscDevices::MedianStack(LINEFOLLOWERCONFIG_MEDIANSTACK_SIZE);
         }
 
         bool HandleBarrierStm::run()
@@ -141,9 +143,16 @@ namespace MtnCtrl
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::POSITION_DISTANCE:
             {
+                // take some measurments - and then take median
+                while (!_medianStack.isFull())
+                {
+                    _hcSr04->blockForNewMeasurment();
+                    _medianStack.push(_hcSr04->getSensorData());
+                }
+                float distance = _medianStack.getMedian();
+
                 // barrier is out of tolerance?
-                float distance = _hcSr04->getSensorData();
-                services::LoggerService::debug("HandleBarrierStm::run() state#POSITION_DISTANCE ", "checkin Barrier distance: %f mm", distance);
+                services::LoggerService::debug("HandleBarrierStm::run() state#POSITION_DISTANCE ", "checkin Barrier distance median: %f mm", distance);
                 if ((distance < LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm - LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm ||
                      distance > LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm + LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm))
                 {
