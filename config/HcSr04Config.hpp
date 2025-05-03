@@ -26,6 +26,17 @@ constexpr float HCSR04_CONFIG_ADAPTIVELOWPASS_INITIDISTANCE = HCSR04CONFIG_DISTA
 
 /* ==============================================================
 
+                        Filter Settings
+
+============================================================== */
+constexpr float SPEEDOFSOUND = 343.2f;
+constexpr float CONVERSION_FACTOR = 2000.f;
+
+constexpr float INITIAL_DISTANCE = HCSR04CONFIG_DISTANCE_TRESHHOLD;
+constexpr float INITIAL_VELOCITY = 0;
+
+/* ==============================================================
+
                             Debug
 
 ============================================================== */
