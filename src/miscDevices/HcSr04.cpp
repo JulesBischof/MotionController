@@ -332,7 +332,6 @@ namespace miscDevices
             timeDiff = static_cast<uint32_t>(absolute_time_diff_us(risingEdge, fallingEdge));
 
             _rawtimediff = timeDiff; // access is atomic - no protection neccesary
-
             xTaskNotifyFromISR(_taskHandle, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
         }
 

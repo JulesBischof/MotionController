@@ -52,8 +52,7 @@ namespace MtnCtrl
             miscDevices::MedianStack _medianStack;
 
         public:
-            HandleBarrierStm(uint32_t *statusFlags,
-                             miscDevices::HcSr04 *hcSr04,
+            HandleBarrierStm(miscDevices::HcSr04 *hcSr04,
                              QueueHandle_t messageDispatcherQueue);
             HandleBarrierStm();
             ~HandleBarrierStm() override;

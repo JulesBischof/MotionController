@@ -12,12 +12,10 @@ namespace MtnCtrl
         class StmBase
         {
         protected:
-            uint32_t *_statusFlags;
             StateType _state;
 
         public:
-            StmBase() : _statusFlags(nullptr), _state() {}
-            StmBase(uint32_t *_statusFlags) : _statusFlags(_statusFlags), _state() {}
+            StmBase() : _state() {}
             virtual ~StmBase() = default;
 
             virtual void init() = 0;

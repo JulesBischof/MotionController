@@ -15,13 +15,12 @@ namespace MtnCtrl
     {
         MovePositionModeStm::MovePositionModeStm() {}
 
-        MovePositionModeStm::MovePositionModeStm(uint32_t *_statusFlags,
-                                                 spiDevices::Tmc5240 *driver0,
+        MovePositionModeStm::MovePositionModeStm(spiDevices::Tmc5240 *driver0,
                                                  spiDevices::Tmc5240 *driver1,
                                                  miscDevices::LineSensor *lineSensor,
                                                  QueueHandle_t messageDispatcherQueue
                                                  )
-            : StmBase(_statusFlags)
+            : StmBase()
         {
             _driver0 = driver0;
             _driver1 = driver1;
@@ -43,8 +42,6 @@ namespace MtnCtrl
 
         bool MovePositionModeStm::run()
         {
-            uint32_t statusFlags = *_statusFlags;
-
             bool retVal = false;
             DispatcherMessage msg;
 
@@ -55,8 +52,6 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::POSITION_MODE:
-                // clear flag
-                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_POSITIONMODE_PERCENTAGE);
@@ -67,8 +62,6 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::TURN_MODE:
-                // clear flag
-                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_TURN_PERCENTAGE);
@@ -79,8 +72,6 @@ namespace MtnCtrl
                 break;
 
             case MovePositionModeStmState::STOP_MODE:
-                // clear flag
-                *_statusFlags &= ~(uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
                 // set motorcurrent
                 _driver0->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
                 _driver1->setRunCurrent(LINEFOLLOWERCONFIG_MOTORCURRENT_STOP_PERCENTAGE);
@@ -109,8 +100,6 @@ namespace MtnCtrl
                 // for safety resons - wait a certain time
                 if ((_stoppedTimeStamp + (TIME_UNTIL_STANDSTILL_IN_MS * 1000)) <= get_absolute_time())
                 {
-                    *_statusFlags |= (uint32_t)RunModeFlag::MOTORS_AT_STANDSTILL;
-
                     services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
 
                     // inform other Tasks

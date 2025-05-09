@@ -14,13 +14,12 @@ namespace MtnCtrl
 {
     namespace stm
     {
-        LineFollowerStm::LineFollowerStm(uint32_t *_statusFlags,
-                                         miscDevices::LineSensor *lineSensor,
+        LineFollowerStm::LineFollowerStm(miscDevices::LineSensor *lineSensor,
                                          spiDevices::Tmc5240 *driver0,
                                          spiDevices::Tmc5240 *driver1,
                                          QueueHandle_t LineFollowerTaskQueue,
                                          QueueHandle_t MessageDispatcherQueue)
-            : StmBase(_statusFlags),
+            : StmBase(),
               _lineSensor(lineSensor),
               _driver0(driver0),
               _driver1(driver1),
@@ -63,13 +62,11 @@ namespace MtnCtrl
                 {
                     services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
                     _state = LineFollowerStmState::CROSSPOINT_DETECTED;
-                    *_statusFlags |= (uint32_t)RunModeFlag::CROSSPOINT_DETECTED;
                 }
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_NO_LINE)
                 {
                     services::LoggerService::info("LineFollowerStm::run()", "Node Detected!");
                     _state = LineFollowerStmState::LOST_LINE;
-                    *_statusFlags |= (uint32_t)RunModeFlag::LOST_LINE;
                 }
 
                 break;
@@ -117,8 +114,6 @@ namespace MtnCtrl
                     {
                     }
                 }
-
-                _state = LineFollowerStmState::IDLE;
                 break;
 
             case LineFollowerStmState::CROSSPOINT_DETECTED:
@@ -205,7 +200,6 @@ namespace MtnCtrl
         void LineFollowerStm::_followLine()
         {
             // init vars
-            uint32_t statusFlags = *_statusFlags;
             int32_t v1 = 0;
             int32_t v2 = 0;
 

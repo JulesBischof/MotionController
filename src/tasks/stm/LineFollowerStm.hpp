@@ -43,8 +43,7 @@ namespace MtnCtrl
             uint32_t _lastMsgData;
 
         public:
-            LineFollowerStm(uint32_t *_statusFlags,
-                            miscDevices::LineSensor *lineSensor,
+            LineFollowerStm(miscDevices::LineSensor *lineSensor,
                             spiDevices::Tmc5240 *driver0,
                             spiDevices::Tmc5240 *driver1,
                             QueueHandle_t LineFollowerTaskQueue,

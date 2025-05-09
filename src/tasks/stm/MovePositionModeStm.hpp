@@ -41,8 +41,7 @@ namespace MtnCtrl
             bool _checkDriversForStandstill();
 
         public:
-            MovePositionModeStm(uint32_t *_statusFlags,
-                                spiDevices::Tmc5240 *driver0,
+            MovePositionModeStm(spiDevices::Tmc5240 *driver0,
                                 spiDevices::Tmc5240 *driver1,
                                 miscDevices::LineSensor *lineSensor,
                                 QueueHandle_t messageDispatcherQueue

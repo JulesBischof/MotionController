@@ -9,10 +9,9 @@ namespace MtnCtrl
 {
     namespace stm
     {
-        HandleBarrierStm::HandleBarrierStm(uint32_t *statusFlags,
-                                           miscDevices::HcSr04 *hcSr04,
+        HandleBarrierStm::HandleBarrierStm(miscDevices::HcSr04 *hcSr04,
                                            QueueHandle_t messageDispatcherQueue)
-            : StmBase(statusFlags),
+            : StmBase(),
               _hcSr04(hcSr04),
               _messageDispatcherQueue(messageDispatcherQueue)
         {
