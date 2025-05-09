@@ -360,6 +360,11 @@ namespace MtnCtrl
         return _messageDispatcherQueue;
     }
 
+    EventGroupHandle_t MotionController::getSafetyButtonEventHandle()
+    {
+        return _safetyButtonPressed;
+    }
+
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
     void MotionController::registerGripControllerInstance(QueueHandle_t gripControllerQueue)
     {

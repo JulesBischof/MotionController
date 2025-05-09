@@ -134,6 +134,7 @@ namespace MtnCtrl
         void startTasks();
 
         QueueHandle_t getMessageDispatcherQueue();
+        EventGroupHandle_t getSafetyButtonEventHandle();
 
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE
         void registerGripControllerInstance(QueueHandle_t gripControllerQueue);
