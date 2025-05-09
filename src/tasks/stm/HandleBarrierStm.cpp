@@ -214,11 +214,81 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_GC_ACK_0 ", "_gcAck = true");
                     _gcAck = false;
-                    _state = HandleBarrierStmState::TURN_ROBOT_0;
+                    // _state = HandleBarrierStmState::TURN_ROBOT_0;
+                    _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
                 }
                 break;
 
                 /* ---------------------------------------------------------------*/
+            // case HandleBarrierStmState::TURN_ROBOT_0:
+            //     services::LoggerService::debug("HandleBarrierStm::run() state#TURN_ROBOT_0 ", "turn Vehicle by 180° ");
+            //     msg = DispatcherMessage(
+            //         DispatcherTaskId::BarrierHandlerTask,
+            //         DispatcherTaskId::LineFollowerTask,
+            //         TaskCommand::Turn,
+            //         1800); // ° * 10
+            //     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+            //     { /* ERROR!!?? */
+            //         services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
+            //         while (1)
+            //         {
+            //         }
+            //     }
+            //     _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
+            //     taskYIELD();
+            //     break;
+
+                case HandleBarrierStmState::SET_BACK_ROBOT_0:
+                    services::LoggerService::debug("HandleBarrierStm::run() state#SET_BACK_ROBOT_0 ", "set back Vehicle now");
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::BarrierHandlerTask,
+                        DispatcherTaskId::LineFollowerTask,
+                        TaskCommand::Move,
+                        static_cast<uint64_t>(LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
+                        while (1)
+                        {
+                        }
+                    }
+                    _posReached = false;
+                    _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
+                    taskYIELD();
+                    break;
+
+                /* ---------------------------------------------------------------*/
+            case HandleBarrierStmState::WAIT_FOR_STOP_3:
+                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = %d", _posReached);
+                if (_posReached)
+                {
+                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = true");
+                    // _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
+                    _state = HandleBarrierStmState::TURN_ROBOT_0;
+                    _posReached = false;
+                }
+                break;
+
+                /* ---------------------------------------------------------------*/
+            // case HandleBarrierStmState::SET_BACK_ROBOT_0:
+            //     services::LoggerService::debug("HandleBarrierStm::run() state#SET_BACK_ROBOT_0 ", "set back Vehicle now");
+            //     msg = DispatcherMessage(
+            //         DispatcherTaskId::BarrierHandlerTask,
+            //         DispatcherTaskId::LineFollowerTask,
+            //         TaskCommand::Move,
+            //         static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
+            //     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+            //     { /* ERROR!!?? */
+            //         services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
+            //         while (1)
+            //         {
+            //         }
+            //     }
+            //     _posReached = false;
+            //     _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
+            //     taskYIELD();
+            //     break;
+
             case HandleBarrierStmState::TURN_ROBOT_0:
                 services::LoggerService::debug("HandleBarrierStm::run() state#TURN_ROBOT_0 ", "turn Vehicle by 180° ");
                 msg = DispatcherMessage(
@@ -233,37 +303,6 @@ namespace MtnCtrl
                     {
                     }
                 }
-                _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
-                taskYIELD();
-                break;
-
-                /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_3:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = %d", _posReached);
-                if (_posReached)
-                {
-                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = true");
-                    _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
-                    _posReached = false;
-                }
-                break;
-
-                /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::SET_BACK_ROBOT_0:
-                services::LoggerService::debug("HandleBarrierStm::run() state#SET_BACK_ROBOT_0 ", "set back Vehicle now");
-                msg = DispatcherMessage(
-                    DispatcherTaskId::BarrierHandlerTask,
-                    DispatcherTaskId::LineFollowerTask,
-                    TaskCommand::Move,
-                    static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
-                    while (1)
-                    {
-                    }
-                }
-                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
                 taskYIELD();
                 break;

@@ -107,6 +107,19 @@ namespace MtnCtrl
                         DispatcherTaskId::BarrierHandlerTask,
                         TaskCommand::PositionReached,
                         0);
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                        services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
+                        while (1)
+                        {
+                        }
+                    }
+                    
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::RaspberryHatComTask,
+                        TaskCommand::PositionReached,
+                        0);
 
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */

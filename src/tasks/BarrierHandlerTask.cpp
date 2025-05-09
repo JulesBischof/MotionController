@@ -13,7 +13,7 @@ namespace MtnCtrl
         QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
         // init stm
-        stm::HandleBarrierStm _handleBarrierStm(&statusFlags, _hcSr04, messageDispatcherQueue);
+        stm::HandleBarrierStm _handleBarrierStm(_hcSr04, messageDispatcherQueue);
 
         _handleBarrierStm.init();
 

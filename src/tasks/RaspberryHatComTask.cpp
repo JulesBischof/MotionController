@@ -67,6 +67,9 @@ namespace MtnCtrl
                 case (TaskCommand::NodeDetectedInfo):
                     txMsg = encode_info(address::RASPBERRY_HAT, info_flag::NODE_DETECTED);
                     break;
+                case (TaskCommand::PositionReached):
+                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::MOTION_DONE);
+                    break;
                 case (TaskCommand::Error):
                     txMsg = encode_error(address::RASPBERRY_HAT, message.getData());
                     break;
