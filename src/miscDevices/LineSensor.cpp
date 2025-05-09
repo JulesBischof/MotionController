@@ -3,6 +3,9 @@
 #include "pico/stdlib.h"
 #include "LoggerService.hpp"
 
+#include "MedianStack.hpp"
+#include <cstring>
+
 namespace miscDevices
 {
 
@@ -264,5 +267,45 @@ namespace miscDevices
         uint16_t retVal = static_cast<uint16_t>(normalized);
         return retVal;
     }
+    
+    void LineSensor::lineSensorCalib(bool high)
+    {
+        // init buffers
+        uint16_t buffer[NUMBER_OF_CELLS] = {0};
+        MedianStack<uint16_t> stacks[NUMBER_OF_CELLS];
+        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+        {
+            stacks[i] = MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+        }
 
+        // get analog data and push median stack
+        for (size_t i = 0; i < LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS; i++)
+        {
+            _toggleUvLed(true);
+            _adcInstance->readAdc(buffer);
+            _toggleUvLed(false);
+
+            // fill stack buffers
+            for (size_t j; j < NUMBER_OF_CELLS; j++)
+            {
+                stacks[j].push(buffer[j]);
+            }
+            vTaskDelay(pdMS_TO_TICKS(1));
+        }
+
+        // get medianesses
+        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+        {
+            buffer[i] = stacks[i].getMedian();
+        }
+
+        // write to calibration values
+        if(high)
+        {
+            std::memcpy(_calibValuesHigh, buffer, NUMBER_OF_CELLS * sizeof(buffer[0]));
+        } else 
+        {
+            std::memcpy(_calibValuesLow, buffer, NUMBER_OF_CELLS * sizeof(buffer[0]));
+        }
+    }
 }

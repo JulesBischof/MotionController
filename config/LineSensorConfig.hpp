@@ -11,9 +11,11 @@
 
 #define ADC_RAW_LINE_TRESHHOLD (30000)
 
-#define LINECOUNTER_CROSS_DETECTED (4)
+#define LINECOUNTER_CROSS_DETECTED (5)
 
 #define LINECOUNTER_MAX_VALUE (10)
+
+#define LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS (50)
 
 /* ==============================================================
 

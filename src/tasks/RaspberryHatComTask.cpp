@@ -18,7 +18,6 @@
 #include "semphr.h"
 #include "queue.h"
 
-
 using namespace prain_uart;
 using namespace encoder;
 
@@ -68,7 +67,7 @@ namespace MtnCtrl
                     txMsg = encode_info(address::RASPBERRY_HAT, info_flag::NODE_DETECTED);
                     break;
                 case (TaskCommand::PositionReached):
-                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::MOTION_DONE);
+                    // txMsg = encode_info(address::RASPBERRY_HAT, info_flag::MOTION_DONE);
                     break;
                 case (TaskCommand::Error):
                     txMsg = encode_error(address::RASPBERRY_HAT, message.getData());
@@ -93,11 +92,11 @@ namespace MtnCtrl
                     break;
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
-                    
+
                     if (xQueueSend(messageDispatcherQueue, &uartMsg, portMAX_DELAY) != pdTRUE)
                     {
                         services::LoggerService::fatal("_raspberryHatComTask", "WRITE TO QUEUE cmd decode msg FAILED");
-                        for(;;)
+                        for (;;)
                             ;
                     }
                     break;
@@ -227,9 +226,30 @@ namespace MtnCtrl
                 retVal.setData(0);
                 break;
 
+                /* ---- REPLACEMENT for calibrate LineSensor ---- */
+                // send PONG::0 -> calib for tile
+                // send PONG::1 -> calib for line
+            case (command::PONG):
+                retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
+                retVal.command = TaskCommand::CalibLineSensor;
+                retVal.setData(dec.get_raw_parameters());
+                break;
+
             case (command::RESPONSE):
                 retVal.receiverTaskId = DispatcherTaskId::LineFollowerTask;
                 retVal.command = TaskCommand::GcAck;
+                retVal.setData(0);
+                break;
+
+            case (command::GRIP):
+                retVal.receiverTaskId = DispatcherTaskId::GripControllerComTask;
+                retVal.command = TaskCommand::CraneGrip;
+                retVal.setData(0);
+                break;
+
+            case (command::RELEASE):
+                retVal.receiverTaskId = DispatcherTaskId::GripControllerComTask;
+                retVal.command = TaskCommand::CraneRelease;
                 retVal.setData(0);
                 break;
 

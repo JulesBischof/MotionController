@@ -32,7 +32,7 @@ namespace MtnCtrl
             _gcAck = false;
             _posReached = false;
 
-            _medianStack = miscDevices::MedianStack(LINEFOLLOWERCONFIG_MEDIANSTACK_SIZE);
+            _medianStack = miscDevices::MedianStack<float>(LINEFOLLOWERCONFIG_MEDIANSTACK_SIZE);
         }
 
         bool HandleBarrierStm::run()

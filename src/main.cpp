@@ -24,9 +24,11 @@ int main()
 
     QueueHandle_t comQueue = gripController.getGripControllerRxQueue();
     QueueHandle_t dispatcher = motionController.getMessageDispatcherQueue();
+    EventGroupHandle_t safetyEvent = motionController.getSafetyButtonEventHandle();
 
     motionController.registerGripControllerInstance(comQueue);
     gripController.registerTxQueue(dispatcher);
+    // gripController.registerSafetyEvent(safetyEvent);
 
     gripController.startTasks();
     motionController.startTasks();

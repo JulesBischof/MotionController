@@ -43,7 +43,8 @@ namespace MtnCtrl
         DecodeMessage,
         CraneGrip,
         CraneRelease,
-        GcAck
+        GcAck, 
+        CalibLineSensor,
     };
 
     /// @brief struct containing Messages for intertask communication

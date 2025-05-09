@@ -59,6 +59,10 @@ namespace miscDevices
         /// @return -4 ... 4  ;  0 = Line in middle Position
         int8_t getLinePositionDigital();
 
+        /// @brief calibrates the lineSensor based on a Median Value
+        /// @param high true if high values should be set - false if low
+        void lineSensorCalib(bool high);
+
         /// @brief get Line Position as an Analog value - see LineSensorConfig.h for maximum value
         /// @return lineposition
         uint32_t getLinePositionAnalog();

@@ -91,6 +91,11 @@ namespace MtnCtrl
                     _movePositionModeStm.update(message.getData(), message.command);
                     break;
 
+                case TaskCommand::CalibLineSensor:
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: CALIBLINESENSOR TILE# data: %d", message.getData());
+                    _lineSensor.lineSensorCalib(message.getData() > 0);
+                    break;
+
                 case TaskCommand::SlowDown:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: SLOW DOWN # data: %d", message.getData());
                     _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
