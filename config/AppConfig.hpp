@@ -16,6 +16,6 @@
 #define MTNCTRL
 
 
-constexpr services::logLevel APPCONFIG_LOGLEVEL = services::logLevel::Debug;
+constexpr services::logLevel APPCONFIG_LOGLEVEL = services::logLevel::Fatal;
 
 #endif // APPCONFIG_H

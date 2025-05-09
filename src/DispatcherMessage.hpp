@@ -1,5 +1,7 @@
 #pragma once
 
+#define EMERGENCY_STOP_BIT (1 << 0) // Bit 0
+
 namespace MtnCtrl
 {
     enum class DispatcherTaskId : uint8_t

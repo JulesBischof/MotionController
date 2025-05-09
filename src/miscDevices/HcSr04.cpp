@@ -303,9 +303,7 @@ namespace miscDevices
         if (_instancesMapSemaphore != nullptr)
         {
             // get concerning instance
-            xSemaphoreTakeFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
             HcSr04 *instance = _instancesMap[gpio];
-            xSemaphoreGiveFromISR(_instancesMapSemaphore, &xHigherPriorityTaskWoken);
 
             // run "personal" instance irq handler
             if (instance != nullptr)

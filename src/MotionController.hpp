@@ -10,6 +10,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "semphr.h"
+#include "event_groups.h"
 
 #include "HcSr04.hpp"
 #include "Tmc5240.hpp"
@@ -60,6 +61,7 @@ namespace MtnCtrl
         void _gripControllerComTask();
         void _messageDispatcherTask();
         void _barrierHandlerTask();
+        void _safetyButtonPollTask();
 
         /// @brief main loop LineFollowerTask. Checks on Barrierdistance as  well as on linepossition and moves vehicle accordingly
         void _startLineFollowerTask();
@@ -75,6 +77,10 @@ namespace MtnCtrl
 
         static void _barrierHandlerTaskWrapper(void *pvParameters);
         void _startBarrierHandlerTask();
+
+        static void _safetyButtonPollTaskWrapper(void *pvParameters);
+        void _startsafetyButtonPollTask();
+        EventGroupHandle_t _safetyButtonPressed;
 
         /// @brief FreeRTOS expects a static Functionpointer. This Wrapping helps to start a memberfunction as its own Task.
         /// @param pvParameters MotionController Instance

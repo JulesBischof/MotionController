@@ -58,6 +58,15 @@ namespace MtnCtrl
         // loop forever
         for (;;)
         {
+            /* -------- check safety button ---------- */
+            EventBits_t safetyButtonBits = xEventGroupWaitBits(
+                _safetyButtonPressed,
+                EMERGENCY_STOP_BIT,
+                pdFALSE,      
+                pdTRUE,
+                0 
+            );
+
             DispatcherMessage message;
             DispatcherMessage response;
 
@@ -70,6 +79,12 @@ namespace MtnCtrl
                 {
                     services::LoggerService::error("_lineFollowerTask", "wrong TaskId: %x", message.receiverTaskId);
                     continue;
+                }
+
+                // if safety button is pressed: all commands are stop commands
+                if ((safetyButtonBits & EMERGENCY_STOP_BIT) != 0)
+                {
+                    message.command = TaskCommand::Stop;
                 }
 
                 switch (message.command)

@@ -58,7 +58,7 @@ namespace MtnCtrl
 
             case LineFollowerStmState::FOLLOW_LINE:
                 _followLine();
-                
+
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_CROSS_DETECTED)
                 {
                     services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
@@ -99,7 +99,7 @@ namespace MtnCtrl
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                     services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
-                    while(1)
+                    while (1)
                     {
                     }
                 }
@@ -270,18 +270,16 @@ namespace MtnCtrl
             u = LINEFOLLERCONFIG_CONTROLLERVALUE_KP * e + LINEFOLLERCONFIG_CONTROLLERVALUE_KD * deltaE;
 #endif
 
-#if LINEFOLLERCONFIG_USE_PD_CONTROLLER_Z_TRANSFORM == (1)
-            static double last_e = 0;
-            static double last_u = 0;
+#if LINEFOLLERCONFIG_USE_PD_CONTROLLER_MATLAB == (1)
+            static int32_t last_e = 0;
+            static int32_t last_u = 0;
 
-            double res = LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_A1 * e +
-                         LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_A2 * last_e -
-                         LINEFOLLOWERCONFIG_CONROLLERVALUE_MATLAB_Z_TRANSFORM_B2 * last_u;
+            float res = pd_beta * e - pd_beta * last_e + pd_alpha * last_u;
 
             int32_t u = static_cast<int32_t>(res);
 
             last_e = e;
-            last_u = u;
+            last_u = res;
 #endif
             int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
             return retVal;
