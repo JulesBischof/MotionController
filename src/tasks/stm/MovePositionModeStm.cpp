@@ -18,8 +18,7 @@ namespace MtnCtrl
         MovePositionModeStm::MovePositionModeStm(spiDevices::Tmc5240 *driver0,
                                                  spiDevices::Tmc5240 *driver1,
                                                  miscDevices::LineSensor *lineSensor,
-                                                 QueueHandle_t messageDispatcherQueue
-                                                 )
+                                                 QueueHandle_t messageDispatcherQueue)
             : StmBase()
         {
             _driver0 = driver0;
@@ -182,8 +181,8 @@ namespace MtnCtrl
 
             if (distance < 0)
             {
-                vmax = -0.5 * vmax;
-                amax = 0.2 * amax;
+                vmax = LINEFOLLOWERCONFIG_BACKWARDS_VMAX;
+                amax = LINEFOLLOWERCONFIG_BACKWARDS_AMAX;
             }
 
             _driver0->moveRelativePositionMode(distance, vmax, amax, 1);
@@ -223,8 +222,14 @@ namespace MtnCtrl
             int32_t nStepsDriver = services::StepperService::convertMillimeterToMicrosteps(ds);
 
             // move drives in different directions
-            _driver0->moveRelativePositionMode(nStepsDriver, 0.4 * LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, 0.5 * LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
-            _driver1->moveRelativePositionMode(nStepsDriver, 0.4 * LINEFOLLERCONFIG_VMAX_REGISTER_VALUE, 0.5 * LINEFOLLERCONFIG_AMAX_REGISTER_VALUE, 0);
+            _driver0->moveRelativePositionMode(nStepsDriver,
+                                               LINEFOLLOWERCONFIG_TURN_VMAX,
+                                               LINEFOLLOWERCONFIG_TURN_AMAX,
+                                               0);
+            _driver1->moveRelativePositionMode(nStepsDriver,
+                                               LINEFOLLOWERCONFIG_TURN_VMAX,
+                                               LINEFOLLOWERCONFIG_TURN_AMAX,
+                                               0);
         }
 
         /// @brief stops the drives

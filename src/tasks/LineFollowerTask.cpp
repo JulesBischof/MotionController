@@ -28,20 +28,16 @@ namespace MtnCtrl
     {
         // init stms
         uint32_t _lineFollowerStatusFlags = 0;
-        stm::LineFollowerStm _lineFollowerStm(&_lineFollowerStatusFlags,
-                                              &_lineSensor,
+        stm::LineFollowerStm _lineFollowerStm(&_lineSensor,
                                               &_driver0,
                                               &_driver1,
                                               _lineFollowerQueue,
-                                              _messageDispatcherQueue
-                                              );
+                                              _messageDispatcherQueue);
         _lineFollowerStm.init();
-        stm::MovePositionModeStm _movePositionModeStm(&_lineFollowerStatusFlags,
-                                                      &_driver0,
+        stm::MovePositionModeStm _movePositionModeStm(&_driver0,
                                                       &_driver1,
                                                       &_lineSensor,
-                                                      _messageDispatcherQueue
-                                                      );
+                                                      _messageDispatcherQueue);
         _movePositionModeStm.init();
 
         // init misc members
@@ -62,10 +58,9 @@ namespace MtnCtrl
             EventBits_t safetyButtonBits = xEventGroupWaitBits(
                 _safetyButtonPressed,
                 EMERGENCY_STOP_BIT,
-                pdFALSE,      
+                pdFALSE,
                 pdTRUE,
-                0 
-            );
+                0);
 
             DispatcherMessage message;
             DispatcherMessage response;
