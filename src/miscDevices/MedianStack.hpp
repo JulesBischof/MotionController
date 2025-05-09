@@ -4,24 +4,25 @@
 
 namespace miscDevices
 {
+    template <typename T>
     class MedianStack
     {
     private:
         uint8_t _writePos, _size;
 
-        float *_buffer;
+        T *_buffer;
 
         void _clearBuffer();
         bool _isEmpty();
 
     public:
         MedianStack(){};
-        MedianStack(uint8_t size);
+        MedianStack(uint16_t size);
         ~MedianStack();
 
         bool isFull();
 
-        float getMedian();
-        void push(float val);
+        T getMedian();
+        void push(T val);
     };
 }

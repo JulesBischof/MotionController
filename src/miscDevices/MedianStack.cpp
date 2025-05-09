@@ -9,7 +9,8 @@
 
 namespace miscDevices
 {
-    MedianStack::MedianStack(uint8_t size) : _size(size)
+    template<typename T>
+    MedianStack<T>::MedianStack(uint16_t size) : _size(size)
     {
         _writePos = 0;
         void *ptr = pvPortMalloc(sizeof(float) * size);
@@ -25,12 +26,17 @@ namespace miscDevices
         _clearBuffer();
     }
 
-    MedianStack::~MedianStack()
+    template <typename T>
+    MedianStack<T>::~MedianStack()
     {
+        services::LoggerService::debug("MedianBuffer dctor", "free buffer Memory");
+        vPortFree(_buffer);
+        _buffer = nullptr;
         /* not implemented */
     }
 
-    void MedianStack::_clearBuffer()
+    template <typename T>
+    void MedianStack<T>::_clearBuffer()
     {
         // init buffer with zeros
         for (uint8_t i = 0; i < _size; i++)
@@ -41,12 +47,14 @@ namespace miscDevices
         _writePos = 0;
     }
 
-    bool MedianStack::_isEmpty()
+    template <typename T>
+    bool MedianStack<T>::_isEmpty()
     {
         return (_writePos == 0);
     }
 
-    bool MedianStack::isFull()
+    template <typename T>
+    bool MedianStack<T>::isFull()
     {
         // writePos represents "net Value to Write" - thats why +1
         return (_writePos == (_size + 1));
@@ -59,7 +67,8 @@ namespace miscDevices
         return (fa > fb) - (fa < fb);
     }
 
-    float MedianStack::getMedian()
+    template<typename T>
+    T MedianStack<T>::getMedian()
     {
         if (_isEmpty())
         {
@@ -75,7 +84,8 @@ namespace miscDevices
         return median;
     }
 
-    void MedianStack::push(float val)
+    template<typename T>
+    void MedianStack<T>::push(T val)
     {
         // buffer full? well, do nothing
         if (isFull())
