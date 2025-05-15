@@ -25,9 +25,9 @@ namespace MtnCtrl
             WAIT_FOR_STOP_1,   // wait for robot to stop
             SEND_GRIP_COMMAND, // send GC-command: grip barrier
             WAIT_FOR_GC_ACK_0, // wait for GC-ACK
+            SET_BACK_ROBOT_0,  // send driver command: reposition robot
             TURN_ROBOT_0,      // send driver command: turn robot
             WAIT_FOR_STOP_2,   // wait for robot to stop
-            SET_BACK_ROBOT_0,  // send driver command: move back
             WAIT_FOR_STOP_3,   // wait for robot to stop
             SEND_RELEASE_CMD,  // send GC-command: release barrier
             WAIT_FOR_GC_ACK_1, // wait for GC-ACK

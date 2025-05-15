@@ -190,6 +190,10 @@ namespace MtnCtrl
             _lineFollowerStm.run();
             _movePositionModeStm.run();
 
+#if TRIGGER_LINESENSOR_SAMPLES == 1
+            _lineSensor.toggleUvLed(true);
+            _lineSensor.getLinePositionAnalog();
+#endif
             vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
         }
     } // end Task

@@ -16,6 +16,7 @@
 // DEBUG
 
 #define ENABLE_DATA_OUTPUT_LINEPOS (0)
+#define TRIGGER_LINESENSOR_SAMPLES (0)
 
 /* ==============================================================
 
@@ -46,8 +47,8 @@ constexpr float LINEFOLLERCONFIG_CONTROLLERVALUE_KP(32); // ~32 analog //~ 13 di
 constexpr float LINEFOLLERCONFIG_CONTROLLERVALUE_KD = (3.2f); //~ 0.7 digital ~1.5f Analog
 
 // PD - Matlab Approximation
-constexpr double cz_matlab_num[2] = {75.76, -74.82};
-constexpr double cz_matlab_dnum[2] = {1, -0.8824};
+constexpr double cz_matlab_num[2] = {59.85, -58.67};
+constexpr double cz_matlab_dnum[2] = {1, -0.8519};
 
 /* ==============================================================
 

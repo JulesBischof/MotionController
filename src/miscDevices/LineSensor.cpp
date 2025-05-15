@@ -160,7 +160,6 @@ namespace miscDevices
         }
 
         uint8_t lineCounter = 0;
-
         uint16_t normValues[NUMBER_OF_CELLS] = {0};
 
         // normalize and invert ADC values
@@ -191,7 +190,7 @@ namespace miscDevices
         }
 
         // if there is still no line - set status to no line detected
-        if (!lineCounter && _nolineCounter >= LINECOUNTER_MAX_VALUE)
+        if (_nolineCounter >= LINECOUNTER_MAX_VALUE)
         {
             _status |= LINESENSOR_NO_LINE;
             return LINESENSOR_MIDDLE_POSITION;
@@ -203,9 +202,13 @@ namespace miscDevices
 
         // check if there has been a crossway
         if (lineCounter > LINECOUNTER_CROSS_DETECTED)
+        {
             _status |= LINESENSOR_CROSS_DETECTED;
+        }
         else
+        {
             _status &= ~LINESENSOR_CROSS_DETECTED;
+        }
 
         // sum up all values
         uint32_t numerator = 0;
@@ -220,7 +223,6 @@ namespace miscDevices
         {
             // this is just info logLevel due to this can happen if LineSensor stands on top of a Node
             services::LoggerService::info("LineSensor::_minMaxNormalize", "prevented division by zero");
-            _status |= LINESENSOR_ERROR;
             return LINESENSOR_MIDDLE_POSITION;
         }
 
