@@ -120,26 +120,10 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_0 ", "_posReached = true");
                     _posReached = false;
-                    _state = HandleBarrierStmState::MIDDLE_ON_LINE;
+                    _state = HandleBarrierStmState::POSITION_DISTANCE;
                 }
                 break;
 
-                /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::MIDDLE_ON_LINE:
-                // not implemented for now - cmd is part of MovePositionModeStm
-                // _state = HandleBarrierStmState::WAIT_FOR_STOP_1;
-                _state = HandleBarrierStmState::POSITION_DISTANCE;
-                break;
-
-                /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_1:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_1 ", "_posReached = %d", _posReached);
-                /* NOT REACHED FOR NOW due to middle on line is not part of stm */
-                _posReached = false;
-                _state = HandleBarrierStmState::POSITION_DISTANCE;
-                break;
-
-                /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::POSITION_DISTANCE:
             {
                 // take some measurments - and then take median
@@ -173,13 +157,13 @@ namespace MtnCtrl
                 }
             }
                 _posReached = false;
-                _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_1;
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_2:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2", "_posReached = %d", _posReached);
+            case HandleBarrierStmState::WAIT_FOR_STOP_1:
+                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_1", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
@@ -219,25 +203,6 @@ namespace MtnCtrl
                 }
                 break;
 
-                /* ---------------------------------------------------------------*/
-            // case HandleBarrierStmState::TURN_ROBOT_0:
-            //     services::LoggerService::debug("HandleBarrierStm::run() state#TURN_ROBOT_0 ", "turn Vehicle by 180° ");
-            //     msg = DispatcherMessage(
-            //         DispatcherTaskId::BarrierHandlerTask,
-            //         DispatcherTaskId::LineFollowerTask,
-            //         TaskCommand::Turn,
-            //         1800); // ° * 10
-            //     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-            //     { /* ERROR!!?? */
-            //         services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
-            //         while (1)
-            //         {
-            //         }
-            //     }
-            //     _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
-            //     taskYIELD();
-            //     break;
-
                 case HandleBarrierStmState::SET_BACK_ROBOT_0:
                     services::LoggerService::debug("HandleBarrierStm::run() state#SET_BACK_ROBOT_0 ", "set back Vehicle now");
                     msg = DispatcherMessage(
@@ -253,41 +218,21 @@ namespace MtnCtrl
                         }
                     }
                     _posReached = false;
-                    _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
+                    _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
                     taskYIELD();
                     break;
 
                 /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_3:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = %d", _posReached);
+            case HandleBarrierStmState::WAIT_FOR_STOP_2:
+                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2 ", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
-                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_3 ", "_posReached = true");
+                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2 ", "_posReached = true");
                     // _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
                     _state = HandleBarrierStmState::TURN_ROBOT_0;
                     _posReached = false;
                 }
                 break;
-
-                /* ---------------------------------------------------------------*/
-            // case HandleBarrierStmState::SET_BACK_ROBOT_0:
-            //     services::LoggerService::debug("HandleBarrierStm::run() state#SET_BACK_ROBOT_0 ", "set back Vehicle now");
-            //     msg = DispatcherMessage(
-            //         DispatcherTaskId::BarrierHandlerTask,
-            //         DispatcherTaskId::LineFollowerTask,
-            //         TaskCommand::Move,
-            //         static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
-            //     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-            //     { /* ERROR!!?? */
-            //         services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
-            //         while (1)
-            //         {
-            //         }
-            //     }
-            //     _posReached = false;
-            //     _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
-            //     taskYIELD();
-            //     break;
 
             case HandleBarrierStmState::TURN_ROBOT_0:
                 services::LoggerService::debug("HandleBarrierStm::run() state#TURN_ROBOT_0 ", "turn Vehicle by 180° ");
@@ -303,12 +248,12 @@ namespace MtnCtrl
                     {
                     }
                 }
-                _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_4:
+            case HandleBarrierStmState::WAIT_FOR_STOP_3:
                 services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
@@ -364,16 +309,16 @@ namespace MtnCtrl
                     }
                 }
                 _posReached = false;
-                _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_5:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = %d", _posReached);
+            case HandleBarrierStmState::WAIT_FOR_STOP_4:
+                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_4 ", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
-                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = true");
+                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_4 ", "_posReached = true");
                     _state = HandleBarrierStmState::TURN_ROBOT_1;
                     _posReached = false;
                 }
@@ -395,16 +340,16 @@ namespace MtnCtrl
                     }
                 }
                 _posReached = false;
-                _state = HandleBarrierStmState::WAIT_FOR_STOP_6;
+                _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
-            case HandleBarrierStmState::WAIT_FOR_STOP_6:
-                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_6 ", "_posReached = %d", _posReached);
+            case HandleBarrierStmState::WAIT_FOR_STOP_5:
+                services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = %d", _posReached);
                 if (_posReached)
                 {
-                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_6 ", "_posReached = true");
+                    services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = true");
                     _state = HandleBarrierStmState::DONE;
                     _posReached = false;
                 }

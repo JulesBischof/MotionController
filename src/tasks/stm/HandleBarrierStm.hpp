@@ -21,22 +21,20 @@ namespace MtnCtrl
             CHECK_DISTANCE,    // check distance
             SLOWED_DOWN,       // slow down vehicle nearby barrier
             WAIT_FOR_STOP_0,   // wait for robot to stop
-            MIDDLE_ON_LINE,    // send driver command: middle on line
-            WAIT_FOR_STOP_1,   // wait for robot to stop
             POSITION_DISTANCE, // send driver command: correct barrierdistance
-            WAIT_FOR_STOP_2,   // wait for robot to stop
+            WAIT_FOR_STOP_1,   // wait for robot to stop
             SEND_GRIP_COMMAND, // send GC-command: grip barrier
             WAIT_FOR_GC_ACK_0, // wait for GC-ACK
             TURN_ROBOT_0,      // send driver command: turn robot
-            WAIT_FOR_STOP_3,   // wait for robot to stop
+            WAIT_FOR_STOP_2,   // wait for robot to stop
             SET_BACK_ROBOT_0,  // send driver command: move back
-            WAIT_FOR_STOP_4,   // wait for robot to stop
+            WAIT_FOR_STOP_3,   // wait for robot to stop
             SEND_RELEASE_CMD,  // send GC-command: release barrier
             WAIT_FOR_GC_ACK_1, // wait for GC-ACK
             SET_BACK_ROBOT_1,  // turned back - set back a little
-            WAIT_FOR_STOP_5,   // wait for robot to stop
+            WAIT_FOR_STOP_4,   // wait for robot to stop
             TURN_ROBOT_1,      // send driver command: turn robot
-            WAIT_FOR_STOP_6,   // wait for robot to stop
+            WAIT_FOR_STOP_5,   // wait for robot to stop
             DONE,              // send driver command: move robot
         };
 
