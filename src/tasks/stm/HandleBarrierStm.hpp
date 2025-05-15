@@ -49,7 +49,7 @@ namespace MtnCtrl
 
             absolute_time_t _stopTimeStamp;
 
-            miscDevices::MedianStack _medianStack;
+            miscDevices::MedianStack<float> _medianStack;
 
         public:
             HandleBarrierStm(miscDevices::HcSr04 *hcSr04,

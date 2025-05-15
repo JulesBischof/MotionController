@@ -26,3 +26,5 @@ namespace miscDevices
         void push(T val);
     };
 }
+
+#include "MedianStack.tpp"

@@ -22,7 +22,7 @@ namespace miscDevices
 
         i2cDevices::Tla2528 *_adcInstance;
 
-        uint8_t _uvGpio;
+        uint8_t _uvGpio, _nolineCounter;
 
         uint16_t _calibValuesLow[NUMBER_OF_CELLS];
         uint16_t _calibValuesHigh[NUMBER_OF_CELLS];
@@ -33,10 +33,6 @@ namespace miscDevices
         /// @param calibMax calibration maximum value
         /// @return 
         static uint16_t _minMaxNormalize(uint16_t val, uint16_t calibMin, uint16_t calibMax);
-
-        /// @brief turns either on or off UV-tx LED's
-        /// @param state true = LED's on; false = LED's off;
-        void _toggleUvLed(bool state);
 
         /// @brief initializes default calibration to LineSensor
         void _initDefaultCalibration();
@@ -66,6 +62,11 @@ namespace miscDevices
         /// @brief get Line Position as an Analog value - see LineSensorConfig.h for maximum value
         /// @return lineposition
         uint32_t getLinePositionAnalog();
+
+        /// @brief turns either on or off UV-tx LED's
+        /// @param state true = LED's on; false = LED's off;
+        void toggleUvLed(bool state);
+        
         uint8_t getStatus() { return _status; };
     };
 }

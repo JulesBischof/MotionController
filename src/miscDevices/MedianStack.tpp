@@ -9,11 +9,12 @@
 
 namespace miscDevices
 {
+
     template<typename T>
     MedianStack<T>::MedianStack(uint16_t size) : _size(size)
     {
         _writePos = 0;
-        void *ptr = pvPortMalloc(sizeof(float) * size);
+        void *ptr = pvPortMalloc(sizeof(T) * size);
         if (ptr == nullptr)
         {
             services::LoggerService::fatal("MedianBuffer ctor", "Malloc Failed");
@@ -21,7 +22,7 @@ namespace miscDevices
             {
             }
         }
-        _buffer = static_cast<float *>(ptr);
+        _buffer = static_cast<T *>(ptr);
 
         _clearBuffer();
     }
@@ -57,13 +58,14 @@ namespace miscDevices
     bool MedianStack<T>::isFull()
     {
         // writePos represents "net Value to Write" - thats why +1
-        return (_writePos == (_size + 1));
+        return (_writePos >= _size);
     }
 
+    template <typename T>
     int comp(const void *a, const void *b)
     {
-        float fa = *(const float *)a;
-        float fb = *(const float *)b;
+        T fa = *(const T *)a;
+        T fb = *(const T *)b;
         return (fa > fb) - (fa < fb);
     }
 
@@ -76,7 +78,7 @@ namespace miscDevices
         }
 
         // sort buffer
-        qsort(_buffer, _size, sizeof(_buffer[0]), comp);
+        qsort(_buffer, _size, sizeof(_buffer[0]), comp<T>);
 
         float median = (_size % 2) ? (_buffer[_size / 2]) : ((_buffer[_size / 2 - 1] + _buffer[_size / 2]) / 2.0f);
 
@@ -93,7 +95,6 @@ namespace miscDevices
             return;
         }
 
-        _buffer[_writePos] = val;
-        _writePos++;
+        _buffer[_writePos++] = val;
     }
 }

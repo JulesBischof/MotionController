@@ -124,11 +124,13 @@ namespace MtnCtrl
 
                 case TaskCommand::PollLineSensor:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL LINESENSOR # data: %d", message.getData());
+                    _lineSensor.toggleUvLed(true);
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                  message.senderTaskId,
                                                  TaskCommand::PollDistance,
                                                  _lineSensor.getLinePositionAnalog());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                    _lineSensor.toggleUvLed(false);
                     break;
 
                 case TaskCommand::PollStatusFlags:

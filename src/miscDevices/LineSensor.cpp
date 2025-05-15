@@ -36,7 +36,9 @@ namespace miscDevices
     {
         gpio_init(_uvGpio);
         gpio_set_dir(_uvGpio, GPIO_OUT);
-        _toggleUvLed(false);
+        toggleUvLed(false);
+
+        _nolineCounter = 0;
 
         return;
     }
@@ -64,9 +66,9 @@ namespace miscDevices
         // get ADC-value
         uint16_t adcValues[NUMBER_OF_CELLS] = {0};
 
-        _toggleUvLed(true);
+        toggleUvLed(true);
         bool err = _adcInstance->readAdc(adcValues);
-        _toggleUvLed(false);
+        toggleUvLed(false);
 
         if (!err)
         {
@@ -148,10 +150,7 @@ namespace miscDevices
     {
         // get ADC-value
         uint16_t adcValues[NUMBER_OF_CELLS] = {0};
-
-        _toggleUvLed(true);
         bool err = _adcInstance->readAdc(adcValues);
-        _toggleUvLed(false);
 
         if (!err)
         {
@@ -176,20 +175,23 @@ namespace miscDevices
             }
         }
 
-        static uint8_t noLineCounter = 0;
+#if LINESENSOR_CONFIG_PRINTF_CELLVALUES == 1
+        printf("%d, %d, %d, %d, %d, %d, %d, %d\n",
+               normValues[0], normValues[1], normValues[2], normValues[3], normValues[4], normValues[5], normValues[6], normValues[7]);
+#endif
 
         // if there is no line - count until LINECOUNTER_MAX_VALUE
         if (!lineCounter)
         {
-            noLineCounter++;
+            _nolineCounter++;
         }
         else
         {
-            noLineCounter = 0;
+            _nolineCounter = 0;
         }
 
         // if there is still no line - set status to no line detected
-        if (!lineCounter && noLineCounter >= LINECOUNTER_MAX_VALUE)
+        if (!lineCounter && _nolineCounter >= LINECOUNTER_MAX_VALUE)
         {
             _status |= LINESENSOR_NO_LINE;
             return LINESENSOR_MIDDLE_POSITION;
@@ -226,7 +228,7 @@ namespace miscDevices
         return linePosition;
     }
 
-    void LineSensor::_toggleUvLed(bool state)
+    void LineSensor::toggleUvLed(bool state)
     {
         gpio_put(_uvGpio, state);
         _status = state ? (_status | LINESENSOR_UV_ACTIVE) : (_status & ~LINESENSOR_UV_ACTIVE);
@@ -267,28 +269,29 @@ namespace miscDevices
         uint16_t retVal = static_cast<uint16_t>(normalized);
         return retVal;
     }
-    
+
     void LineSensor::lineSensorCalib(bool high)
     {
+        toggleUvLed(true);
         // init buffers
         uint16_t buffer[NUMBER_OF_CELLS] = {0};
-        MedianStack<uint16_t> stacks[NUMBER_OF_CELLS];
+        MedianStack<uint16_t> *stacks[NUMBER_OF_CELLS];
+
+        // create stacks
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            stacks[i] = MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+            stacks[i] = new MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
         }
 
         // get analog data and push median stack
-        for (size_t i = 0; i < LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS; i++)
+        for (uint8_t i = 0; i < LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS; i++)
         {
-            _toggleUvLed(true);
             _adcInstance->readAdc(buffer);
-            _toggleUvLed(false);
 
             // fill stack buffers
-            for (size_t j; j < NUMBER_OF_CELLS; j++)
+            for (uint8_t j = 0; j < NUMBER_OF_CELLS; j++)
             {
-                stacks[j].push(buffer[j]);
+                stacks[j]->push(buffer[j]);
             }
             vTaskDelay(pdMS_TO_TICKS(1));
         }
@@ -296,16 +299,24 @@ namespace miscDevices
         // get medianesses
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            buffer[i] = stacks[i].getMedian();
+            buffer[i] = stacks[i]->getMedian();
         }
 
         // write to calibration values
-        if(high)
+        if (high)
         {
             std::memcpy(_calibValuesHigh, buffer, NUMBER_OF_CELLS * sizeof(buffer[0]));
-        } else 
+        }
+        else
         {
             std::memcpy(_calibValuesLow, buffer, NUMBER_OF_CELLS * sizeof(buffer[0]));
         }
+
+        // delete stacks
+        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+        {
+            delete (stacks[i]);
+        }
+        toggleUvLed(false);
     }
 }

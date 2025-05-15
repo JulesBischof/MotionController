@@ -17,6 +17,8 @@
 
 #define LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS (50)
 
+#define LINESENSOR_CONFIG_PRINTF_CELLVALUES (1)
+
 /* ==============================================================
 
                     Analog Mode Settings

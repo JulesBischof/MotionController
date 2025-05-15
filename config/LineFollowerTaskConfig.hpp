@@ -6,12 +6,16 @@
 
 ============================================================== */
 #define LINEFOLLOWERTASK_NAME ("vLineFollowerTask")
-#define LINEFOLLOWERTASK_STACKSIZE (10 * 1024) // 10kB
+#define LINEFOLLOWERTASK_STACKSIZE (20 * 1024) // 20kB
 #define LINEFOLLOWERTASK_PRIORITY (1)
 
 #define LINEFOLLOWERCONFIG_QUEUESIZE_N_ELEMENTS (100)
 
 #define LINEFOLLOWERCONFIG_POLLING_RATE_MS (10)
+
+// DEBUG
+
+#define ENABLE_DATA_OUTPUT_LINEPOS (0)
 
 /* ==============================================================
 
@@ -20,13 +24,11 @@
 ============================================================== */
 
 #define LINEFOLLERCONFIG_USE_P_CONTROLLER (0)
-#define LINEFOLLERCONFIG_USE_PD_CONTROLLER (1)
+#define LINEFOLLERCONFIG_USE_PD_CONTROLLER (0)
 
-#define LINEFOLLERCONFIG_USE_PD_CONTROLLER_MATLAB (0)
+#define LINEFOLLERCONFIG_USE_PD_CONTROLLER_MATLAB (1)
 
 #define LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR (0) // 0 = analog, 1 = digital
-
-#define ENABLE_DATA_OUTPUT_LINEPOS (0)
 
 /* ==============================================================
 
@@ -44,8 +46,8 @@ constexpr float LINEFOLLERCONFIG_CONTROLLERVALUE_KP(32); // ~32 analog //~ 13 di
 constexpr float LINEFOLLERCONFIG_CONTROLLERVALUE_KD = (3.2f); //~ 0.7 digital ~1.5f Analog
 
 // PD - Matlab Approximation
-constexpr double pd_alpha = 0.2308;
-constexpr double pd_beta = 196.9;
+constexpr double cz_matlab_num[2] = {75.76, -74.82};
+constexpr double cz_matlab_dnum[2] = {1, -0.8824};
 
 /* ==============================================================
 

@@ -175,6 +175,7 @@ namespace MtnCtrl
             services::LoggerService::debug("LineFollowerStm::reset()", "reset lineFollowerStm");
             _slowFlag = false;
             _state = LineFollowerStmState::IDLE;
+            _lineSensor->toggleUvLed(false);
         }
 
         void LineFollowerStm::update(uint32_t msgData)
@@ -191,6 +192,7 @@ namespace MtnCtrl
 
             if (msgData == 0 && cmd == TaskCommand::Move)
             {
+                _lineSensor->toggleUvLed(true);
                 services::LoggerService::debug("LineFollowerStm::update()", "start FOLLOW_LINE");
                 _state = LineFollowerStmState::FOLLOW_LINE;
             }
@@ -266,14 +268,13 @@ namespace MtnCtrl
 
 #if LINEFOLLERCONFIG_USE_PD_CONTROLLER_MATLAB == (1)
             static int32_t last_e = 0;
-            static int32_t last_u = 0;
+            static double last_u = 0;
 
-            float res = pd_beta * e - pd_beta * last_e + pd_alpha * last_u;
+            double res = cz_matlab_num[0] * e + cz_matlab_num[1] * last_e - cz_matlab_dnum[1] * last_u;
+            last_u = res;
+            last_e = e;
 
             int32_t u = static_cast<int32_t>(res);
-
-            last_e = e;
-            last_u = res;
 #endif
             int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
             return retVal;
