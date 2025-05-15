@@ -17,7 +17,7 @@ namespace miscDevices
         void *ptr = pvPortMalloc(sizeof(T) * size);
         if (ptr == nullptr)
         {
-            services::LoggerService::fatal("MedianBuffer ctor", "Malloc Failed");
+            services::LoggerService::fatal("MedianStack ctor", "Malloc Failed");
             while (1)
             {
             }
@@ -30,10 +30,16 @@ namespace miscDevices
     template <typename T>
     MedianStack<T>::~MedianStack()
     {
-        services::LoggerService::debug("MedianBuffer dctor", "free buffer Memory");
-        vPortFree(_buffer);
-        _buffer = nullptr;
-        /* not implemented */
+        services::LoggerService::debug("MedianStack dctor", "free buffer Memory");
+        if (_buffer != nullptr)
+        {
+            vPortFree(_buffer);
+            _buffer = nullptr;
+        }
+        else
+        {
+            services::LoggerService::error("MedianStack dctor", "Buffer already freed");
+        }
     }
 
     template <typename T>

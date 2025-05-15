@@ -315,7 +315,11 @@ namespace miscDevices
         // delete stacks
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            delete (stacks[i]);
+            if (stacks[i] != nullptr)
+            {
+                delete (stacks[i]);
+                stacks[i] = nullptr;
+            }
         }
         toggleUvLed(false);
     }

@@ -13,9 +13,11 @@
 #include "LineFollowerTaskConfig.hpp"
 #include "LineFollowerTaskStatusFlags.hpp"
 
-#include "StepperService.hpp"
+#include "LineSensor.hpp"
 
+#include "StepperService.hpp"
 #include "MovementTracker.hpp"
+#include "MedianStack.hpp"
 
 namespace MtnCtrl
 {
@@ -123,15 +125,42 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollLineSensor:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL LINESENSOR # data: %d", message.getData());
+
+                    miscDevices::MedianStack<uint16_t> stack(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
                     _lineSensor.toggleUvLed(true);
-                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 message.senderTaskId,
-                                                 TaskCommand::PollDistance,
-                                                 _lineSensor.getLinePositionAnalog());
-                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                    bool lostFlag = false;
+                    for (uint8_t i = 0; i < LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS; i++)
+                    {
+                        stack.push(_lineSensor.getLinePositionAnalog());
+                        // check for Line
+                        if (_lineSensor.getStatus() & miscDevices::LINESENSOR_NO_LINE)
+                        {
+                            lostFlag = true;
+                            services::LoggerService::info("LineFollowerTask", "Lost Line");
+                            break;
+                        }
+                    }
+
+                    if(lostFlag)
+                    {
+                        response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                     message.senderTaskId,
+                                                     TaskCommand::LostLineInfo,
+                                                     0);
+                    }
+                    else
+                    {
+                        response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                                                     message.senderTaskId,
+                                                     TaskCommand::PollLineSensor,
+                                                     stack.getMedian());
+                    }
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(100));
                     _lineSensor.toggleUvLed(false);
-                    break;
+                }
+                break;
 
                 case TaskCommand::PollStatusFlags:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL STATUSFLAGS # data: %d", message.getData());
