@@ -5,6 +5,7 @@
 
 #include "MedianStack.hpp"
 #include <cstring>
+#include <new>
 
 namespace miscDevices
 {
@@ -46,8 +47,18 @@ namespace miscDevices
     /// @brief sets default values out of LineFollowerConfig.h file to calibration values
     void LineSensor::_initDefaultCalibration()
     {
-        memcpy(this->_calibValuesLow, LINESENSOR_DEFAULT_CALIBRATION_LOW_VALUES, NUMBER_OF_CELLS);
-        memcpy(this->_calibValuesHigh, LINESENSOR_DEFAULT_CALIBRATION_HIGH_VALUES, NUMBER_OF_CELLS);
+        _calibValuesLow = (uint16_t *)pvPortMalloc(NUMBER_OF_CELLS * sizeof(_calibValuesLow[0]));
+        _calibValuesHigh = (uint16_t *)pvPortMalloc(NUMBER_OF_CELLS * sizeof(_calibValuesHigh[0]));
+
+        if (_calibValuesLow == NULL || _calibValuesHigh == NULL)
+        {
+            services::LoggerService::fatal("_initDefaultCalibration", "Failed to malloc calibration Values");
+            for (;;)
+                ;
+        }
+
+        memcpy(_calibValuesLow, LINESENSOR_DEFAULT_CALIBRATION_LOW_VALUES, NUMBER_OF_CELLS * sizeof(_calibValuesLow[0]));
+        memcpy(_calibValuesHigh, LINESENSOR_DEFAULT_CALIBRATION_HIGH_VALUES, NUMBER_OF_CELLS * sizeof(_calibValuesHigh[0]));
         services::LoggerService::debug("LineSensor::_initDefaultCalibration", "default calibration set");
     }
 
@@ -191,7 +202,17 @@ namespace miscDevices
         // create stacks
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            stacks[i] = new MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+            void *mem = pvPortMalloc(sizeof(MedianStack<uint16_t>));
+            if(mem != nullptr)
+            {
+                stacks[i] = new (mem) MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+            }
+            else
+            {
+                services::LoggerService::fatal("lineSensorCalib()", "stacks Malloc failed!");
+                for (;;)
+                    ;
+            }
         }
 
         // get analog data and push median stack
@@ -228,7 +249,8 @@ namespace miscDevices
         {
             if (stacks[i] != nullptr)
             {
-                delete (stacks[i]);
+                stacks[i]->~MedianStack();
+                vPortFree(stacks[i]);
                 stacks[i] = nullptr;
             }
         }

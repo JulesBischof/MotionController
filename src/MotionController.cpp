@@ -388,8 +388,10 @@ namespace MtnCtrl
             {
                 xEventGroupSetBits(_safetyButtonPressed, EMERGENCY_STOP_BIT);
 
-                if (!lastState)
+                if (lastState)
                 {
+                    services::LoggerService::info("_safetyButtonPollTask::run()", "SafetyButton Pressed! ");
+
                     DispatcherMessage msg = DispatcherMessage(
                         DispatcherTaskId::NoTask,
                         DispatcherTaskId::Broadcast,
@@ -424,7 +426,7 @@ namespace MtnCtrl
 
             lastState = state;
 
-            vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
+            vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(50));
         }
     }
 }

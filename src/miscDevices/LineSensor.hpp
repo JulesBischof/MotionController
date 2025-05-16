@@ -24,8 +24,7 @@ namespace miscDevices
 
         uint8_t _uvGpio, _nolineCounter;
 
-        uint16_t _calibValuesLow[NUMBER_OF_CELLS];
-        uint16_t _calibValuesHigh[NUMBER_OF_CELLS];
+        uint16_t *_calibValuesLow, *_calibValuesHigh;
 
         /// @brief normalizes raw Values of the Line Sensor into range 0 ... 1000
         /// @param val single Cell raw Sensor value 
