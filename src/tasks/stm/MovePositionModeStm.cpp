@@ -1,7 +1,6 @@
 #include "MovePositionModeStm.hpp"
 
 #include "LineFollowerTaskConfig.hpp"
-#include "LineFollowerTaskStatusFlags.hpp"
 
 #include "LineSensorService.hpp"
 #include "LoggerService.hpp"

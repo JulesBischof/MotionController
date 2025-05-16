@@ -1,20 +1,12 @@
 #include "MotionController.hpp"
-
 #include <stdio.h>
 #include "pico/stdlib.h"
-
 #include "hardware/uart.h"
-
 #include "FreeRTOS.h"
 #include "queue.h"
-
 #include "task.h"
-
 #include "LineFollowerTaskConfig.hpp"
-#include "LineFollowerTaskStatusFlags.hpp"
-
 #include "LineSensor.hpp"
-
 #include "StepperService.hpp"
 #include "MovementTracker.hpp"
 #include "MedianStack.hpp"
@@ -88,7 +80,6 @@ namespace MtnCtrl
                 {
                 case TaskCommand::Move:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: MOVE # data: %d", message.getData());
-                    _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
                     _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
                     break;
@@ -100,7 +91,6 @@ namespace MtnCtrl
 
                 case TaskCommand::SlowDown:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: SLOW DOWN # data: %d", message.getData());
-                    _lineFollowerStatusFlags &= ~(uint32_t)RunModeFlag::POSITION_REACHED;
                     _lineFollowerStm.update(message.getData(), message.command);
                     break;
 

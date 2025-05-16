@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cmath>
+#include "Tmc5240Config.hpp"
+#include "FreeRTOS.h"
+
 /* ==============================================================
 
                     general Settings
@@ -32,14 +36,11 @@
 
 #define LINEFOLLERCONFIG_USE_PD_CONTROLLER_MATLAB (1)
 
-#define LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR (0) // 0 = analog, 1 = digital
-
 /* ==============================================================
 
                    set Controller Parameter
 
 ============================================================== */
-constexpr int32_t LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P = (1); // ~1 analog / ~1000 digital
 constexpr int32_t LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL = (0);
 constexpr int32_t LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG = (3500);
 
@@ -60,10 +61,10 @@ constexpr double cz_matlab_dnum[2] = {1, -0.8519};
 ============================================================== */
 
 /* ---  AMAX and VMAX Management   ---*/
-constexpr int32_t LINEFOLLERCONFIG_VMAX_REGISTER_VALUE = (150000);
+constexpr int32_t LINEFOLLERCONFIG_VMAX_REGISTER_VALUE = (1.1 * 150000);
 constexpr int32_t LINEFOLLERCONFIG_VMAX_REGISTER_VALUE_SLOW = (50000);
 
-constexpr int32_t LINEFOLLERCONFIG_AMAX_REGISTER_VALUE = (4500); // 6500
+constexpr int32_t LINEFOLLERCONFIG_AMAX_REGISTER_VALUE = (0.8 * 4500); // 6500
 
 /* --- straight velocity params ------ */
 constexpr float LINEFOLLERCONFIG_VMAX_STRAIGHT_BACKWARDS_PERCANTAGE = (0.5);
@@ -104,3 +105,18 @@ constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm = (28);
 constexpr float LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm = (2);
 constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm = (350);
 constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm = (50);
+
+/* ================================= */
+/*            consts                 */
+/* ================================= */
+
+constexpr float V_MAX_ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
+constexpr float V_MAX_IN_MMPS = ((LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM)*M_PI * V_MAX_ROTATIONS_PER_SEC); // mm per second
+
+constexpr float V_SLOW_ROTATIONS_PER_SEC = (LINEFOLLERCONFIG_VMAX_REGISTER_VALUE_SLOW / (16777216.f / TMC5240CLOCKFREQUENCY) / MICROSTEPS_PER_REVOLUTION);
+constexpr float V_SLOW_IN_MMPS = ((LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM)*M_PI * V_SLOW_ROTATIONS_PER_SEC); // mm per second
+
+constexpr float ROTATIONS_PER_SEC_SQUARED = (LINEFOLLERCONFIG_AMAX_REGISTER_VALUE / (131072.f / TMC5240CLOCKFREQUENCY));
+constexpr float A_MAX_IN_MMPSS = (LINEFOLLOWERCONFIG_WHEEL_DIAMETER_MM * M_PI * ROTATIONS_PER_SEC_SQUARED) / MICROSTEPS_PER_REVOLUTION; // mm per s^2
+
+constexpr TickType_t TIME_UNTIL_STANDSTILL_IN_MS = 1000 * (V_MAX_IN_MMPS / A_MAX_IN_MMPSS);

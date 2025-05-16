@@ -41,6 +41,10 @@ namespace MtnCtrl
         _initHardware();
         _initQueues();
         _initPeripherals();
+
+#if USE_TEST_SHELL == 1
+        _testShell = services::TestShell(_messageDispatcherQueue);
+#endif
     }
 
     /* ==================================

@@ -52,6 +52,7 @@ namespace MtnCtrl
                 frame txMsg;
 
                 // check incoming commands - messages supposed to go out
+
                 switch (message.command)
                 {
                 case (TaskCommand::Info):

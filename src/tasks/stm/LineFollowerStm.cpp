@@ -1,12 +1,7 @@
 #include "LineFollowerStm.hpp"
-
 #include "LineFollowerTaskConfig.hpp"
-#include "LineFollowerTaskStatusFlags.hpp"
-
 #include "LoggerService.hpp"
-
 #include "DispatcherMessage.hpp"
-
 #include "pico/stdlib.h"
 #include <stdio.h>
 
@@ -60,12 +55,12 @@ namespace MtnCtrl
 
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_CROSS_DETECTED)
                 {
-                    services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
+                    services::LoggerService::info("LineFollowerStm::run()", "Node Detected!");
                     _state = LineFollowerStmState::CROSSPOINT_DETECTED;
                 }
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_NO_LINE)
                 {
-                    services::LoggerService::info("LineFollowerStm::run()", "Node Detected!");
+                    services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
                     _state = LineFollowerStmState::LOST_LINE;
                 }
 
@@ -209,24 +204,14 @@ namespace MtnCtrl
             uint32_t vmax = (_slowFlag == true) ? LINEFOLLERCONFIG_VMAX_REGISTER_VALUE_SLOW : LINEFOLLERCONFIG_VMAX_REGISTER_VALUE;
 
             // get Sensor values
-#if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
-            int16_t y = _lineSensor->getLinePositionDigital();
-#else
             int16_t y = _lineSensor->getLinePositionAnalog();
-#endif
 
 #if ENABLE_DATA_OUTPUT_LINEPOS == (1)
             printf("%d\n", y);
 #endif
-
             // get error
-            int16_t e = 0;
+            int16_t e = LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG - y;
 
-#if LINEFOLLOWERCONFIG_USE_DIGITAL_LINESENSOR == 1
-            e = LINEFOLLOWERCONFIG_CONTROLVALUE_DIGITAL - y;
-#else
-            e = LINEFOLLOWERCONFIG_CONTROLVALUE_ANALOG - y;
-#endif
             // calc control variable
             int32_t u = 0;
             u = _controllerC(e);
@@ -276,8 +261,7 @@ namespace MtnCtrl
 
             int32_t u = static_cast<int32_t>(res);
 #endif
-            int32_t retVal = u * LINEFOLLERCONFIG_CONVERSION_CONSTANT_C_TO_P;
-            return retVal;
+            return u;
         } // end ControllerC
     }
 }

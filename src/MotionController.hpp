@@ -25,6 +25,8 @@
 #include "LineFollowerStm.hpp"
 #include "MovePositionModeStm.hpp"
 
+#include "TestShell.hpp"
+
 #include "prain_uart/protocol.hpp"
     using namespace prain_uart;
 
@@ -124,6 +126,10 @@ namespace MtnCtrl
         static void _uart1RxIrqHandler();
 
         static void _safetyButtonIrqHandler(uint gpio, uint32_t event);
+
+#if USE_TEST_SHELL == 1
+        services::TestShell _testShell;
+#endif
 
     public:
         /// @brief default ctor

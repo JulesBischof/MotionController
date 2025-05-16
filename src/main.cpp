@@ -28,7 +28,7 @@ int main()
 
     motionController.registerGripControllerInstance(comQueue);
     gripController.registerTxQueue(dispatcher);
-    // gripController.registerSafetyEvent(safetyEvent);
+    gripController.registerSafetyEvent(safetyEvent);
 
     gripController.startTasks();
     motionController.startTasks();

@@ -46,105 +46,14 @@ namespace miscDevices
     /// @brief sets default values out of LineFollowerConfig.h file to calibration values
     void LineSensor::_initDefaultCalibration()
     {
-        uint16_t defValuesLow[NUMBER_OF_CELLS] = LINESENSOR_DEFAULT_CALIBRATION_LOW_VALUES;
-        uint16_t defValuesHigh[NUMBER_OF_CELLS] = LINESENSOR_DEFAULT_CALIBRATION_HIGH_VALUES;
-
-        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
-        {
-            this->_calibValuesLow[i] = defValuesLow[i];
-            this->_calibValuesHigh[i] = defValuesHigh[i];
-        }
+        memcpy(this->_calibValuesLow, LINESENSOR_DEFAULT_CALIBRATION_LOW_VALUES, NUMBER_OF_CELLS);
+        memcpy(this->_calibValuesHigh, LINESENSOR_DEFAULT_CALIBRATION_HIGH_VALUES, NUMBER_OF_CELLS);
         services::LoggerService::debug("LineSensor::_initDefaultCalibration", "default calibration set");
     }
 
     /* ==================================
                 getters & setters
        ================================== */
-
-    int8_t LineSensor::getLinePositionDigital()
-    {
-        // get ADC-value
-        uint16_t adcValues[NUMBER_OF_CELLS] = {0};
-
-        toggleUvLed(true);
-        bool err = _adcInstance->readAdc(adcValues);
-        toggleUvLed(false);
-
-        if (!err)
-        {
-            services::LoggerService::fatal("LineSensor::getLinePositionDigital", "reading adcValue");
-            return 0;
-        }
-
-        // convert ADC-values to digital values
-        uint8_t digArray[NUMBER_OF_CELLS] = {0};
-        int8_t linePosition = 0;
-        int8_t lineCounter = 0;
-        static uint8_t noLineCounter = 0;
-
-        // convert ADC-values to digital values
-        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
-        {
-            if (adcValues[i] >= ADC_RAW_LINE_TRESHHOLD)
-            {
-                digArray[i] = 1;
-            }
-            else
-            {
-                digArray[i] = 0;
-                lineCounter++;
-            }
-        }
-
-        // if there is no line - count until LINECOUNTER_MAX_VALUE
-        if (!lineCounter)
-        {
-            noLineCounter++;
-        }
-        else
-        {
-            noLineCounter = 0;
-        }
-
-        // if there is still no line - set status to no line detected
-        if (!lineCounter && noLineCounter >= LINECOUNTER_MAX_VALUE)
-        {
-            _status |= LINESENSOR_NO_LINE;
-        }
-        else
-        {
-            _status &= ~LINESENSOR_NO_LINE;
-        }
-
-        // check if there has been a crossway
-        if (lineCounter >= LINECOUNTER_CROSS_DETECTED)
-        {
-            _status |= LINESENSOR_CROSS_DETECTED;
-        }
-        else
-        {
-            _status &= ~LINESENSOR_CROSS_DETECTED;
-        }
-
-        // determine line position
-        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
-        {
-            if (digArray[i])
-                linePosition++;
-            else
-                break;
-        }
-
-        for (size_t i = NUMBER_OF_CELLS - 1; i > 0; i--)
-        {
-            if (digArray[i])
-                linePosition--;
-            else
-                break;
-        }
-
-        return linePosition;
-    }
 
     uint32_t LineSensor::getLinePositionAnalog()
     {
@@ -179,7 +88,7 @@ namespace miscDevices
                normValues[0], normValues[1], normValues[2], normValues[3], normValues[4], normValues[5], normValues[6], normValues[7]);
 #endif
 
-        // if there is no line - count until LINECOUNTER_MAX_VALUE
+        // if there is no line - count until NOLINECOUNTER_MAXVALUE
         if (!lineCounter)
         {
             _nolineCounter++;
@@ -190,7 +99,7 @@ namespace miscDevices
         }
 
         // if there is still no line - set status to no line detected
-        if (_nolineCounter >= LINECOUNTER_MAX_VALUE)
+        if (_nolineCounter >= NOLINECOUNTER_MAXVALUE)
         {
             _status |= LINESENSOR_NO_LINE;
             return LINESENSOR_MIDDLE_POSITION;

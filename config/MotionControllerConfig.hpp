@@ -31,7 +31,6 @@
 /* -------------- GripController ------------------- */
 #define INCLUDE_GRIPCONTROLLER_AS_INSTANCE (1)
 
-
-
+#define USE_TEST_SHELL (1)
 
 #endif

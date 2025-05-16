@@ -1,8 +1,5 @@
 #include "HandleBarrierStm.hpp"
-
 #include "LineFollowerTaskConfig.hpp"
-#include "LineFollowerTaskStatusFlags.hpp"
-
 #include "LoggerService.hpp"
 
 namespace MtnCtrl
