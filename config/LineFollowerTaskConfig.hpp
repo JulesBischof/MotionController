@@ -16,6 +16,9 @@
 // DEBUG
 
 #define ENABLE_DATA_OUTPUT_LINEPOS (0)
+
+#define TRIGGER_LINEPOS_SAMPLES (0)
+
 #define TRIGGER_LINESENSOR_SAMPLES (0)
 
 /* ==============================================================

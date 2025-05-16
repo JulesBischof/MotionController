@@ -190,6 +190,12 @@ namespace MtnCtrl
             _lineFollowerStm.run();
             _movePositionModeStm.run();
 
+#if TRIGGER_LINEPOS_SAMPLES == 1
+            _lineSensor.toggleUvLed(true);
+            uint32_t linePos = _lineSensor.getLinePositionAnalog();
+            printf("%d\n", linePos);
+#endif
+
 #if TRIGGER_LINESENSOR_SAMPLES == 1
             _lineSensor.toggleUvLed(true);
             _lineSensor.getLinePositionAnalog();
