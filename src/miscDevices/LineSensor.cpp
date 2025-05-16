@@ -40,7 +40,8 @@ namespace miscDevices
         toggleUvLed(false);
 
         _nolineCounter = 0;
-
+        _crosswayGuessCounter = 0;
+       
         return;
     }
 
@@ -121,13 +122,25 @@ namespace miscDevices
         }
 
         // check if there has been a crossway
-        if (lineCounter > LINECOUNTER_CROSS_DETECTED)
+        if (lineCounter > LINECOUNTER_CROSS_SURE_DETECTED)
         {
             _status |= LINESENSOR_CROSS_DETECTED;
+            return LINESENSOR_MIDDLE_POSITION;
         }
         else
         {
             _status &= ~LINESENSOR_CROSS_DETECTED;
+            _crosswayGuessCounter = 0;
+        }
+
+        if (lineCounter > LINECOUNTER_CROSS_GUESS_DETECTED)
+        {
+            _crosswayGuessCounter++;
+        }
+        if (_crosswayGuessCounter > LINECOUNTER_CROSS_NUBER_OF_GUESSES)
+        {
+            _status |= LINESENSOR_CROSS_DETECTED;
+            return LINESENSOR_MIDDLE_POSITION;
         }
 
         // sum up all values

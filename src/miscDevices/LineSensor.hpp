@@ -22,7 +22,7 @@ namespace miscDevices
 
         i2cDevices::Tla2528 *_adcInstance;
 
-        uint8_t _uvGpio, _nolineCounter;
+        uint8_t _uvGpio, _nolineCounter, _crosswayGuessCounter;
 
         uint16_t *_calibValuesLow, *_calibValuesHigh;
 
