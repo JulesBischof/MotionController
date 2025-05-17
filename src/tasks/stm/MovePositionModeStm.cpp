@@ -188,8 +188,8 @@ namespace MtnCtrl
         /// @param distance distance [IN MICROSTEPS]
         void MovePositionModeStm::_movePositionMode(int32_t distance)
         {
-            int32_t vmax = LINEFOLLERCONFIG_VMAX_REGISTER_VALUE;
-            int32_t amax = LINEFOLLERCONFIG_AMAX_REGISTER_VALUE;
+            int32_t vmax = LINEFOLLOWERCONFIG_FORWARDS_VMAX;
+            int32_t amax = LINEFOLLOWERCONFIG_FORWARDS_AMAX;
 
             if (distance < 0)
             {
