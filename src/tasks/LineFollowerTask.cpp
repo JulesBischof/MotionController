@@ -10,6 +10,7 @@
 #include "StepperService.hpp"
 #include "MovementTracker.hpp"
 #include "MedianStack.hpp"
+#include "CheckForLineStm.hpp"
 
 namespace MtnCtrl
 {
@@ -21,7 +22,6 @@ namespace MtnCtrl
     void MotionController::_lineFollowerTask()
     {
         // init stms
-        uint32_t _lineFollowerStatusFlags = 0;
         stm::LineFollowerStm _lineFollowerStm(&_lineSensor,
                                               &_driver0,
                                               &_driver1,
@@ -33,6 +33,10 @@ namespace MtnCtrl
                                                       &_lineSensor,
                                                       _messageDispatcherQueue);
         _movePositionModeStm.init();
+
+#if USE_CHECKFORLINE_STM == (1)
+        stm::CheckForLineStm _checkForLineStm = stm::CheckForLineStm(&_lineSensor, _messageDispatcherQueue);
+#endif
 
         // init misc members
         MovementTracker _movementTracker(&_driver0, &_driver1);
@@ -98,6 +102,9 @@ namespace MtnCtrl
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: STOP # data: %d", message.getData());
                     _lineFollowerStm.reset();
                     _movePositionModeStm.update(message.getData(), message.command);
+#if USE_CHECKFORLINE_STM == (1)
+                    _checkForLineStm.reset();
+#endif
                     break;
 
                 case TaskCommand::Turn:
@@ -118,6 +125,9 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL LINESENSOR # data: %d", message.getData());
 
+#if USE_CHECKFORLINE_STM == (1)
+                    _checkForLineStm.update(message.command, message.getData());
+#elif
                     miscDevices::MedianStack<uint16_t> stack(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
                     _lineSensor.toggleUvLed(true);
                     bool lostFlag = false;
@@ -131,9 +141,11 @@ namespace MtnCtrl
                             services::LoggerService::info("LineFollowerTask", "Lost Line");
                             break;
                         }
+                        vTaskDelay(pdMS_TO_TICKS(1));
                     }
+                    _lineSensor.toggleUvLed(false);
 
-                    if(lostFlag)
+                    if (lostFlag)
                     {
                         response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                      message.senderTaskId,
@@ -148,17 +160,14 @@ namespace MtnCtrl
                                                      stack.getMedian());
                     }
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(100));
-                    _lineSensor.toggleUvLed(false);
+#endif
                 }
                 break;
 
-                case TaskCommand::PollStatusFlags:
-                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL STATUSFLAGS # data: %d", message.getData());
-                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 message.senderTaskId,
-                                                 TaskCommand::PollStatusFlags,
-                                                 _lineFollowerStatusFlags);
-                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                case TaskCommand::PositionReached:
+#if USE_CHECKFORLINE_STM == (1)
+                    _checkForLineStm.update(message.command, message.getData());
+#endif
                     break;
 
                 case TaskCommand::PollDegree:
@@ -179,6 +188,9 @@ namespace MtnCtrl
             // run statemaschines
             _lineFollowerStm.run();
             _movePositionModeStm.run();
+#if USE_CHECKFORLINE_STM == (1)
+            _checkForLineStm.run();
+#endif
 
 #if TRIGGER_LINEPOS_SAMPLES == 1
             _lineSensor.toggleUvLed(true);

@@ -12,7 +12,6 @@ namespace miscDevices
 
         T *_buffer;
 
-        void _clearBuffer();
         bool _isEmpty();
 
     public:
@@ -20,10 +19,13 @@ namespace miscDevices
         MedianStack(uint16_t size);
         ~MedianStack();
 
+        void clearBuffer();
         bool isFull();
 
         T getMedian();
         void push(T val);
+
+        bool cpyBufferToArray(T *pDest);
     };
 }
 

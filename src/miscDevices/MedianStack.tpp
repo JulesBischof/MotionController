@@ -1,10 +1,8 @@
 #include "MedianStack.hpp"
-
 #include "FreeRTOS.h"
 #include "task.h"
-
 #include <math.h>
-
+#include <cstring>
 #include "LoggerService.hpp"
 
 namespace miscDevices
@@ -24,7 +22,7 @@ namespace miscDevices
         }
         _buffer = static_cast<T *>(ptr);
 
-        _clearBuffer();
+        clearBuffer();
     }
 
     template <typename T>
@@ -43,7 +41,7 @@ namespace miscDevices
     }
 
     template <typename T>
-    void MedianStack<T>::_clearBuffer()
+    void MedianStack<T>::clearBuffer()
     {
         // init buffer with zeros
         for (uint8_t i = 0; i < _size; i++)
@@ -88,7 +86,7 @@ namespace miscDevices
 
         float median = (_size % 2) ? (_buffer[_size / 2]) : ((_buffer[_size / 2 - 1] + _buffer[_size / 2]) / 2.0f);
 
-        _clearBuffer();
+        clearBuffer();
         return median;
     }
 
@@ -102,5 +100,16 @@ namespace miscDevices
         }
 
         _buffer[_writePos++] = val;
+    }
+
+    template <typename T>
+    bool MedianStack<T>::cpyBufferToArray(T *pDest)
+    {
+        if (pDest == nullptr || _buffer == nullptr)
+        {
+            return false;
+        }
+        memcpy(pDest, _buffer, sizeof(_buffer));
+        return true;
     }
 }

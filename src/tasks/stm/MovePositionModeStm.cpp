@@ -100,6 +100,8 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
 
+                    // TODO: Rebuild Message Dispatcher - check target-Task in bitwise compare blocks so that multiple targets can be selected
+
                     // inform other Tasks
                     msg = DispatcherMessage(
                         DispatcherTaskId::LineFollowerTask,
@@ -113,10 +115,24 @@ namespace MtnCtrl
                         {
                         }
                     }
-                    
+
                     msg = DispatcherMessage(
                         DispatcherTaskId::LineFollowerTask,
                         DispatcherTaskId::RaspberryHatComTask,
+                        TaskCommand::PositionReached,
+                        0);
+
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                        services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
+                        while (1)
+                        {
+                        }
+                    }
+
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::LineFollowerTask,
                         TaskCommand::PositionReached,
                         0);
 
@@ -197,8 +213,10 @@ namespace MtnCtrl
                 amax = LINEFOLLOWERCONFIG_BACKWARDS_AMAX;
             }
 
+            vTaskSuspendAll();
             _driver0->moveRelativePositionMode(distance, vmax, amax, 1);
             _driver1->moveRelativePositionMode(distance, vmax, amax, 0);
+            xTaskResumeAll();
             return;
         }
 
@@ -233,6 +251,7 @@ namespace MtnCtrl
             // unit conversion mm -> uSteps
             int32_t nStepsDriver = services::StepperService::convertMillimeterToMicrosteps(ds);
 
+            vTaskSuspendAll();
             // move drives in different directions
             _driver0->moveRelativePositionMode(nStepsDriver,
                                                LINEFOLLOWERCONFIG_TURN_VMAX,
@@ -242,14 +261,17 @@ namespace MtnCtrl
                                                LINEFOLLOWERCONFIG_TURN_VMAX,
                                                LINEFOLLOWERCONFIG_TURN_AMAX,
                                                0);
+            xTaskResumeAll();
         }
 
         /// @brief stops the drives
         /// @details stops the drives in velocity mode. In position mode, the drives are stopped by the driver itself.
         void MovePositionModeStm::_stopDrives()
         {
+            vTaskSuspendAll();
             _driver0->moveVelocityMode(1, 0, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
             _driver1->moveVelocityMode(0, 0, LINEFOLLERCONFIG_AMAX_REGISTER_VALUE);
+            xTaskResumeAll();
             return;
         }
 

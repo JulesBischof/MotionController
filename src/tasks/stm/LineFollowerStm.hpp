@@ -38,7 +38,6 @@ namespace MtnCtrl
 
             void _followLine();
             int32_t _controllerC(int32_t e);
-            void _checkLineFollowerStatus();
 
             uint32_t _lastMsgData;
 
