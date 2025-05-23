@@ -4,6 +4,7 @@
 
 namespace MtnCtrl
 {
+    /// @brief keeps track on how far Robot drove since last measurment
     class MovementTracker
     {
         private:

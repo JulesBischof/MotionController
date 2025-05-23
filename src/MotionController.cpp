@@ -122,27 +122,6 @@ namespace MtnCtrl
         return;
     }
 
-    void MotionController::_safetyButtonIrqHandler(uint gpio, uint32_t event)
-    {
-        services::LoggerService::debug("_safetyButtonIrqHandler", "safety Button pressed!");
-        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-
-        // send info to RaspberryHat
-        DispatcherMessage msg(DispatcherTaskId::NoTask,
-                              DispatcherTaskId::RaspberryHatComTask,
-                              TaskCommand::SafetyButtonInfo,
-                              0);
-        xQueueSendFromISR(_raspberryHatComQueue, &msg, &xHigherPriorityTaskWoken);
-
-        // send a stop Broadcast to all Tasks and yield (stop yield is more important)
-        msg = DispatcherMessage(DispatcherTaskId::NoTask,
-                                DispatcherTaskId::Broadcast,
-                                TaskCommand::Stop,
-                                0);
-
-        xQueueSendFromISR(_messageDispatcherQueue, &msg, &xHigherPriorityTaskWoken);
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
 
     void MotionController::_initQueues()
     {
@@ -154,6 +133,7 @@ namespace MtnCtrl
         _safetyButtonPressed = xEventGroupCreate();
         if (_safetyButtonPressed == NULL)
         {
+            services::LoggerService::fatal("MotionController::_initQueues()", "_safetyButtonPressed = xEventGroupCreate()");
             // ERROR
             for (;;)
                 ;

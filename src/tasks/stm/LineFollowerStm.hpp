@@ -23,6 +23,7 @@ namespace MtnCtrl
             CROSSPOINT_DETECTED,
         };
 
+        /// @brief Statemaschine that performs all lineFollowing Concerning movements such as PD-LineController, check Linesensor Status
         class LineFollowerStm : public StmBase<LineFollowerStmState>
         {
         private:

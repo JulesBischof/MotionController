@@ -125,8 +125,6 @@ namespace MtnCtrl
         static void _uart0RxIrqHandler();
         static void _uart1RxIrqHandler();
 
-        static void _safetyButtonIrqHandler(uint gpio, uint32_t event);
-
 #if USE_TEST_SHELL == 1
         services::TestShell _testShell;
 #endif
@@ -139,7 +137,12 @@ namespace MtnCtrl
         /// @brief initialises FreeRTOS Tasks
         void startTasks();
 
+        /// @brief getter propety for GripController Instance
+        /// @return QueueHandle from MessageDispatcher
         QueueHandle_t getMessageDispatcherQueue();
+
+        /// @brief getter Property for SafetyButtonEvent
+        /// @return EventHandle for the SafetyButton
         EventGroupHandle_t getSafetyButtonEventHandle();
 
 #if INCLUDE_GRIPCONTROLLER_AS_INSTANCE

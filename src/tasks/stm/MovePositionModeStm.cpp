@@ -100,8 +100,6 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("MovePositionModeStm::run() state#STOPPED", "drives stopped");
 
-                    // TODO: Rebuild Message Dispatcher - check target-Task in bitwise compare blocks so that multiple targets can be selected
-
                     // inform other Tasks
                     msg = DispatcherMessage(
                         DispatcherTaskId::LineFollowerTask,
@@ -119,7 +117,7 @@ namespace MtnCtrl
                 }
                 break;
             default:
-                /* ERROR..? */
+                services::LoggerService::error("MovePositionModeStm::run()", "recieved command: unknown");
                 break;
             }
 
@@ -166,7 +164,7 @@ namespace MtnCtrl
                 _state = MovePositionModeStmState::STOP_MODE;
                 break;
             default:
-                /* ERROR shouldnt be reached */
+                services::LoggerService::error("MovePositionModeStm::update()", "recieved command: unknown");
                 break;
             }
         }

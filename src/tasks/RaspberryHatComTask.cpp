@@ -161,7 +161,7 @@ namespace MtnCtrl
         {
             rawMessage[i] = uart_getc(uartId);
         }
-        
+
         uint64_t rawFrame = 0;
         std::memcpy(&rawFrame, rawMessage, sizeof(uint64_t));
 
@@ -188,6 +188,7 @@ namespace MtnCtrl
         {
             if (!crcCheck)
             {
+                services::LoggerService::error("MotionController::_getCommand()", "CRC invalid");
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
                 retVal.command = TaskCommand::Error;
                 retVal.setData(static_cast<uint64_t>(error_code::INVALID_CRC));

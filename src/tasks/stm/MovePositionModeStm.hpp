@@ -23,6 +23,7 @@ namespace MtnCtrl
             STOPPED,
         };
 
+        /// @brief Statemaschine controls all Robot-Movements that contains a specific distance-parameter such as MOVE[10mm] or STOP
         class MovePositionModeStm : public StmBase<MovePositionModeStmState>
         {
         private:

@@ -160,14 +160,10 @@ namespace miscDevices
             float distance = INITIAL_DISTANCE;
 
             // wait for interrupt event
-            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(100)) == pdTRUE)
+            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, portMAX_DELAY) == pdTRUE)
             {
                 rawTimeDiff = _getHcSr04RawTimeDiff();
                 distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
-            }
-            else
-            {
-                /* TIMEOUT ERROR ??? */
             }
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)
@@ -259,6 +255,7 @@ namespace miscDevices
     {
         if (_currentVelocityMutex == nullptr)
         {
+            services::LoggerService::fatal("HcSr04 getCurrentVelocity", "_currentVelocityMutex = nullptr");
             return 0;
             /* ERROR ??? */
         }

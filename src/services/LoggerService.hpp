@@ -15,6 +15,7 @@ namespace services
         None,
     };
 
+    /// @brief some basic logger implementation. LogLevel can be set globally
     class LoggerService
     {
         private:

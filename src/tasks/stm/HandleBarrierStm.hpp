@@ -38,6 +38,7 @@ namespace MtnCtrl
             DONE,              // send driver command: move robot
         };
 
+        /// @brief Statemaschine that performs the Barrierhandling - Moves
         class HandleBarrierStm : public StmBase<HandleBarrierStmState>
         {
         private:
