@@ -54,7 +54,10 @@ int32_t MtnCtrl::MovementTracker::getDistance()
     int32_t xActualDriver0 = _driver0->getXActual();
     int32_t xActualDriver1 = _driver1->getXActual();
 
-    int32_t average = ( (xActualDriver0 - _rotationXActualStartDriver0) + (xActualDriver1 - _rotationXActualStartDriver1) / 2);
+    int32_t dist0 = (xActualDriver0 - _distanceXActualStartDriver0);
+    int32_t dist1 = -1 * (xActualDriver1 - _distanceXActualStartDriver1); // -1 due to motor drives backwars
+
+    int32_t average = ( dist0 + dist1 ) / 2;
 
     return services::StepperService::convertMicrostepsToMillimeter(average);
 }

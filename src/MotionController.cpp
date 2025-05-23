@@ -379,10 +379,12 @@ namespace MtnCtrl
     void MotionController::_safetyButtonPollTask()
     {
         TickType_t lastWakeTime = xTaskGetTickCount();
-        bool lastState = false;
+        bool lastState = true;
+        bool state = false;
+
         for (;;)
         {
-            bool state = _safetyButton.getValue();
+            state = _safetyButton.getValue();
             /* NOT logic - Tasks wait until event got set */
             if (!state)
             {
@@ -417,6 +419,8 @@ namespace MtnCtrl
                         {
                         }
                     }
+
+                    taskYIELD();
                 }
             }
             else
@@ -426,7 +430,7 @@ namespace MtnCtrl
 
             lastState = state;
 
-            vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(50));
+            vTaskDelayUntil(&lastWakeTime, pdMS_TO_TICKS(100));
         }
     }
 }

@@ -115,10 +115,12 @@ namespace MtnCtrl
                 case TaskCommand::PollDistance:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DISTANCE # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 message.senderTaskId,
+                                                 DispatcherTaskId::RaspberryHatComTask,
                                                  TaskCommand::PollDistance,
                                                  _movementTracker.getDistance());
-                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
+
+                    _movementTracker.resetDistance();
                     break;
 
                 case TaskCommand::PollLineSensor:
@@ -127,7 +129,7 @@ namespace MtnCtrl
 
 #if USE_CHECKFORLINE_STM == (1)
                     _checkForLineStm.update(message.command, message.getData());
-#elif
+#else
                     miscDevices::MedianStack<uint16_t> stack(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
                     _lineSensor.toggleUvLed(true);
                     bool lostFlag = false;
@@ -176,7 +178,8 @@ namespace MtnCtrl
                                                  message.senderTaskId,
                                                  TaskCommand::PollDegree,
                                                  _movementTracker.getRotation());
-                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(10));
+                    xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
+
                     break;
 
                 default:

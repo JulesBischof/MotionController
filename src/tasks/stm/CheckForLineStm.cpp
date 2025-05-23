@@ -30,6 +30,7 @@ namespace MtnCtrl
                 break;
 
             case (CheckForLineStmState::CHECK_APPEARANCE):
+            {
                 services::LoggerService::debug("CheckForLineStm::run()", "Check appearance...");
                 _lineSensor->toggleUvLed(true);
 
@@ -55,7 +56,7 @@ namespace MtnCtrl
                     _stack.clearBuffer();
 
                     // move back vehicle
-                    DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
+                    msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                               DispatcherTaskId::LineFollowerTask,
                                                               TaskCommand::Move,
                                                               (-1 * _measCounter * POLL_LINE_MOVE_INCREMENT_MM));
@@ -66,11 +67,13 @@ namespace MtnCtrl
                     break;
                 }
 
+                _measCounter++;
+
                 // per default: get line position until linesensor claimes NO LINE
                 for (size_t i = 0; i < LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS; i++)
                 {
                     _lineSensor->getLinePositionAnalog();
-                    vTaskDelay(pdMS_TO_TICKS(1));
+                    vTaskDelay(pdMS_TO_TICKS(5));
                 }
                 _lineSensor->toggleUvLed(false);
 
@@ -100,17 +103,21 @@ namespace MtnCtrl
                     }
                     reset();
                 }
-
-                break;
+            }
+            break;
 
             case (CheckForLineStmState::MOVE_ROBOT):
+            {
                 services::LoggerService::debug("CheckForLineStm::run()", "Send Move Robot Command");
                 DispatcherMessage msg = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
                                                           DispatcherTaskId::LineFollowerTask,
                                                           TaskCommand::Move,
                                                           POLL_LINE_MOVE_INCREMENT_MM);
                 xQueueSend(_messageDispatcherQueue, &msg, portMAX_DELAY);
-                break;
+                _state = CheckForLineStmState::WAIT_FOR_STOP;
+                taskYIELD();
+            }
+            break;
 
             case (CheckForLineStmState::WAIT_FOR_STOP):
                 if (_posReachedFlag)
@@ -149,7 +156,13 @@ namespace MtnCtrl
 
         void CheckForLineStm::update(TaskCommand cmd, uint32_t msgData)
         {
-            if (cmd == TaskCommand::PositionReached)
+            if (cmd == TaskCommand::PollLineSensor && _state == CheckForLineStmState::IDLE)
+            {
+                services::LoggerService::debug("CheckForLineStm::update()", "received PollLineSensor");
+                _state = CheckForLineStmState::CHECK_APPEARANCE;
+            }
+
+            if (cmd == TaskCommand::PositionReached && _state == CheckForLineStmState::WAIT_FOR_STOP)
             {
                 services::LoggerService::debug("CheckForLineStm::update()", "received PositionReached");
                 _posReachedFlag = true;

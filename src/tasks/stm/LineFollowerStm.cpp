@@ -140,6 +140,20 @@ namespace MtnCtrl
                     }
                 }
 
+                // send driven Distance to RaspberryHat
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::LineFollowerTask,
+                    TaskCommand::PollDistance,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
+                }
+
                 // stop barrier detection
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
