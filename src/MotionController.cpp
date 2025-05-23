@@ -100,6 +100,7 @@ namespace MtnCtrl
         _safetyButton = miscDevices::DigitalInput(DIN_4);
         _tmc5240Eval_R2 = miscDevices::DigitalOutput(IREF_R2_DRIVER, STATE_EVALBOARD_R2);
         _tmc5240Eval_R3 = miscDevices::DigitalOutput(IREF_R3_DRIVER, STATE_EVALBOARD_R3);
+        _lamp = miscDevices::DigitalOutput(DOUT_1, false);
 
         // The HcSr04 object requires dynamic allocation due to the need for the ISR
         // (Interrupt Service Routine) to access the object's pointer directly.

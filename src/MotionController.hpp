@@ -57,6 +57,7 @@ namespace MtnCtrl
         miscDevices::DigitalInput _safetyButton;
         miscDevices::DigitalOutput _tmc5240Eval_R2, _tmc5240Eval_R3;
         miscDevices::HcSr04 *_hcSr04;
+        miscDevices::DigitalOutput _lamp;
 
         void _lineFollowerTask();
         void _raspberryHatComTask();

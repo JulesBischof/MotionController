@@ -83,6 +83,7 @@ namespace MtnCtrl
                 switch (message.command)
                 {
                 case TaskCommand::Move:
+                    _lamp.setState(true);
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: MOVE # data: %d", message.getData());
                     _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
@@ -99,6 +100,7 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::Stop:
+                    _lamp.setState(false);
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: STOP # data: %d", message.getData());
                     _lineFollowerStm.reset();
                     _movePositionModeStm.update(message.getData(), message.command);
