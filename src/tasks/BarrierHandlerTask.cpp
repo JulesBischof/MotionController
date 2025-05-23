@@ -1,11 +1,11 @@
 #include "MotionController.hpp"
+#include "BarrierHandlerConfig.hpp"
 
 namespace MtnCtrl
 {
     void MotionController::_barrierHandlerTask()
     {
         // vars
-        uint32_t statusFlags = 0;
         TickType_t xLastWakeTime = xTaskGetTickCount();
 
         // get queues
@@ -64,7 +64,7 @@ namespace MtnCtrl
                     services::LoggerService::debug("BarrierHandlerTask", "Recieved Command: POLL ULTRASONIC # data: %d", message.getData());
                     response = DispatcherMessage(DispatcherTaskId::BarrierHandlerTask,
                                                  message.senderTaskId,
-                                                 TaskCommand::PollDistance,
+                                                 TaskCommand::PollUltrasonic,
                                                  _hcSr04->getSensorData());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
                     break;
@@ -73,7 +73,7 @@ namespace MtnCtrl
 
             // otherwise - run stm Object
             _handleBarrierStm.run();
-            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(10));
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(BARRIERHANDLERTASK_POLLING_RATE_MS));
         }
     }
 }

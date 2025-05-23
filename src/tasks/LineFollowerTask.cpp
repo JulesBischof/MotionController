@@ -45,13 +45,15 @@ namespace MtnCtrl
         QueueHandle_t lineFollowerQueue = _lineFollowerQueue;
         QueueHandle_t messageDispatcherQueue = _messageDispatcherQueue;
 
-        uint32_t maxDistance = 0;
-
         TickType_t xLastWakeTime = xTaskGetTickCount();
+
+        DispatcherMessage message;
 
         // loop forever
         for (;;)
         {
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
+
             /* -------- check safety button ---------- */
             EventBits_t safetyButtonBits = xEventGroupWaitBits(
                 _safetyButtonPressed,
@@ -59,9 +61,6 @@ namespace MtnCtrl
                 pdFALSE,
                 pdTRUE,
                 0);
-
-            DispatcherMessage message;
-            DispatcherMessage response;
 
             if (uxQueueMessagesWaiting(lineFollowerQueue) > 0)
             {
@@ -74,56 +73,66 @@ namespace MtnCtrl
                     continue;
                 }
 
-                // if safety button is pressed: all commands are stop commands
-                if ((safetyButtonBits & EMERGENCY_STOP_BIT) != 0)
+                // if safety button is pressed: dont react unless its a stop command
+                if ((safetyButtonBits & EMERGENCY_STOP_BIT) != 0 && message.command != TaskCommand::Stop)
                 {
-                    message.command = TaskCommand::Stop;
+                    continue;
                 }
 
                 switch (message.command)
                 {
                 case TaskCommand::Move:
-                    _lamp.setState(true);
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: MOVE # data: %d", message.getData());
                     _lineFollowerStm.update(message.getData(), message.command);
                     _movePositionModeStm.update(message.getData(), message.command);
-                    break;
+                }
+                break;
 
                 case TaskCommand::CalibLineSensor:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: CALIBLINESENSOR TILE# data: %d", message.getData());
                     _lineSensor.lineSensorCalib(message.getData() > 0);
-                    break;
+                }
+                break;
 
                 case TaskCommand::SlowDown:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: SLOW DOWN # data: %d", message.getData());
                     _lineFollowerStm.update(message.getData(), message.command);
-                    break;
+                }
+                break;
 
                 case TaskCommand::Stop:
-                    _lamp.setState(false);
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: STOP # data: %d", message.getData());
                     _lineFollowerStm.reset();
                     _movePositionModeStm.update(message.getData(), message.command);
 #if USE_CHECKFORLINE_STM == (1)
                     _checkForLineStm.reset();
 #endif
-                    break;
+                }
+                break;
 
                 case TaskCommand::Turn:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: TURN # data: %d", message.getData());
                     _movePositionModeStm.update(message.getData(), TaskCommand::Turn);
-                    break;
+                }
+                break;
 
                 case TaskCommand::PollDistance:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DISTANCE # data: %d", message.getData());
-                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 DispatcherTaskId::RaspberryHatComTask,
-                                                 TaskCommand::PollDistance,
-                                                 _movementTracker.getDistance());
+                    DispatcherMessage response(DispatcherTaskId::LineFollowerTask,
+                                               DispatcherTaskId::RaspberryHatComTask,
+                                               TaskCommand::PollDistance,
+                                               _movementTracker.getDistance());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
 
                     _movementTracker.resetDistance();
-                    break;
+                }
+                break;
 
                 case TaskCommand::PollLineSensor:
                 {
@@ -175,13 +184,14 @@ namespace MtnCtrl
                     break;
 
                 case TaskCommand::PollDegree:
+                {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DEGREE # data: %d", message.getData());
-                    response = DispatcherMessage(DispatcherTaskId::LineFollowerTask,
-                                                 message.senderTaskId,
-                                                 TaskCommand::PollDegree,
-                                                 _movementTracker.getRotation());
+                    DispatcherMessage response(DispatcherTaskId::LineFollowerTask,
+                                              message.senderTaskId,
+                                              TaskCommand::PollDegree,
+                                              _movementTracker.getRotation());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
-
+                    }
                     break;
 
                 default:
@@ -207,7 +217,6 @@ namespace MtnCtrl
             _lineSensor.toggleUvLed(true);
             _lineSensor.getLinePositionAnalog();
 #endif
-            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(LINEFOLLOWERCONFIG_POLLING_RATE_MS));
         }
     } // end Task
 }

@@ -161,13 +161,7 @@ namespace MtnCtrl
         {
             rawMessage[i] = uart_getc(uartId);
         }
-
-        // // MSB FIRST
-        // for (int i = 8; uart_is_readable_within_us(UART_INSTANCE_RASPBERRYHAT, 1000) && i >= 0; i--)
-        // {
-        //     rawMessage[i] = uart_getc(UART_INSTANCE_RASPBERRYHAT);
-        // }
-
+        
         uint64_t rawFrame = 0;
         std::memcpy(&rawFrame, rawMessage, sizeof(uint64_t));
 

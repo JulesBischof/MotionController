@@ -4,19 +4,37 @@
 
 namespace MtnCtrl
 {
-    enum class DispatcherTaskId : uint8_t
+    enum class DispatcherTaskId : uint16_t
     {
-        NoTask,
-        Broadcast,
-        DispatcherTask,
-        LineFollowerTask,
-        RaspberryHatComTask,
-        GripControllerComTask,
-        MotionControllerComTask,
-        ServoDriveTask,
-        BarrierHandlerTask,
-        TestTask,
+        NoTask = 1 << 0,
+        DispatcherTask = 1 << 1,
+        LineFollowerTask = 1 << 2,
+        RaspberryHatComTask = 1 << 3,
+        GripControllerComTask = 1 << 4,
+        MotionControllerComTask = 1 << 5,
+        ServoDriveTask = 1 << 6,
+        BarrierHandlerTask = 1 << 7,
+        TestTask = 1 << 8,
+        Broadcast = 0xFFFF
     };
+
+    inline DispatcherTaskId
+    operator|(DispatcherTaskId lhs, DispatcherTaskId rhs)
+    {
+        return static_cast<DispatcherTaskId>(
+            static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+    }
+
+    inline DispatcherTaskId operator&(DispatcherTaskId lhs, DispatcherTaskId rhs)
+    {
+        return static_cast<DispatcherTaskId>(
+            static_cast<uint32_t>(lhs) & static_cast<uint32_t>(rhs));
+    }
+
+    inline DispatcherTaskId operator~(DispatcherTaskId value)
+    {
+        return static_cast<DispatcherTaskId>(~static_cast<uint32_t>(value));
+    }
 
     enum class TaskCommand : uint8_t
     {
@@ -43,7 +61,7 @@ namespace MtnCtrl
         DecodeMessage,
         CraneGrip,
         CraneRelease,
-        GcAck, 
+        GcAck,
         CalibLineSensor,
     };
 

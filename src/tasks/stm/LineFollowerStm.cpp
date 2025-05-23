@@ -67,7 +67,7 @@ namespace MtnCtrl
                 break;
 
             case LineFollowerStmState::LOST_LINE:
-                // stop motors
+                // stop motors every task
                 services::LoggerService::debug("LineFollowerStm::run() state#LOST_LINE", "send Stop Cmd");
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
@@ -95,20 +95,6 @@ namespace MtnCtrl
                     {
                     }
                 }
-
-                // stop barrier detection
-                msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::BarrierHandlerTask,
-                    TaskCommand::Stop,
-                    0);
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
-                    while (1)
-                    {
-                    }
-                }
                 break;
 
             case LineFollowerStmState::CROSSPOINT_DETECTED:
@@ -126,21 +112,7 @@ namespace MtnCtrl
                     }
                 }
 
-                // send info to RaspberryHat
-                msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::RaspberryHatComTask,
-                    TaskCommand::NodeDetectedInfo,
-                    0);
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
-                    while (1)
-                    {
-                    }
-                }
-
-                // send driven Distance to RaspberryHat
+                // send driven Distance to RaspberryHat - infoflag = driven distance now
                 msg = DispatcherMessage(
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
@@ -167,7 +139,6 @@ namespace MtnCtrl
                     {
                     }
                 }
-
                 reset();
                 break;
 

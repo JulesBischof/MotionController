@@ -23,93 +23,51 @@ namespace MtnCtrl
             {
                 services::LoggerService::debug("MessageDispatcher", "Recieved Command: %x # data: %d", message.command ,message.getData());
 
-                // take messages and put them to other Queues ... (if possible)
-                switch (message.receiverTaskId)
+                if ((message.receiverTaskId & DispatcherTaskId::LineFollowerTask) == DispatcherTaskId::LineFollowerTask)
                 {
-                case (DispatcherTaskId::DispatcherTask):
-                    // shouldn't happen - error Handling..? send ERRORCODE to RaspberryHat
-                    break;
-
-                case (DispatcherTaskId::LineFollowerTask):
                     if (xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to lineFollowerTaskQueue");
                         while (1)
                         {
                         } /* ERROR */
                     }
-                    break;
+                }
 
-                case (DispatcherTaskId::RaspberryHatComTask):
+                if ((message.receiverTaskId & DispatcherTaskId::RaspberryHatComTask) == DispatcherTaskId::RaspberryHatComTask)
+                {
                     if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to raspberryHatComQueue");
                         while (1)
                         {
                         } /* ERROR */
                     }
-                    break;
+                }
 
-                case (DispatcherTaskId::GripControllerComTask):
+                if ((message.receiverTaskId & DispatcherTaskId::GripControllerComTask) == DispatcherTaskId::GripControllerComTask)
+                {
                     message.receiverTaskId = DispatcherTaskId::ServoDriveTask;
                     if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to gripControllercomQueue");
                         while (1)
                         {
                         } /* ERROR */
                     }
-                    break;
+                }
 
-                case (DispatcherTaskId::BarrierHandlerTask):
+                if ((message.receiverTaskId & DispatcherTaskId::BarrierHandlerTask) == DispatcherTaskId::BarrierHandlerTask)
+                {
                     if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to barrierHandlerQueue");
                         while (1)
                         {
                         } /* ERROR */
                     }
-                    break;
-
-                case (DispatcherTaskId::Broadcast):
-                    if (xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
-                    {
-                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
-                        while (1)
-                        {
-                        } /* ERROR */
-                    }
-                    if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
-                    {
-                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
-                        while (1)
-                        {
-                        } /* ERROR */
-                    }
-                    if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
-                    {
-                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
-                        while (1)
-                        {
-                        } /* ERROR */
-                    }
-                    if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
-                    {
-                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
-                        // while (1)
-                        // {
-                        // } /* ERROR */
-                    }
-                    break;
-                default:
-                    break;
                 }
             } // end Queue msg handling
-
-            vTaskDelay(pdMS_TO_TICKS(10));
-        } // end loop
-
-        /* never reached */
+        }
     }
-
 }
