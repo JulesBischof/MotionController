@@ -63,8 +63,6 @@ namespace miscDevices
         void toggleUvLed(bool state);
         
         uint8_t getStatus() { return _status; };
-
-        void reset();
     };
 }
 #endif

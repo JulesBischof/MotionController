@@ -269,9 +269,4 @@ namespace miscDevices
         }
         toggleUvLed(false);
     }
-
-    void LineSensor::reset()
-    {
-
-    }
 }
