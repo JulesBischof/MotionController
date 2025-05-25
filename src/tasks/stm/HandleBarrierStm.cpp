@@ -93,9 +93,9 @@ namespace MtnCtrl
                     }
                 }
 
-                // send msg to RaspberryHAT
+                // send msg to RaspberryHAT & LineFollower due to offset in distance calculations
                 msg = DispatcherMessage(
-                    DispatcherTaskId::BarrierHandlerTask,
+                    DispatcherTaskId::BarrierHandlerTask | DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::RaspberryHatComTask,
                     TaskCommand::BarrierDetectedInfo,
                     0);
@@ -190,12 +190,10 @@ namespace MtnCtrl
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_GC_ACK_0:
-                // _gcAck = true; /* \TODO !!! ONLY FOR DEBUG REASONS*/
                 if (_gcAck)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_GC_ACK_0 ", "_gcAck = true");
                     _gcAck = false;
-                    // _state = HandleBarrierStmState::TURN_ROBOT_0;
                     _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
                 }
                 break;
@@ -206,7 +204,7 @@ namespace MtnCtrl
                         DispatcherTaskId::BarrierHandlerTask,
                         DispatcherTaskId::LineFollowerTask,
                         TaskCommand::Move,
-                        static_cast<uint64_t>(LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
+                        static_cast<uint64_t>(LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm));
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
                         services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
@@ -225,7 +223,6 @@ namespace MtnCtrl
                 if (_posReached)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2 ", "_posReached = true");
-                    // _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
                     _state = HandleBarrierStmState::TURN_ROBOT_0;
                     _posReached = false;
                 }
@@ -281,7 +278,6 @@ namespace MtnCtrl
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_GC_ACK_1:
-                // _gcAck = true; /* \TODO !!! ONLY FOR DEBUG REASONS*/
                 if (_gcAck)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_gcAck = true");
@@ -297,7 +293,7 @@ namespace MtnCtrl
                     DispatcherTaskId::BarrierHandlerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
-                    static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm)); // -1 due to backward
+                    static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm));
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                     services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_1", "_messagDispatcherQueue TIMEOUT");

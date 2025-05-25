@@ -187,12 +187,19 @@ namespace MtnCtrl
                 {
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: POLL DEGREE # data: %d", message.getData());
                     DispatcherMessage response(DispatcherTaskId::LineFollowerTask,
-                                              message.senderTaskId,
-                                              TaskCommand::PollDegree,
-                                              _movementTracker.getRotation());
+                                               message.senderTaskId,
+                                               TaskCommand::PollDegree,
+                                               _movementTracker.getRotation());
                     xQueueSend(messageDispatcherQueue, &response, pdMS_TO_TICKS(1000));
-                    }
-                    break;
+                }
+                break;
+
+                case TaskCommand::BarrierDetectedInfo:
+                {
+                    services::LoggerService::debug("LineFollowerTask", "Recieved Command: BarrierDetectedInfo # data: %d", message.getData());
+                    _movementTracker.addOffsetMillimeters(LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm);
+                }
+                break;
 
                 default:
                     services::LoggerService::error("_lineFollowerTask", "command unknown: %x", message.command);
