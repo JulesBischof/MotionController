@@ -5,7 +5,7 @@
 #include <cstring>
 #include "LoggerService.hpp"
 
-namespace miscDevices
+namespace services
 {
 
     template<typename T>

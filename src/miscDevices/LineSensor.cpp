@@ -210,15 +210,15 @@ namespace miscDevices
         toggleUvLed(true);
         // init buffers
         uint16_t buffer[NUMBER_OF_CELLS] = {0};
-        MedianStack<uint16_t> *stacks[NUMBER_OF_CELLS];
+        services::MedianStack<uint16_t> *stacks[NUMBER_OF_CELLS];
 
         // create stacks
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            void *mem = pvPortMalloc(sizeof(MedianStack<uint16_t>));
+            void *mem = pvPortMalloc(sizeof(services::MedianStack<uint16_t>));
             if(mem != nullptr)
             {
-                stacks[i] = new (mem) MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+                stacks[i] = new (mem) services::MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
             }
             else
             {
@@ -262,7 +262,7 @@ namespace miscDevices
         {
             if (stacks[i] != nullptr)
             {
-                stacks[i]->~MedianStack();
+                stacks[i]->services::MedianStack<uint16_t>::~MedianStack();
                 vPortFree(stacks[i]);
                 stacks[i] = nullptr;
             }

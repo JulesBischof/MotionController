@@ -18,7 +18,7 @@ namespace MtnCtrl
         {
             _state = CheckForLineStmState::IDLE;
             _measCounter = 0;
-            _stack = miscDevices::MedianStack<uint16_t>(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
+            _stack = services::MedianStack<uint16_t>(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
             _posReachedFlag = false;
         }
 

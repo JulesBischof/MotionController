@@ -25,7 +25,7 @@ namespace MtnCtrl
             bool _posReachedFlag;
 
             uint32_t _measCounter;
-            miscDevices::MedianStack<uint16_t> _stack;
+            services::MedianStack<uint16_t> _stack;
 
             miscDevices::LineSensor *_lineSensor;
             QueueHandle_t _messageDispatcherQueue;

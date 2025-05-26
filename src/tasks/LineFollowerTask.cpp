@@ -141,7 +141,7 @@ namespace MtnCtrl
 #if USE_CHECKFORLINE_STM == (1)
                     _checkForLineStm.update(message.command, message.getData());
 #else
-                    miscDevices::MedianStack<uint16_t> stack(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
+                    services::MedianStack<uint16_t> stack(LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS);
                     _lineSensor.toggleUvLed(true);
                     bool lostFlag = false;
                     for (uint8_t i = 0; i < LINEFOLLOWERCONFIG_NUMBER_OF_LINEPOLLS; i++)

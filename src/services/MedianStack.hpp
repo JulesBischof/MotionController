@@ -2,7 +2,7 @@
 
 #include "pico/stdlib.h"
 
-namespace miscDevices
+namespace services
 {
     /// @brief MedianStack stores values in a buffer and provides median calculation.
     ///
