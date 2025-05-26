@@ -156,6 +156,7 @@ namespace MtnCtrl
             _slowFlag = false;
             _state = LineFollowerStmState::IDLE;
             _lineSensor->toggleUvLed(false);
+            _lineSensor->reset();
         }
 
         void LineFollowerStm::update(uint32_t msgData)
@@ -172,6 +173,7 @@ namespace MtnCtrl
 
             if (msgData == 0 && cmd == TaskCommand::Move)
             {
+                _lineSensor->reset(); // clear buffers and counters for node detection
                 _lineSensor->toggleUvLed(true);
                 services::LoggerService::debug("LineFollowerStm::update()", "start FOLLOW_LINE");
                 _state = LineFollowerStmState::FOLLOW_LINE;

@@ -9,14 +9,13 @@
 
 constexpr uint8_t NUMBER_OF_CELLS = 8;
 
-constexpr uint8_t LINECOUNTER_CROSS_SURE_DETECTED = 6;
-
-constexpr uint8_t LINECOUNTER_CROSS_GUESS_DETECTED = 4;
-constexpr uint8_t LINECOUNTER_CROSS_NUBER_OF_GUESSES = 3;
-
 constexpr uint8_t LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS = 50;
 
 #define LINESENSOR_CONFIG_PRINTF_CELLVALUES (0)
+
+/* --- Node Detection Params --- */
+constexpr uint32_t RINGBUFFER_SIZE = 5;
+constexpr uint8_t LINECOUNTER_TRESHHOLD_CROSS_DETECTED = 6;
 
 /* ==============================================================
 
