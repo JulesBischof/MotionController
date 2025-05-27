@@ -102,6 +102,7 @@ namespace miscDevices
         // if there is no line - count until NOLINECOUNTER_MAXVALUE
         if (!lineCounter)
         {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "no line detected - increase counter: %d", _nolineCounter);
             _nolineCounter++;
         }
         else
@@ -112,6 +113,7 @@ namespace miscDevices
         // if there is still no line - set status to no line detected
         if (_nolineCounter >= NOLINECOUNTER_MAXVALUE)
         {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "no line detected - set status");
             _status |= LINESENSOR_NO_LINE;
             return LINESENSOR_MIDDLE_POSITION;
         }
@@ -121,24 +123,31 @@ namespace miscDevices
         }
 
         // check if there has been a Node
-        if (lineCounter > LINECOUNTER_TRESHHOLD_CROSS_DETECTED)
-        {
-            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node guessed - push 1 (true) to ringbuffer");
-            _ringBuffer.push(1);               // push node guess
-            return LINESENSOR_MIDDLE_POSITION; // drive straight - all values high might end in a non percise position 
-        }
-
-        if (_ringBuffer.getSum() >= RINGBUFFER_SIZE)
+        uint8_t bufferSum = _ringBuffer.getSum();
+        services::LoggerService::debug("LineSensor::getLinePositionAnalog", "ringbuffersum = %d", bufferSum);
+        if (bufferSum >= RINGBUFFER_SIZE)
         {
             // all values in ringbuffer are 1 -> <RINGBUFFER_SIZE> Node guessings in a row - there indeed might be a Node
             _status |= LINESENSOR_CROSS_DETECTED; // set node detected
             services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node detected - ringbuffer full of 1's");
-            return LINESENSOR_MIDDLE_POSITION;    // drive straight - all values high might end in a non percise position
+            return LINESENSOR_MIDDLE_POSITION; // drive straight - all values high might end in a non percise position
         }
         else
         {
             // clear flag
             _status &= ~LINESENSOR_CROSS_DETECTED;
+        }
+        
+        if (lineCounter >= LINECOUNTER_TRESHHOLD_CROSS_DETECTED)
+        {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node guessed - push 1 (true) to ringbuffer");
+            _ringBuffer.push(1);               // push node guess
+            return LINESENSOR_MIDDLE_POSITION; // drive straight - all values high might end in a non percise position 
+        }
+        else 
+        {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node not guessed - push 0 (false) to ringbuffer");
+            _ringBuffer.push(0); // push no node guess
         }
 
         // sum up all values

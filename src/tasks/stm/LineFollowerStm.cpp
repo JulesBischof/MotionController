@@ -103,7 +103,7 @@ namespace MtnCtrl
                     DispatcherTaskId::LineFollowerTask,
                     DispatcherTaskId::LineFollowerTask,
                     TaskCommand::Move,
-                    LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm);
+                    LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm - (LINEFOLLOWERCONFIG_DISTANCE_PER_LINE_POLLCYCLE_MM * RINGBUFFER_SIZE));
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
                     services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
