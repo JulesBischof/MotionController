@@ -160,10 +160,14 @@ namespace miscDevices
             float distance = INITIAL_DISTANCE;
 
             // wait for interrupt event
-            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, portMAX_DELAY) == pdTRUE)
+            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(400)) == pdTRUE)
             {
                 rawTimeDiff = _getHcSr04RawTimeDiff();
                 distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
+            }
+            else
+            {
+                services::LoggerService::error("_HcSr04Task()", "ULTRASONIC TIMEOUT...!!! set result to default");
             }
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)

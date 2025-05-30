@@ -6,16 +6,16 @@ namespace MtnCtrl
 {
     enum class DispatcherTaskId : uint16_t
     {
-        NoTask = 1 << 0,
-        DispatcherTask = 1 << 1,
-        LineFollowerTask = 1 << 2,
-        RaspberryHatComTask = 1 << 3,
-        GripControllerComTask = 1 << 4,
+        NoTask                  = 1 << 0,
+        DispatcherTask          = 1 << 1,
+        LineFollowerTask        = 1 << 2,
+        RaspberryHatComTask     = 1 << 3,
+        GripControllerComTask   = 1 << 4,
         MotionControllerComTask = 1 << 5,
-        ServoDriveTask = 1 << 6,
-        BarrierHandlerTask = 1 << 7,
-        TestTask = 1 << 8,
-        Broadcast = 0xFFFF
+        ServoDriveTask          = 1 << 6,
+        BarrierHandlerTask      = 1 << 7,
+        TestTask                = 1 << 8,
+        Broadcast               = 0xFFFF
     };
 
     inline DispatcherTaskId

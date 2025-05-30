@@ -23,6 +23,8 @@ namespace MtnCtrl
         // loop forever
         for (;;)
         {
+            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(BARRIERHANDLERTASK_POLLING_RATE_MS));
+
             DispatcherMessage message;
             DispatcherMessage response;
 
@@ -73,7 +75,6 @@ namespace MtnCtrl
 
             // otherwise - run stm Object
             _handleBarrierStm.run();
-            vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(BARRIERHANDLERTASK_POLLING_RATE_MS));
         }
     }
 }

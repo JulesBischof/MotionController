@@ -95,6 +95,20 @@ namespace MtnCtrl
                     {
                     }
                 }
+
+                // stop barrier detection
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::BarrierHandlerTask,
+                    TaskCommand::Stop,
+                    0);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
+                    while (1)
+                    {
+                    }
+                }
                 break;
 
             case LineFollowerStmState::CROSSPOINT_DETECTED:

@@ -80,11 +80,10 @@ namespace MtnCtrl
             case HandleBarrierStmState::SLOWED_DOWN:
             {
                 float dist = _hcSr04->getSensorData();
-               
+
                 if (dist > BRAKEDISTANCE_BARRIER_IN_MM)
                 {
                     services::LoggerService::debug("HandleBarrierStm::run()", "distance state SLOWED DOWN = %f", dist);
-                    taskYIELD();
                     break; // barrier still far away enough
                 }
 
@@ -415,6 +414,7 @@ namespace MtnCtrl
                 break;
             }
 
+            taskYIELD();
             return retVal;
         }
 
@@ -452,7 +452,15 @@ namespace MtnCtrl
 
             case TaskCommand::PositionReached:
                 services::LoggerService::debug("HandleBarrierStm::update() ", "Recieved Command: POSITION_REACHED");
-                _posReached = true;
+                if (_state == HandleBarrierStmState::WAIT_FOR_STOP_0 ||
+                    _state == HandleBarrierStmState::WAIT_FOR_STOP_1 ||
+                    _state == HandleBarrierStmState::WAIT_FOR_STOP_2 ||
+                    _state == HandleBarrierStmState::WAIT_FOR_STOP_3 ||
+                    _state == HandleBarrierStmState::WAIT_FOR_STOP_4 ||
+                    _state == HandleBarrierStmState::WAIT_FOR_STOP_5)
+                {
+                    _posReached = true;
+                }
                 break;
 
             case TaskCommand::Stop:
