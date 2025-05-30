@@ -103,7 +103,7 @@ namespace MtnCtrl
                     // inform other Tasks
                     msg = DispatcherMessage(
                         DispatcherTaskId::LineFollowerTask,
-                        DispatcherTaskId::BarrierHandlerTask | DispatcherTaskId::RaspberryHatComTask | DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::Broadcast,
                         TaskCommand::PositionReached,
                         0);
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)

@@ -47,7 +47,6 @@ namespace MtnCtrl
 
                 if ((message.receiverTaskId & DispatcherTaskId::GripControllerComTask) == DispatcherTaskId::GripControllerComTask)
                 {
-                    message.receiverTaskId = DispatcherTaskId::ServoDriveTask;
                     if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
                         services::LoggerService::fatal("messageDispatcherTask", "writing to gripControllercomQueue");

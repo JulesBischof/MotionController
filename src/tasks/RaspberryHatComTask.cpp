@@ -91,6 +91,9 @@ namespace MtnCtrl
                 case (TaskCommand::PollStatusFlags):
                     // TODO: prain_uart poll_id
                     break;
+                case (TaskCommand::PollUltrasonic):
+                    txMsg = encode_response(address::RASPBERRY_HAT, poll_id::ULTRASONIC, message.getData());
+                    break;
                 case (TaskCommand::DecodeMessage):
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
 
