@@ -160,14 +160,15 @@ namespace miscDevices
             float distance = INITIAL_DISTANCE;
 
             // wait for interrupt event
-            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(100)) == pdTRUE)
+            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(190)) == pdTRUE)
             {
                 rawTimeDiff = _getHcSr04RawTimeDiff();
                 distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
             }
             else
             {
-                /* TIMEOUT ERROR ??? */
+                services::LoggerService::error("_HcSr04Task()", "retry measurment... ");
+                continue;
             }
 
 #if HCSR04CONFIG_USE_RAW_VALUES == (1)
