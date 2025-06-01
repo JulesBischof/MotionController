@@ -1,8 +1,8 @@
-#ifndef LINESENSOR_H
-#define LINESENSOR_H
+#pragma once
 
 #include "Tla2528.hpp"
 #include "LineSensorConfig.hpp"
+#include "RingBuffer.hpp"
 
 namespace miscDevices
 {
@@ -22,9 +22,12 @@ namespace miscDevices
 
         i2cDevices::Tla2528 *_adcInstance;
 
-        uint8_t _uvGpio, _nolineCounter, _crosswayGuessCounter;
+        uint8_t _uvGpio, _nolineCounter;
 
         uint16_t *_calibValuesLow, *_calibValuesHigh;
+
+        services::RingBuffer<uint8_t> _ringBuffer;
+
 
         /// @brief normalizes raw Values of the Line Sensor into range 0 ... 1000
         /// @param val single Cell raw Sensor value 
@@ -47,7 +50,8 @@ namespace miscDevices
         /// @param adcInstance Instance of ADC - with whom the cell values can be read
         /// @param uvGpio gpio connected to the UV-Tx - LEDs
         LineSensor(i2cDevices::Tla2528 *adcInstance, uint8_t uvGpio);
-        
+
+        /// @brief default deconstructor
         ~LineSensor();
 
         /// @brief calibrates the lineSensor based on a Median Value
@@ -61,10 +65,11 @@ namespace miscDevices
         /// @brief turns either on or off UV-tx LED's
         /// @param state true = LED's on; false = LED's off;
         void toggleUvLed(bool state);
-        
-        uint8_t getStatus() { return _status; };
 
+        /// @brief resets LineSensor to default values 
+        /// @note this wil clear the internal ring buffer and counter fo no line detected
         void reset();
+
+        uint8_t getStatus() { return _status; };
     };
 }
-#endif

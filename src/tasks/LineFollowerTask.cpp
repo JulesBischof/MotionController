@@ -75,7 +75,7 @@ namespace MtnCtrl
                 }
 
                 // if safety button is pressed: all commands are stop commands
-                if ((safetyButtonBits & EMERGENCY_STOP_BIT) != 0)
+                if ((safetyButtonBits & EMERGENCY_STOP_BIT) != 0 && message.command != TaskCommand::Stop)
                 {
                     message.command = TaskCommand::Stop;
                 }
@@ -83,11 +83,22 @@ namespace MtnCtrl
                 switch (message.command)
                 {
                 case TaskCommand::Move:
+                {
                     _lamp.setState(true);
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: MOVE # data: %d", message.getData());
-                    _lineFollowerStm.update(message.getData(), message.command);
-                    _movePositionModeStm.update(message.getData(), message.command);
-                    break;
+
+                    int64_t dist = static_cast<int64_t>(message.getData());
+                    _lineFollowerStm.update(dist, message.command);
+                    _movePositionModeStm.update(dist, message.command);
+
+                    /* add offset if driving backwards */
+                    if(dist < 0)
+                    {
+                        services::LoggerService::debug("LineFollowerTask", "added offset to movementtracker: %d mm", dist);
+                        _movementTracker.addOffsetMillimeters(dist);
+                    }
+                }
+                break;
 
                 case TaskCommand::CalibLineSensor:
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: CALIBLINESENSOR TILE# data: %d", message.getData());

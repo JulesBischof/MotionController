@@ -19,6 +19,7 @@ namespace miscDevices
         _status = 0;
         _initDefaultCalibration();
         _initUvLed();
+        _ringBuffer = services::RingBuffer<uint8_t>(RINGBUFFER_SIZE, true);
     }
 
     /// @brief default consturctor
@@ -40,8 +41,6 @@ namespace miscDevices
         toggleUvLed(false);
 
         _nolineCounter = 0;
-        _crosswayGuessCounter = 0;
-       
         return;
     }
 
@@ -103,6 +102,7 @@ namespace miscDevices
         // if there is no line - count until NOLINECOUNTER_MAXVALUE
         if (!lineCounter)
         {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "no line detected - increase counter: %d", _nolineCounter);
             _nolineCounter++;
         }
         else
@@ -113,6 +113,7 @@ namespace miscDevices
         // if there is still no line - set status to no line detected
         if (_nolineCounter >= NOLINECOUNTER_MAXVALUE)
         {
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "no line detected - set status");
             _status |= LINESENSOR_NO_LINE;
             return LINESENSOR_MIDDLE_POSITION;
         }
@@ -121,26 +122,32 @@ namespace miscDevices
             _status &= ~LINESENSOR_NO_LINE;
         }
 
-        // check if there has been a crossway
-        if (lineCounter > LINECOUNTER_CROSS_SURE_DETECTED)
+        // check if there has been a Node
+        uint8_t bufferSum = _ringBuffer.getSum();
+        services::LoggerService::debug("LineSensor::getLinePositionAnalog", "ringbuffersum = %d", bufferSum);
+        if (bufferSum >= RINGBUFFER_SIZE)
         {
-            _status |= LINESENSOR_CROSS_DETECTED;
-            return LINESENSOR_MIDDLE_POSITION;
+            // all values in ringbuffer are 1 -> <RINGBUFFER_SIZE> Node guessings in a row - there indeed might be a Node
+            _status |= LINESENSOR_CROSS_DETECTED; // set node detected
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node detected - ringbuffer full of 1's");
+            return LINESENSOR_MIDDLE_POSITION; // drive straight - all values high might end in a non percise position
         }
         else
         {
+            // clear flag
             _status &= ~LINESENSOR_CROSS_DETECTED;
-            _crosswayGuessCounter = 0;
         }
-
-        if (lineCounter > LINECOUNTER_CROSS_GUESS_DETECTED)
+        
+        if (lineCounter >= LINECOUNTER_TRESHHOLD_CROSS_DETECTED)
         {
-            _crosswayGuessCounter++;
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node guessed - push 1 (true) to ringbuffer");
+            _ringBuffer.push(1);               // push node guess
+            return LINESENSOR_MIDDLE_POSITION; // drive straight - all values high might end in a non percise position 
         }
-        if (_crosswayGuessCounter > LINECOUNTER_CROSS_NUBER_OF_GUESSES)
+        else 
         {
-            _status |= LINESENSOR_CROSS_DETECTED;
-            return LINESENSOR_MIDDLE_POSITION;
+            services::LoggerService::debug("LineSensor::getLinePositionAnalog", "Node not guessed - push 0 (false) to ringbuffer");
+            _ringBuffer.push(0); // push no node guess
         }
 
         // sum up all values
@@ -168,6 +175,15 @@ namespace miscDevices
         gpio_put(_uvGpio, state);
         _status = state ? (_status | LINESENSOR_UV_ACTIVE) : (_status & ~LINESENSOR_UV_ACTIVE);
         return;
+    }
+
+    void LineSensor::reset()
+    {
+        _status = 0;
+        _nolineCounter = 0;
+        _ringBuffer.clearBuffer();
+        toggleUvLed(false);
+        services::LoggerService::debug("LineSensor::reset", "LineSensor reset to default values");
     }
 
     /* ==================================
@@ -210,15 +226,15 @@ namespace miscDevices
         toggleUvLed(true);
         // init buffers
         uint16_t buffer[NUMBER_OF_CELLS] = {0};
-        MedianStack<uint16_t> *stacks[NUMBER_OF_CELLS];
+        miscDevices::MedianStack<uint16_t> *stacks[NUMBER_OF_CELLS];
 
         // create stacks
         for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
         {
-            void *mem = pvPortMalloc(sizeof(MedianStack<uint16_t>));
-            if(mem != nullptr)
+            void *mem = pvPortMalloc(sizeof(miscDevices::MedianStack<uint16_t>));
+            if (mem != nullptr)
             {
-                stacks[i] = new (mem) MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
+                stacks[i] = new (mem) miscDevices::MedianStack<uint16_t>(LINESENSOR_CONFIG_CALIBRATION_NUMBER_OF_MEASURMENTS);
             }
             else
             {
@@ -262,16 +278,11 @@ namespace miscDevices
         {
             if (stacks[i] != nullptr)
             {
-                stacks[i]->~MedianStack();
+                stacks[i]->miscDevices::MedianStack<uint16_t>::~MedianStack();
                 vPortFree(stacks[i]);
                 stacks[i] = nullptr;
             }
         }
         toggleUvLed(false);
-    }
-
-    void LineSensor::reset()
-    {
-
     }
 }
