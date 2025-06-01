@@ -94,7 +94,10 @@ namespace miscDevices
         _queueHandle = xQueueCreate(1, sizeof(float));
         if (_queueHandle == nullptr)
         {
-            /* ERROR HANDLING ??? */
+            services::LoggerService::fatal("_initHcSr04Queue", "_queheHandle == nullptr");
+            while (1)
+            {
+            }
         }
         else
         {
@@ -153,6 +156,7 @@ namespace miscDevices
 
         while (true)
         {
+            vTaskDelayUntil(&previousWakeTime, pdMS_TO_TICKS(HCSR04CONFIG_POLLING_RATE_MS));
 
             _trigger();
 
@@ -160,14 +164,14 @@ namespace miscDevices
             float distance = INITIAL_DISTANCE;
 
             // wait for interrupt event
-            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(190)) == pdTRUE)
+            if (xTaskNotifyWait(0x00, 0xFFFFFFFF, 0, pdMS_TO_TICKS(10)) == pdTRUE) // 10 ms ~1800mm - way too far
             {
                 rawTimeDiff = _getHcSr04RawTimeDiff();
                 distance = static_cast<float>(rawTimeDiff) * SPEEDOFSOUND / CONVERSION_FACTOR; // mm
             }
-            else
+            else // restart measurment if timeout
             {
-                services::LoggerService::error("_HcSr04Task()", "retry measurment... ");
+                services::LoggerService::error("_HcSr04Task()", "retry measurment ... ");
                 continue;
             }
 
@@ -197,7 +201,6 @@ namespace miscDevices
 #endif
             // inform "listening" task
             xSemaphoreGive(_newMeasurmentSemaphore);
-            vTaskDelayUntil(&previousWakeTime, pdMS_TO_TICKS(HCSR04CONFIG_POLLING_RATE_MS));
         }
 
         /* never reached */
@@ -265,7 +268,7 @@ namespace miscDevices
         }
 
         float retVal;
-        xSemaphoreTake(_currentVelocityMutex, pdMS_TO_TICKS(100));
+        xSemaphoreTake(_currentVelocityMutex, portMAX_DELAY);
         retVal = _currentVelocity;
         xSemaphoreGive(_currentVelocityMutex);
 
