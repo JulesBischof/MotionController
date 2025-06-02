@@ -171,7 +171,7 @@ namespace miscDevices
             }
             else // restart measurment if timeout
             {
-                services::LoggerService::error("_HcSr04Task()", "retry measurment ... ");
+                services::LoggerService::info("_HcSr04Task()", "retry measurment ... ");
                 continue;
             }
 

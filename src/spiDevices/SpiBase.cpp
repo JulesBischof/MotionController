@@ -7,10 +7,6 @@
 namespace spiDevices
 {
 
-    // init static class members
-    SemaphoreHandle_t SpiBase::_spiMutex = NULL;
-    bool SpiBase::_spiMutexInititalized = false;
-
     /* ==================================
             Constructor / Deconstructor
        ================================== */
@@ -18,14 +14,7 @@ namespace spiDevices
     SpiBase::SpiBase(spi_inst_t *spiInstance, uint8_t csPin)
         : _spiInstance(spiInstance), _csPin(csPin)
     {
-        taskENTER_CRITICAL();
-        if (!this->_spiMutexInititalized)
-        {
-            _spiMutex = xSemaphoreCreateMutex();
-            _spiMutexInititalized = true;
-        }
         _initCsGpio(csPin);
-        taskEXIT_CRITICAL();
     }
 
     SpiBase::SpiBase() {}
@@ -70,8 +59,6 @@ namespace spiDevices
         uint8_t rx_buffer[5] = {0};
         uint8_t dummy_Tx[5] = {0};
 
-        xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(1000));
-
         // push address - take a look into datasheet, pipeline structure
         gpio_put(_csPin, 0); // pull down CS
         sleep_us(40);        // wait at least 40 clk cycles -> @1MHz ~40us
@@ -86,8 +73,6 @@ namespace spiDevices
         sleep_us(40);        // wait at least 40 clk cycles -> @1MHz ~40us
         spi_write_read_blocking(_spiInstance, dummy_Tx, rx_buffer, 5);
         gpio_put(_csPin, 1); // pull up CS
-
-        xSemaphoreGive(_spiMutex);
 
         this->_spiStatus = (rx_buffer[0]);
 
@@ -119,9 +104,7 @@ namespace spiDevices
 
         uint8_t rx_buffer[5] = {0};
         uint8_t dummy_Tx[5] = {0};
-
-        xSemaphoreTake(_spiMutex, pdMS_TO_TICKS(100));
-
+        
         gpio_put(_csPin, 0); // pull down CS
         sleep_us(40);
         spi_write_read_blocking(_spiInstance, tx_buffer, rx_buffer, 5);
@@ -133,8 +116,6 @@ namespace spiDevices
         sleep_us(40);
         spi_write_read_blocking(_spiInstance, dummy_Tx, rx_buffer, 5);
         gpio_put(_csPin, 1); // pull up CS
-
-        xSemaphoreGive(_spiMutex);
 
         // get status flags
         this->_spiStatus = (rx_buffer[0]);

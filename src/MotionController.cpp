@@ -340,7 +340,7 @@ namespace MtnCtrl
                         "safetyButton Task wrapper",
                         1024 / sizeof(StackType_t),
                         this,
-                        tskIDLE_PRIORITY + 5,
+                        tskIDLE_PRIORITY + 4,
                         NULL) != pdTRUE)
         {
             /* ERROR HANDLING ??? */

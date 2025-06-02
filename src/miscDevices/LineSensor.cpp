@@ -14,12 +14,11 @@ namespace miscDevices
           constructor / deconstructor
        ================================== */
 
-    LineSensor::LineSensor(i2cDevices::Tla2528 *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio)
+    LineSensor::LineSensor(i2cDevices::Tla2528 *adcInstance, uint8_t uvGpio) : _adcInstance(adcInstance), _uvGpio(uvGpio), _ringBuffer(services::RingBuffer<uint8_t>(RINGBUFFER_SIZE, true))
     {
         _status = 0;
         _initDefaultCalibration();
         _initUvLed();
-        _ringBuffer = services::RingBuffer<uint8_t>(RINGBUFFER_SIZE, true);
     }
 
     /// @brief default consturctor

@@ -15,8 +15,6 @@ namespace spiDevices
     class SpiBase
     {
     private:
-        static SemaphoreHandle_t _spiMutex;
-        static bool _spiMutexInititalized;
 
     protected:
         spi_inst_t *_spiInstance;

@@ -2,6 +2,9 @@
 #include "LineFollowerTaskConfig.hpp"
 #include "LoggerService.hpp"
 
+#define WAIT_FOR_STOP_TIMEOUT_MS 1000
+#define WAIT_FOR_STOP_TIMEOUT_TURN_MS 7000
+
 namespace MtnCtrl
 {
     namespace stm
@@ -107,13 +110,16 @@ namespace MtnCtrl
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
+                _stopTimeStamp = get_absolute_time();
+
+                _posReached = false;
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_0:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_0 ", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_0 ", "_posReached = true");
                     _posReached = false;
@@ -155,18 +161,20 @@ namespace MtnCtrl
             }
                 _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_1;
+                _stopTimeStamp = get_absolute_time();
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_1:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_1", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
                     _posReached = false;
                     _state = HandleBarrierStmState::SEND_GRIP_COMMAND;
                 }
+                
                 break;
 
                 /* ---------------------------------------------------------------*/
@@ -216,13 +224,15 @@ namespace MtnCtrl
                     }
                     _posReached = false;
                     _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
+                    _stopTimeStamp = get_absolute_time();
+
                     taskYIELD();
                     break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_2:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2 ", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_2 ", "_posReached = true");
                     // _state = HandleBarrierStmState::SET_BACK_ROBOT_0;
@@ -246,13 +256,16 @@ namespace MtnCtrl
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
+                _stopTimeStamp = get_absolute_time();
+                _posReached = false;
+
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_3:
                 services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_TURN_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state# ", "_posReached = true");
                     _posReached = false;
@@ -307,13 +320,15 @@ namespace MtnCtrl
                 }
                 _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
+                _stopTimeStamp = get_absolute_time();
+
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_4:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_4 ", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_4 ", "_posReached = true");
                     _state = HandleBarrierStmState::TURN_ROBOT_1;
@@ -338,13 +353,15 @@ namespace MtnCtrl
                 }
                 _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
+                _stopTimeStamp = get_absolute_time();
+
                 taskYIELD();
                 break;
 
                 /* ---------------------------------------------------------------*/
             case HandleBarrierStmState::WAIT_FOR_STOP_5:
                 services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = %d", _posReached);
-                if (_posReached)
+                if (_posReached || (absolute_time_diff_us(_stopTimeStamp, get_absolute_time())) >= (WAIT_FOR_STOP_TIMEOUT_TURN_MS * 1e3))
                 {
                     services::LoggerService::debug("HandleBarrierStm::run() state#WAIT_FOR_STOP_5 ", "_posReached = true");
                     _state = HandleBarrierStmState::DONE;
@@ -395,8 +412,8 @@ namespace MtnCtrl
 
         void HandleBarrierStm::update(uint32_t msgData, TaskCommand cmd)
         {
-            _posReached = false;
-            _gcAck = false;
+            // _posReached = false;
+            // _gcAck = false;
 
             switch (cmd)
             {
