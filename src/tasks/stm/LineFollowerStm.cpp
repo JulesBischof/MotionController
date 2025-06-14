@@ -240,7 +240,6 @@ namespace MtnCtrl
                 _lineSensor->toggleUvLed(true);
                 vTaskDelay(pdMS_TO_TICKS(10));
                 bool nolineFlag = _lineSensor->checkLineAppearance();
-                _lineSensor->toggleUvLed(false);
 
                 if (!nolineFlag)
                 {
@@ -265,7 +264,6 @@ namespace MtnCtrl
                     _state = LineFollowerStmState::FOLLOW_LINE;
                     _lineSweepFlag = false;
                     _lineSweepCounter = 0;
-                    _lineSensor->reset();
                 }
             }
             break;
