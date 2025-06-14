@@ -10,6 +10,7 @@
 
 int main()
 {
+
     stdio_init_all();
     services::LoggerService::setLogLevel(APPCONFIG_LOGLEVEL);
 

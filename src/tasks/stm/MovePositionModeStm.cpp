@@ -110,9 +110,9 @@ namespace MtnCtrl
                         0);
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
-                        services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
                         while (1)
                         {
+                            services::LoggerService::fatal("MovePositionModeStm::run() state#STOPPED", "_messagDispatcherQueue TIMEOUT");
                         }
                     }
 

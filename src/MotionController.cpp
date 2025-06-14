@@ -402,9 +402,9 @@ namespace MtnCtrl
                         0);
                     if (xQueueSend(_messageDispatcherQueue, &msg, portMAX_DELAY) != pdPASS)
                     { /* ERROR!!?? */
-                        services::LoggerService::fatal("_safetyButtonPollTask::run() STOP EVENT TIMEOUT", "_messagDispatcherQueue TIMEOUT");
                         while (1)
                         {
+                            services::LoggerService::fatal("_safetyButtonPollTask::run() STOP EVENT TIMEOUT", "_messagDispatcherQueue TIMEOUT");
                         }
                     }
 
@@ -415,9 +415,9 @@ namespace MtnCtrl
                         0);
                     if (xQueueSend(_messageDispatcherQueue, &msg, portMAX_DELAY) != pdPASS)
                     { /* ERROR!!?? */
-                        services::LoggerService::fatal("_safetyButtonPollTask::run() STOP EVENT TIMEOUT", "_messagDispatcherQueue TIMEOUT");
                         while (1)
                         {
+                            services::LoggerService::fatal("_safetyButtonPollTask::run() STOP EVENT TIMEOUT", "_messagDispatcherQueue TIMEOUT");
                         }
                     }
 

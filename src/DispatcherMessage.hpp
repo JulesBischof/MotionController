@@ -45,6 +45,7 @@ namespace MtnCtrl
         CraneRelease,
         GcAck, 
         CalibLineSensor,
+        FAILED_CRC,
     };
 
     /// @brief struct containing Messages for intertask communication

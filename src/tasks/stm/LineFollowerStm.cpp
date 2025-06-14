@@ -76,9 +76,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -90,9 +90,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -120,9 +120,9 @@ namespace MtnCtrl
                     LINEFOLLOWERCONFIG_DISTANCE_LINESENSOR_TO_AXIS_mm);
                 if (xQueueSend(_lineFollowerTaskQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -134,9 +134,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -148,9 +148,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -162,9 +162,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -190,9 +190,9 @@ namespace MtnCtrl
 
         void LineFollowerStm::update(uint32_t msgData)
         {
-            services::LoggerService::fatal("LineFollwerStm::update(uint32_t msgData);", "not implemented");
             while (1)
             {
+                services::LoggerService::fatal("LineFollwerStm::update(uint32_t msgData);", "not implemented");
             }
         }
 

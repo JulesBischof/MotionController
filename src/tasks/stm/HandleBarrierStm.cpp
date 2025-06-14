@@ -65,9 +65,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#CHECK_DISTANCE", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#CHECK_DISTANCE", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::SLOWED_DOWN;
@@ -90,9 +90,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SLOWED_DOWN", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SLOWED_DOWN", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
 
@@ -104,15 +104,14 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SLOWED_DOWN", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SLOWED_DOWN", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_0;
                 _stopTimeStamp = get_absolute_time();
 
-                _posReached = false;
                 taskYIELD();
                 break;
 
@@ -152,14 +151,13 @@ namespace MtnCtrl
                         corrPos);
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
-                        services::LoggerService::fatal("HandleBarrierStm::run() state#POSITION_DISTANCE", "_messagDispatcherQueue TIMEOUT");
                         while (1)
                         {
+                            services::LoggerService::fatal("HandleBarrierStm::run() state#POSITION_DISTANCE", "_messagDispatcherQueue TIMEOUT");
                         }
                     }
                 }
             }
-                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_1;
                 _stopTimeStamp = get_absolute_time();
                 taskYIELD();
@@ -187,9 +185,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SEND_GRIP_COMMAND", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SEND_GRIP_COMMAND", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_0;
@@ -217,12 +215,11 @@ namespace MtnCtrl
                         static_cast<uint64_t>(LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm)); // -1 due to backward
                     if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                     { /* ERROR!!?? */
-                        services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
                         while (1)
                         {
+                            services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
                         }
                     }
-                    _posReached = false;
                     _state = HandleBarrierStmState::WAIT_FOR_STOP_2;
                     _stopTimeStamp = get_absolute_time();
 
@@ -250,14 +247,13 @@ namespace MtnCtrl
                     1800); // ° * 10
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_0", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_3;
                 _stopTimeStamp = get_absolute_time();
-                _posReached = false;
 
                 taskYIELD();
                 break;
@@ -283,9 +279,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SEND_RELEASE_CMD", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SEND_RELEASE_CMD", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::WAIT_FOR_GC_ACK_1;
@@ -313,12 +309,11 @@ namespace MtnCtrl
                     static_cast<uint64_t>(-1 * LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm)); // -1 due to backward
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#SET_BACK_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
-                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_4;
                 _stopTimeStamp = get_absolute_time();
 
@@ -346,15 +341,13 @@ namespace MtnCtrl
                     static_cast<uint64_t>(-1 * 1800)); // ° * 10
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
-                _posReached = false;
                 _state = HandleBarrierStmState::WAIT_FOR_STOP_5;
                 _stopTimeStamp = get_absolute_time();
-
                 taskYIELD();
                 break;
 
@@ -381,9 +374,9 @@ namespace MtnCtrl
                     0);
                 if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
                 { /* ERROR!!?? */
-                    services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     while (1)
                     {
+                        services::LoggerService::fatal("HandleBarrierStm::run() state#TURN_ROBOT_1", "_messagDispatcherQueue TIMEOUT");
                     }
                 }
                 _state = HandleBarrierStmState::IDLE;

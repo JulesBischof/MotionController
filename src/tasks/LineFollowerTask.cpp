@@ -95,7 +95,7 @@ namespace MtnCtrl
                     if(dist < 0)
                     {
                         services::LoggerService::debug("LineFollowerTask", "added offset to movementtracker: %d mm", dist);
-                        _movementTracker.addOffsetMillimeters(dist);
+                        _movementTracker.addOffsetMillimeters(-3.5 * dist);
                     }
                 }
                 break;

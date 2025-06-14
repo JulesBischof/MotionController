@@ -33,9 +33,10 @@ namespace MtnCtrl
                 case (DispatcherTaskId::LineFollowerTask):
                     if (xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to lineFollowerTaskQueue");
+
                         } /* ERROR */
                     }
                     break;
@@ -43,9 +44,10 @@ namespace MtnCtrl
                 case (DispatcherTaskId::RaspberryHatComTask):
                     if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to raspberryHatComQueue");
+
                         } /* ERROR */
                     }
                     break;
@@ -54,9 +56,10 @@ namespace MtnCtrl
                     message.receiverTaskId = DispatcherTaskId::ServoDriveTask;
                     if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to gripControllercomQueue");
+
                         } /* ERROR */
                     }
                     break;
@@ -64,9 +67,9 @@ namespace MtnCtrl
                 case (DispatcherTaskId::BarrierHandlerTask):
                     if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to barrierHandlerQueue");
                         } /* ERROR */
                     }
                     break;
@@ -74,28 +77,28 @@ namespace MtnCtrl
                 case (DispatcherTaskId::Broadcast):
                     if (xQueueSend(lineFollowerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to lineFollowerTaskQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to lineFollowerTaskQueue");
                         } /* ERROR */
                     }
                     if (xQueueSend(barrierHandlerQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to barrierHandlerQueue");
                         while (1)
                         {
+                            services::LoggerService::fatal("messageDispatcherTask", "writing to barrierHandlerQueue");
                         } /* ERROR */
                     }
                     if (xQueueSend(raspberryHatComQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to raspberryHatComQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to raspberryHatComQueue");
                         while (1)
                         {
                         } /* ERROR */
                     }
                     if (xQueueSend(gripControllercomQueue, &message, pdMS_TO_TICKS(1000)) != pdTRUE)
                     {
-                        services::LoggerService::error("messageDispatcherTask", "writing to gripControllercomQueue");
+                        services::LoggerService::fatal("messageDispatcherTask", "writing to gripControllercomQueue");
                         // while (1)
                         // {
                         // } /* ERROR */

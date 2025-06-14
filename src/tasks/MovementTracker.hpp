@@ -41,6 +41,6 @@ namespace MtnCtrl
 
             /// @brief adds an Offset to the driven Distanze.
             /// might be e.g. due to Barrier-Handling
-            void addOffsetMillimeters(uint64_t offset);
+            void addOffsetMillimeters(int64_t offset);
     };
 }

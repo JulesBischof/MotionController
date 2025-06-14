@@ -68,7 +68,7 @@ namespace MtnCtrl
                     txMsg = encode_info(address::RASPBERRY_HAT, info_flag::NODE_DETECTED);
                     break;
                 case (TaskCommand::PositionReached):
-                    // txMsg = encode_info(address::RASPBERRY_HAT, info_flag::MOTION_DONE);
+                    txMsg = encode_info(address::RASPBERRY_HAT, info_flag::MOTION_DONE);
                     break;
                 case (TaskCommand::Error):
                     txMsg = encode_error(address::RASPBERRY_HAT, message.getData());
@@ -92,15 +92,40 @@ namespace MtnCtrl
                     // TODO: prain_uart poll_id
                     break;
                 case (TaskCommand::DecodeMessage):
+                {
                     uartMsg = _getCommand(UART_INSTANCE_RASPBERRYHAT);
 
-                    if (xQueueSend(messageDispatcherQueue, &uartMsg, portMAX_DELAY) != pdTRUE)
+                    // message wrong crc - ignore cmd!
+                    if (uartMsg.command == TaskCommand::FAILED_CRC)
                     {
-                        services::LoggerService::fatal("_raspberryHatComTask", "WRITE TO QUEUE cmd decode msg FAILED");
-                        for (;;)
-                            ;
+                        services::LoggerService::error("_raspberryHatComTask", "INVALID CRC received");
+                        break;
                     }
-                    break;
+
+                    // otherwise send ACK
+                    DispatcherMessage ackMsg(
+                        DispatcherTaskId::RaspberryHatComTask,
+                        DispatcherTaskId::RaspberryHatComTask,
+                        TaskCommand::Info,
+                        static_cast<uint64_t>(info_flag::ACK));                        
+                    if (xQueueSend(raspberryHatComQueue, &ackMsg, pdMS_TO_TICKS(5000)) != pdTRUE)
+                    {
+                        for (;;)
+                        {
+                            services::LoggerService::fatal("_raspberryHatComTask", "WRITE TO QUEUE cmd decode msg FAILED");
+                        }
+                    }
+
+                    // and handle cmd accordingly
+                    if (xQueueSend(messageDispatcherQueue, &uartMsg, pdMS_TO_TICKS(5000)) != pdTRUE)
+                    {
+                        for (;;)
+                        {
+                            services::LoggerService::fatal("_raspberryHatComTask", "WRITE TO QUEUE cmd decode msg FAILED");
+                        }
+                    }
+                }
+                break;
                 default:
                     break;
                 }
@@ -195,7 +220,7 @@ namespace MtnCtrl
             if (!crcCheck)
             {
                 retVal.receiverTaskId = DispatcherTaskId::RaspberryHatComTask;
-                retVal.command = TaskCommand::Error;
+                retVal.command = TaskCommand::FAILED_CRC;
                 retVal.setData(static_cast<uint64_t>(error_code::INVALID_CRC));
                 return retVal;
             }

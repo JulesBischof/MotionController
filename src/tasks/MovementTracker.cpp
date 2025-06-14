@@ -69,7 +69,7 @@ namespace MtnCtrl
         return services::StepperService::convertMicrostepsToMillimeter(average) + _offsetMm;
     }
 
-    void MovementTracker::addOffsetMillimeters(uint64_t offsetMm)
+    void MovementTracker::addOffsetMillimeters(int64_t offsetMm)
     {
         _offsetMm = offsetMm;
     }
