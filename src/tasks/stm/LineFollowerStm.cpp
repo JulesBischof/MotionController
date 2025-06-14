@@ -4,6 +4,7 @@
 #include "DispatcherMessage.hpp"
 #include "pico/stdlib.h"
 #include <stdio.h>
+#include "MedianStack.hpp"
 
 namespace MtnCtrl
 {
@@ -21,6 +22,8 @@ namespace MtnCtrl
               _lineFollowerTaskQueue(LineFollowerTaskQueue),
               _messageDispatcherQueue(MessageDispatcherQueue)
         {
+            _posReachedFlag = false;
+            _lineSweepFlag = false;
         }
 
         LineFollowerStm::LineFollowerStm()
@@ -61,26 +64,29 @@ namespace MtnCtrl
                 if (_lineSensor->getStatus() & miscDevices::LINESENSOR_NO_LINE)
                 {
                     services::LoggerService::info("LineFollowerStm::run()", "Lost Line!");
-                    _state = LineFollowerStmState::LOST_LINE;
+
+                    // stop motors
+                    services::LoggerService::debug("LineFollowerStm::run() state#LOST_LINE", "send Stop Cmd");
+                    msg = DispatcherMessage(
+                        DispatcherTaskId::LineFollowerTask,
+                        DispatcherTaskId::Broadcast,
+                        TaskCommand::Stop,
+                        0);
+                    if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                    { /* ERROR!!?? */
+                        while (1)
+                        {
+                            services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
+                        }
+                    }
+                    _lineSweepFlag = true;
+                    _state = LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_0;
+                    taskYIELD();
                 }
 
                 break;
 
             case LineFollowerStmState::LOST_LINE:
-                // stop motors
-                services::LoggerService::debug("LineFollowerStm::run() state#LOST_LINE", "send Stop Cmd");
-                msg = DispatcherMessage(
-                    DispatcherTaskId::LineFollowerTask,
-                    DispatcherTaskId::Broadcast,
-                    TaskCommand::Stop,
-                    0);
-                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
-                { /* ERROR!!?? */
-                    while (1)
-                    {
-                        services::LoggerService::fatal("LineFollowerStm::run() state#LOST_LINE", "_messagDispatcherQueue TIMEOUT");
-                    }
-                }
 
                 // send info to RaspberryHat
                 msg = DispatcherMessage(
@@ -109,6 +115,8 @@ namespace MtnCtrl
                     {
                     }
                 }
+
+                _state = LineFollowerStmState::IDLE;
                 break;
 
             case LineFollowerStmState::CROSSPOINT_DETECTED:
@@ -171,6 +179,116 @@ namespace MtnCtrl
                 reset();
                 break;
 
+                /* --- LINE SWEEP --- */
+
+            case LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_0:
+            {
+                // wait for stop
+                if (_posReachedFlag)
+                {
+                    _state = LineFollowerStmState::LINESWEEP_TURN_0;
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_WAIT_FOR_STOP_0", "stop reached");
+                    _posReachedFlag = false; // reset flag
+                }
+                else
+                {
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_WAIT_FOR_STOP_0", "waiting for stop");
+                }
+            }
+            break;
+
+            case LineFollowerStmState::LINESWEEP_TURN_0:
+            {
+                DispatcherMessage msg(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::LineFollowerTask,
+                    TaskCommand::Turn,
+                    LINEFOLLOWERCONFIG_LINESWEEP_STARTANGLE);
+
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                    while (1)
+                    {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#CROSSPOINT_DETECTED", "_messagDispatcherQueue TIMEOUT");
+                    }
+                }
+
+                _state = LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_1;
+                taskYIELD();
+            }
+
+            case LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_1:
+            {
+                // wait for stop
+                if (_posReachedFlag)
+                {
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_WAIT_FOR_STOP", "stop reached");
+                    _posReachedFlag = false; // reset flag
+                    _state = LineFollowerStmState::LINESWEEP_CHECK_FOR_LINE;
+                }
+                else
+                {
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_WAIT_FOR_STOP", "waiting for stop");
+                }
+            }
+            break;
+
+            case LineFollowerStmState::LINESWEEP_CHECK_FOR_LINE:
+            {
+                // check if line gets detected
+                _lineSensor->reset();
+                _lineSensor->toggleUvLed(true);
+                vTaskDelay(pdMS_TO_TICKS(10));
+                bool nolineFlag = _lineSensor->checkLineAppearance();
+                _lineSensor->toggleUvLed(false);
+
+                if (!nolineFlag)
+                {
+                    if (_lineSweepCounter >= LINEFOLLERCONFIG_LINESWEEP_MAXCOUNTER)
+                    {
+                        services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_CHECK_FOR_LINE", "max sweep counter reached");
+                        _lineSweepCounter = 0;
+                        _lineSweepFlag = false;
+                        _state = LineFollowerStmState::LOST_LINE;
+                        break;
+                    }
+
+                    // linesweepcounter not reached 
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_CHECK_FOR_LINE", "no line detected, lineSweepCounter = %d", _lineSweepCounter);
+                    _state = LineFollowerStmState::LINESWEEP_TURN_1;
+                }
+                else
+                {
+                    // line detected
+
+                    services::LoggerService::debug("LineFollowerStm::run() state#LINESWEEP_CHECK_FOR_LINE", "line detected - continue LineFollowerMode");
+                    _state = LineFollowerStmState::FOLLOW_LINE;
+                    _lineSweepFlag = false;
+                    _lineSweepCounter = 0;
+                    _lineSensor->reset();
+                }
+            }
+            break;
+
+            case LineFollowerStmState::LINESWEEP_TURN_1:
+            {
+                _lineSweepCounter++;
+                msg = DispatcherMessage(
+                    DispatcherTaskId::LineFollowerTask,
+                    DispatcherTaskId::LineFollowerTask,
+                    TaskCommand::Turn,
+                    LINEFOLLOWERCONIG_LINESWEEP_ANGULAR_INCREMENT);
+                if (xQueueSend(_messageDispatcherQueue, &msg, pdMS_TO_TICKS(1000)) != pdPASS)
+                { /* ERROR!!?? */
+                    while (1)
+                    {
+                        services::LoggerService::fatal("LineFollowerStm::run() state#LINESWEEP_TURN_1", "_messagDispatcherQueue TIMEOUT");
+                    }
+                }
+                _state = LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_1;
+            }
+            break;
+
             default:
                 /* ERROR..? */
                 break;
@@ -186,6 +304,8 @@ namespace MtnCtrl
             _state = LineFollowerStmState::IDLE;
             _lineSensor->toggleUvLed(false);
             _lineSensor->reset();
+            _posReachedFlag = false;
+            _lineSweepFlag = false;
         }
 
         void LineFollowerStm::update(uint32_t msgData)
@@ -206,6 +326,13 @@ namespace MtnCtrl
                 _lineSensor->toggleUvLed(true);
                 services::LoggerService::debug("LineFollowerStm::update()", "start FOLLOW_LINE");
                 _state = LineFollowerStmState::FOLLOW_LINE;
+            }
+
+            if ((_state == LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_0 && cmd == TaskCommand::PositionReached) ||
+                (_state == LineFollowerStmState::LINESWEEP_WAIT_FOR_STOP_1 && cmd == TaskCommand::PositionReached))
+            {
+                services::LoggerService::debug("LineFollowerStm::update()", "Position Reached in LINESWEEP_WAIT_FOR_STOP");
+                _posReachedFlag = true;
             }
         }
 

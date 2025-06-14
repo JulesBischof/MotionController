@@ -92,7 +92,7 @@ namespace MtnCtrl
                     _movePositionModeStm.update(dist, message.command);
 
                     /* add offset if driving backwards */
-                    if(dist < 0)
+                    if (dist < 0)
                     {
                         services::LoggerService::debug("LineFollowerTask", "added offset to movementtracker: %d mm", dist);
                         _movementTracker.addOffsetMillimeters(-3.5 * dist);
@@ -113,7 +113,12 @@ namespace MtnCtrl
                 case TaskCommand::Stop:
                     _lamp.setState(false);
                     services::LoggerService::debug("LineFollowerTask", "Recieved Command: STOP # data: %d", message.getData());
-                    _lineFollowerStm.reset();
+
+                    if (!_lineFollowerStm.isInLineSweepMode())
+                    {
+                        _lineFollowerStm.reset();
+                    }
+
                     _movePositionModeStm.update(message.getData(), message.command);
 #if USE_CHECKFORLINE_STM == (1)
                     _checkForLineStm.reset();
@@ -182,6 +187,7 @@ namespace MtnCtrl
                 case TaskCommand::PositionReached:
 #if USE_CHECKFORLINE_STM == (1)
                     _checkForLineStm.update(message.command, message.getData());
+                    _lineFollowerStm.update(message.getData(), message.command);
 #endif
                     break;
 

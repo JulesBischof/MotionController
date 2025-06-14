@@ -176,6 +176,37 @@ namespace miscDevices
         return;
     }
 
+    bool LineSensor::checkLineAppearance()
+    {
+        // get ADC-value
+        uint16_t adcValues[NUMBER_OF_CELLS] = {0};
+        bool err = _adcInstance->readAdc(adcValues);
+
+        if (!err)
+        {
+            services::LoggerService::error("LineSensor::getLinePositionAnalog", "reading adcValue");
+            _status |= LINESENSOR_ERROR;
+            return LINESENSOR_MIDDLE_POSITION;
+        }
+
+        uint8_t lineCounter = 0;
+        uint16_t normValues[NUMBER_OF_CELLS] = {0};
+
+        // normalize and invert ADC values
+        // invert values due to sensor is low active
+        for (size_t i = 0; i < NUMBER_OF_CELLS; i++)
+        {
+            normValues[i] = _minMaxNormalize(adcValues[i], _calibValuesLow[i], _calibValuesHigh[i]);
+            normValues[i] = 1000 - normValues[i];
+            if (normValues[i] > LINESENSOR_LINE_DETECTED_NORMLIZED) // bigger then due to values were invertet right before
+            {
+                lineCounter++;
+            }
+        }
+
+        return lineCounter > 0;;
+    }
+
     void LineSensor::reset()
     {
         _status = 0;

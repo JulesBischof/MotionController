@@ -133,3 +133,14 @@ constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_mm = (28);
 constexpr float LINEFOLLOWERCONFIG_BARRIER_GRIP_DISTANCE_TOLAREANCE_mm = (2);
 constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_mm = (350);
 constexpr int32_t LINEFOLLOWERCONFIG_BARRIER_SET_BACK_DISTANCE_AFTER_TURN_BACK_mm = (50);
+
+/* ==============================================================
+
+                    Line Sweep
+
+============================================================== */
+constexpr int64_t LINEFOLLOWERCONFIG_LINESWEEP_STARTANGLE = (-150);
+
+constexpr uint8_t LINEFOLLERCONFIG_LINESWEEP_MAXCOUNTER = (2);
+
+constexpr int64_t LINEFOLLOWERCONIG_LINESWEEP_ANGULAR_INCREMENT = -2 * (LINEFOLLOWERCONFIG_LINESWEEP_STARTANGLE) / (LINEFOLLERCONFIG_LINESWEEP_MAXCOUNTER );

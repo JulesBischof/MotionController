@@ -66,6 +66,8 @@ namespace miscDevices
         /// @param state true = LED's on; false = LED's off;
         void toggleUvLed(bool state);
 
+        bool checkLineAppearance();
+
         /// @brief resets LineSensor to default values 
         /// @note this wil clear the internal ring buffer and counter fo no line detected
         void reset();

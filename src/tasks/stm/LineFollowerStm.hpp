@@ -21,6 +21,12 @@ namespace MtnCtrl
             FOLLOW_LINE,
             LOST_LINE,
             CROSSPOINT_DETECTED,
+
+            LINESWEEP_WAIT_FOR_STOP_0,
+            LINESWEEP_TURN_0,
+            LINESWEEP_WAIT_FOR_STOP_1,
+            LINESWEEP_CHECK_FOR_LINE,
+            LINESWEEP_TURN_1,
         };
 
         class LineFollowerStm : public StmBase<LineFollowerStmState>
@@ -41,6 +47,9 @@ namespace MtnCtrl
 
             uint32_t _lastMsgData;
 
+            bool _posReachedFlag, _lineSweepFlag;
+            uint8_t _lineSweepCounter = 0;
+
         public:
             LineFollowerStm(miscDevices::LineSensor *lineSensor,
                             spiDevices::Tmc5240 *driver0,
@@ -56,7 +65,9 @@ namespace MtnCtrl
             void update(uint32_t msgData) override;
             void update(uint32_t msgData, TaskCommand cmd);
 
-                LineFollowerStmState getState() override
+            bool isInLineSweepMode() { return _lineSweepFlag; }
+
+            LineFollowerStmState getState() override
             {
                 return _state;
             };

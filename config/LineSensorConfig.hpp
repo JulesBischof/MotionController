@@ -38,7 +38,7 @@ constexpr uint16_t LINESENSOR_MIDDLE_POSITION((LINESENSOR_NORMALIZE_REFERENCE_HI
 
 /* --- TRESHHOLDS ---*/
 constexpr uint16_t LINESENSOR_LINE_DETECTED_NORMLIZED(0.45 * LINESENSOR_NORMALIZE_REFERENCE_HIGH); // 0.7
-constexpr uint8_t NOLINECOUNTER_MAXVALUE = 15; // no line detected for this amount of cycles -> set no line Flag and stop vehicle 
+constexpr uint8_t NOLINECOUNTER_MAXVALUE = 25; // no line detected for this amount of cycles -> set no line Flag and stop vehicle 
 
 constexpr float LINESENSOR_UNITCONVERSION_SENSORVALUE_TO_MM = 40; // 2000 = 50mm
 
